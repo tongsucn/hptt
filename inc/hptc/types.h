@@ -2,6 +2,7 @@
 #ifndef HPTC_TYPES_H_
 #ifndef HPTC_TYPES_H_
 
+#include <cstdint>
 
 namespace hptc {
 
