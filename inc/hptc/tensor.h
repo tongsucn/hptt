@@ -29,11 +29,14 @@ public:
   TensorSize();
   TensorSize(TensorDim dim);
   TensorSize(std::initializer_list<TensorIdx> size);
+
   TensorSize(const TensorSize &size_obj);
   TensorSize(TensorSize &&size_obj) noexcept;
-
   TensorSize &operator=(const TensorSize &size_obj);
   TensorSize &operator=(TensorSize &&size_obj) noexcept;
+
+  ~TensorSize();
+
   bool operator==(const TensorSize &size_obj);
 
   inline TensorIdx &operator[](TensorIdx idx);
@@ -48,16 +51,16 @@ private:
 template <typename FloatType>
 class TensorWrapper {
 public:
-  TensorWrapper() = delete;
   TensorWrapper(const TensorSize &size_obj, FloatType *raw_data);
   TensorWrapper(const TensorSize &size_obj, const TensorSize &outer_size_obj,
       TensorIdx data_offset, FloatType *raw_data);
+
   TensorWrapper(const TensorWrapper<FloatType> &wrapper_obj);
   TensorWrapper(TensorWrapper<FloatType> &&wrapper_obj);
-  ~TensorWrapper();
-
   TensorWrapper &operator=(const TensorWrapper &wrapper_obj);
   TensorWrapper &operator=(TensorWrapper &&wrapper_obj);
+
+  ~TensorWrapper();
 
   template <typename... Idx>
   FloatType &operator()(Idx... indices);

@@ -65,13 +65,8 @@ TensorSize &TensorSize::operator=(TensorSize &&size_obj) {
 }
 
 
-inline TensorIdx &TensorSize::operator[](TensorIdx idx) {
-  return this->size_[idx];
-}
-
-
-inline TensorDim TensorSize::get_dim() const {
-  return this->dim_;
+TensorSize::~TensorSize() {
+  delete [] this->size_;
 }
 
 
@@ -83,6 +78,16 @@ bool TensorSize::operator==(const TensorSize &size_obj) {
     return false;
 
   return true;
+}
+
+
+inline TensorIdx &TensorSize::operator[](TensorIdx idx) {
+  return this->size_[idx];
+}
+
+
+inline TensorDim TensorSize::get_dim() const {
+  return this->dim_;
 }
 
 }
