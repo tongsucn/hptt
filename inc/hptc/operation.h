@@ -12,10 +12,12 @@
 
 namespace hptc {
 
+template <typename ParamType,
+          typename FloatType>
 class Operation {
 public:
-  Operation(const std::shared_ptr<Param> &param, Operation *prev = nullptr,
-      Operation *next = nullptr);
+  Operation(const std::shared_ptr<ParamType<FloatType>> &param,
+      Operation *prev = nullptr, Operation *next = nullptr);
 
   Operation(const Operation &operation) = default;
   Operation &operator=(const Operation &operation) = default;
@@ -30,7 +32,7 @@ public:
   virtual void exec() = 0;
 
 protected:
-  std::shared_ptr<Param> param;
+  std::shared_ptr<ParamType<FloatType>> param;
 
 private:
   Operation *prev;
@@ -38,10 +40,12 @@ private:
 };
 
 
-template <uint32_t OPER_NUM>
+template <typename ParamType,
+          typename FloatType,
+          uint32_t OPER_NUM>
 class OpLoop : public Operation {
 public:
-  OpLoop(const std::shared_ptr<Param> &param);
+  OpLoop(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpLoop(const OpLoop &operation) = default;
   OpLoop &operator=(const OpLoop &operation) = default;
@@ -91,12 +95,13 @@ struct ForCond {
 
 
 template <typename ParamType,
+          typename FloatType,
           uint32_t OPER_NUM,
           typename IdxType = TensorIdx>
 class OpLoopFor : public OpLoop<OPER_NUM> {
 public:
   OpLoopFor(IdxType begin, IdxType end, IdxType step, ForCondType<IdxType> cond,
-      const std::shared_ptr<ParamType> &param);
+      const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpLoopFor(const OpLoopFor &operation) = default;
   OpLoopFor &operator=(const OpLoopFor &operation) = default;
@@ -111,9 +116,11 @@ private:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMicro : public Operation {
 public:
-  OpMicro(const std::shared_ptr<Param> &param);
+  OpMicro(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicro(const OpMicro &operation) = default;
   OpMicro &operator=(const OpMicro &operation) = default;
@@ -124,9 +131,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMicroCopier : public OpMicro {
 public:
-  OpMicroCopier(const std::shared_ptr<Param> &param);
+  OpMicroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicroCopier(const OpMicroCopier &operation) = default;
   OpMicroCopier &operator=(const OpMicroCopier &operation) = default;
@@ -137,10 +146,11 @@ public:
 };
 
 
-template <typename ParamType>
+template <typename ParamType,
+          typename FloatType>
 class OpMicroCopier1x1 : public OpMicroCopier {
 public:
-  OpMicroCopier1x1(const std::shared_ptr<ParamType> &param);
+  OpMicroCopier1x1(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicroCopier1x1(const OpMicroCopier1x1 &operation) = default;
   OpMicroCopier1x1 &operator=(const OpMicroCopier1x1 &operation) = default;
@@ -151,10 +161,11 @@ public:
 };
 
 
-template <typename ParamType>
+template <typename ParamType,
+          typename FloatType>
 class OpMicroCopier2x2 : public OpMicroCopier {
 public:
-  OpMicroCopier2x2(const std::shared_ptr<ParamType> &param);
+  OpMicroCopier2x2(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicroCopier2x2(const OpMicroCopier2x2 &operation) = default;
   OpMicroCopier2x2 &operator=(const OpMicroCopier2x2 &operation) = default;
@@ -165,10 +176,11 @@ public:
 };
 
 
-template <typename ParamType>
+template <typename ParamType,
+          typename FloatType>
 class OpMicroCopier4x4 : public OpMicroCopier {
 public:
-  OpMicroCopier4x4(const std::shared_ptr<ParamType> &param);
+  OpMicroCopier4x4(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicroCopier4x4(const OpMicroCopier4x4 &operation) = default;
   OpMicroCopier4x4 &operator=(const OpMicroCopier4x4 &operation) = default;
@@ -179,10 +191,11 @@ public:
 };
 
 
-template <typename ParamType>
+template <typename ParamType,
+          typename FloatType>
 class OpMicroCopier8x8 : public OpMicroCopier {
 public:
-  OpMicroCopier8x8(const std::shared_ptr<ParamType> &param);
+  OpMicroCopier8x8(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMicroCopier8x8(const OpMicroCopier8x8 &operation) = default;
   OpMicroCopier8x8 &operator=(const OpMicroCopier8x8 &operation) = default;
@@ -195,7 +208,7 @@ public:
 
 class OpMacro : public Operation {
 public:
-  OpMacro(const std::shared_ptr<Param> &param);
+  OpMacro(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacro(const OpMacro &operation) = default;
   OpMacro &operator=(const OpMacro &operation) = default;
@@ -208,7 +221,7 @@ public:
 
 class OpMacroCopier : public OpMacro {
 public:
-  OpMacroCopier(const std::shared_ptr<Param> &param);
+  OpMacroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier(const OpMacroCopier &operation) = default;
   OpMacroCopier &operator=(const OpMacroCopier &operation) = default;
@@ -219,9 +232,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier8x16 : public OpMacroCopier {
 public:
-  OpMacroCopier8x16(const std::shared_ptr<Param> &param);
+  OpMacroCopier8x16(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier8x16(const OpMacroCopier8x16 &operation) = default;
   OpMacroCopier8x16 &operator=(const OpMacroCopier8x16 &operation) = default;
@@ -232,9 +247,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier16x8 : public OpMacroCopier {
 public:
-  OpMacroCopier16x8(const std::shared_ptr<Param> &param);
+  OpMacroCopier16x8(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier16x8(const OpMacroCopier16x8 &operation) = default;
   OpMacroCopier16x8 &operator=(const OpMacroCopier16x8 &operation) = default;
@@ -245,9 +262,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier16x16 : public OpMacroCopier {
 public:
-  OpMacroCopier16x16(const std::shared_ptr<Param> &param);
+  OpMacroCopier16x16(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier16x16(const OpMacroCopier16x16 &operation) = default;
   OpMacroCopier16x16 &operator=(const OpMacroCopier16x16 &operation) = default;
@@ -258,9 +277,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier16x32 : public OpMacroCopier {
 public:
-  OpMacroCopier16x32(const std::shared_ptr<Param> &param);
+  OpMacroCopier16x32(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier16x32(const OpMacroCopier16x32 &operation) = default;
   OpMacroCopier16x32 &operator=(const OpMacroCopier16x32 &operation) = default;
@@ -271,9 +292,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier32x16 : public OpMacroCopier {
 public:
-  OpMacroCopier32x16(const std::shared_ptr<Param> &param);
+  OpMacroCopier32x16(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier32x16(const OpMacroCopier32x16 &operation) = default;
   OpMacroCopier32x16 &operator=(const OpMacroCopier32x16 &operation) = default;
@@ -284,9 +307,11 @@ public:
 };
 
 
+template <typename ParamType,
+          typename FloatType>
 class OpMacroCopier32x32 : public OpMacroCopier {
 public:
-  OpMacroCopier32x32(const std::shared_ptr<Param> &param);
+  OpMacroCopier32x32(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacroCopier32x32(const OpMacroCopier32x32 &operation) = default;
   OpMacroCopier32x32 &operator=(const OpMacroCopier32x32 &operation) = default;
