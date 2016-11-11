@@ -3,14 +3,19 @@
 #define HPTC_PARAMETER_H_
 
 #include <hptc/types.h>
+#include <hptc/tensor.h>
 
 namespace hptc {
 
-struct Param {
-};
+template <typename FloatType>
+struct ParamTrans {
+  ParamTrans();
 
-struct ParamTrans : public Param {
-  ;
+  TensorWrapper<FloatType> &input_tensor;
+  TensorWrapper<FloatType> &output_tensor;
+
+  CoefficientType<FloatType> alpha;
+  CoefficientType<FloatType> beta;
 };
 
 }
