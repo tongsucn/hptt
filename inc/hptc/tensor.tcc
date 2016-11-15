@@ -43,7 +43,8 @@ TensorWrapper<FloatType>::TensorWrapper(
 
 
   template <typename FloatType>
-TensorWrapper<FloatType>::TensorWrapper(TensorWrapper<FloatType> &&wrapper_obj)
+TensorWrapper<FloatType>::TensorWrapper(
+    TensorWrapper<FloatType> &&wrapper_obj) noexcept
     : size_(std::move(wrapper_obj.size_)),
       outer_size_(std::move(wrapper_obj.outer_size_)),
       data_offset_(wrapper_obj.data_offset_),
@@ -73,7 +74,7 @@ TensorWrapper &TensorWrapper<FloatType>::operator=(
 
 template <typename FloatType>
 TensorWrapper &TensorWrapper<FloatType>::operator=(
-    TensorWrapper &&wrapper_obj) {
+    TensorWrapper &&wrapper_obj) noexcept {
   this->size_ = std::move(wrapper_obj.size_);
   this->outer_size_ = std::move(wrapper_obj.outer_size_);
   this->data_offset_ = wrapper_obj.data_offset_;
@@ -102,7 +103,7 @@ TensorWrapper<FloatType> TensorWrapper<FloatType>::slice(Ranges... range) {
 
 
 template <typename FloatType>
-inline TensorSize TensorWrapper<FloatType>::get_size() const {
+inline const TensorSize &TensorWrapper<FloatType>::get_size() const {
   return this->size_;
 }
 

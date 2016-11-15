@@ -36,7 +36,7 @@ TensorSize::TensorSize(const TensorSize &size_obj)
 }
 
 
-TensorSize::TensorSize(TensorSize &&size_obj)
+TensorSize::TensorSize(TensorSize &&size_obj) noexcept
     : dim_(size_obj.dim_),
       size_(size_obj.size_) {
   size_obj.size_ = nullptr;
@@ -54,7 +54,7 @@ TensorSize &TensorSize::operator=(const TensorSize &size_obj) {
 }
 
 
-TensorSize &TensorSize::operator=(TensorSize &&size_obj) {
+TensorSize &TensorSize::operator=(TensorSize &&size_obj) noexcept {
   this->dim_ = size_obj.dim;
 
   delete [] this->size_;

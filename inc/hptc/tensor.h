@@ -56,9 +56,9 @@ public:
       TensorIdx data_offset, FloatType *raw_data);
 
   TensorWrapper(const TensorWrapper<FloatType> &wrapper_obj);
-  TensorWrapper(TensorWrapper<FloatType> &&wrapper_obj);
+  TensorWrapper(TensorWrapper<FloatType> &&wrapper_obj) noexcept;
   TensorWrapper &operator=(const TensorWrapper &wrapper_obj);
-  TensorWrapper &operator=(TensorWrapper &&wrapper_obj);
+  TensorWrapper &operator=(TensorWrapper &&wrapper_obj) noexcept;
 
   ~TensorWrapper();
 
@@ -67,7 +67,7 @@ public:
   template <typename... Ranges>
   TensorWrapper slice(TRI offset, Ranges... range);
 
-  inline TensorSize get_size() const;
+  inline const TensorSize &get_size() const;
   inline TensorSize get_outer_size() const;
   inline FloatType *get_data();
   inline const FloatType *get_data() const;
