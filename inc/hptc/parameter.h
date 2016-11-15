@@ -2,6 +2,8 @@
 #ifndef HPTC_PARAMETER_H_
 #define HPTC_PARAMETER_H_
 
+#include <algorithm>
+
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 
@@ -9,14 +11,82 @@ namespace hptc {
 
 template <typename FloatType>
 struct ParamTrans {
-  ParamTrans();
+  ParamTrans() = delete;
+  ParamTrans(const TensorWrapper<FloatType> &input_tensor,
+      TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
+      CoefficientType<FloatType> beta);
 
-  TensorWrapper<FloatType> &input_tensor;
+  ParamTrans(const ParamTrans &param_obj);
+  ParamTrans(ParamTrans &&param_obj) noexcept;
+
+  ParamTrans &operator=(const ParamTrans &param_obj) = delete;
+
+  ~ParamTrans();
+
+  const TensorWrapper<FloatType> &input_tensor;
   TensorWrapper<FloatType> &output_tensor;
 
   CoefficientType<FloatType> alpha;
   CoefficientType<FloatType> beta;
+
+  TensorDim tensor_dim;
+  TensorIdx *macro_loop_idx;
+  TensorIdx *remainder_loop_idx;
 };
+
+
+/*
+ * Implementation for class ParamTrans
+ */
+template <typename FloatType>
+ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
+    TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
+    CoefficientType<FloatType> beta)
+    : input_tensor(input_tensor),
+      output_tensor(output_tensor),
+      alpha(alpha),
+      beta(beta),
+      tensor_dim(input_tensor.get_size().get_dim()) {
+  this->macro_loop_idx = new TensorIdx [tensor_dim];
+  this->remainder_loop_idx = new TensorIdx [tensor_dim];
+}
+
+
+template <typename FloatType>
+ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj) {
+    : input_tensor(param_obj.input_tensor),
+      output_tensor(param_obj.output_tensor),
+      alpha(param_obj.alpha),
+      beta(param_obj.beta),
+      tensor_dim(param_obj.tensor_dim) {
+  this->macro_loop_idx = new TensorIdx [tensor_dim];
+  std::copy(param_obj.macro_loop_idx, param_obj.macro_loop_idx + tensor_dim,
+      this->macro_loop_idx);
+  this->remainder_loop_idx = new TensorIdx [tensor_dim];
+  std::copy(param_obj.remainder_loop_idx,
+      param_obj.remainder_loop_idx + tensor_dim, this->remainder_loop_idx);
+}
+
+
+template <typename FloatType>
+ParamTrans<FloatType>::ParamTrans(ParamTrans &&param_obj) noexcept
+    : input_tensor(param_obj.input_tensor),
+      output_tensor(param_obj.output_tensor),
+      alpha(param_obj.alpha),
+      beta(param_obj.beta),
+      tensor_dim(param_obj.tensor_dim),
+      macro_loop_idx(param_obj.macro_loop_idx),
+      remainder_loop_idx(param_obj.remainder_loop_idx) {
+  param_obj.macro_loop_idx = nullptr;
+  param_obj.remainder_loop_idx = nullptr;
+}
+
+
+template <typename FloatType>
+ParamTrans<FloatType>::~ParamTrans() {
+  delete [] this->macro_loop_idx;
+  delete [] this->remainder_loop_idx;
+}
 
 }
 

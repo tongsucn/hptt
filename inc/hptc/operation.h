@@ -8,12 +8,13 @@
 #include <functional>
 
 #include <hptc/types.h>
+#include <hptc/util.h>
 #include <htpc/parameter.h>
 
 namespace hptc {
 
-template <typename ParamType,
-          typename FloatType>
+template <typename FloatType,
+          typename ParamType>
 class Operation {
 public:
   Operation(const std::shared_ptr<ParamType<FloatType>> &param,
@@ -40,10 +41,10 @@ private:
 };
 
 
-template <typename ParamType,
-          typename FloatType,
+template <typename FloatType,
+          typename ParamType,
           uint32_t OPER_NUM>
-class OpLoop : public Operation {
+class OpLoop : public Operation<FloatType, ParamType> {
 public:
   OpLoop(const std::shared_ptr<ParamType<FloatType>> &param);
 
@@ -52,25 +53,17 @@ public:
 
   virtual ~OpLoop() = default;
 
-  template <typename OperType>
-  inline void init_operation(uint32_t nth_operation,
-      const std::shared_ptr<OperType> &oper);
-
   virtual void exec() override = 0;
+
+  template <typename OperType>
+  inline void init_operation(uint32_t operation_idx,
+      const std::shared_ptr<OperType> &oper);
 
 protected:
   inline void exec_all();
 
 private:
   std::shared_ptr<Operation> operations[OPER_NUM];
-
-  template <uint32_t UnrollDepth>
-  struct UnrollControllor {
-  };
-
-  template <uint32_t UnrollDepth>
-  inline void unroller(UnrollControllor<UnrollDepth>);
-  inline void unroller(UnrollControllor<0>);
 };
 
 
@@ -94,14 +87,14 @@ struct ForCond {
 };
 
 
-template <typename ParamType,
-          typename FloatType,
-          uint32_t OPER_NUM,
-          typename IdxType = TensorIdx>
-class OpLoopFor : public OpLoop<OPER_NUM> {
+template <typename FloatType,
+          typename ParamType,
+          uint32_t OPER_NUM>
+class OpLoopFor : public OpLoop<FloatType, ParamType, OPER_NUM> {
 public:
-  OpLoopFor(IdxType begin, IdxType end, IdxType step, ForCondType<IdxType> cond,
-      const std::shared_ptr<ParamType<FloatType>> &param);
+  OpLoopFor(const std::shared_ptr<ParamType<FloatType>> &param,
+      TensorIdx &target_idx, TensorIdx begin, TensorIdx end, TensorIdx step = 1,
+      ForCondType<TensorIdx> cond = ForCond::Smaller);
 
   OpLoopFor(const OpLoopFor &operation) = default;
   OpLoopFor &operator=(const OpLoopFor &operation) = default;
@@ -111,14 +104,15 @@ public:
   virtual inline void exec() final;
 
 private:
-  IdxType begin, end, step;
-  ForCondType<IdxType> cond;
+  TensorIdx &curr_idx;
+  TensorIdx begin, end, step;
+  ForCondType<TensorIdx> cond;
 };
 
 
-template <typename ParamType,
-          typename FloatType>
-class OpMicro : public Operation {
+template <typename FloatType,
+          typename ParamType>
+class OpMicro : public Operation<FloatType, ParamType> {
 public:
   OpMicro(const std::shared_ptr<ParamType<FloatType>> &param);
 
@@ -131,9 +125,11 @@ public:
 };
 
 
-template <typename ParamType,
-          typename FloatType>
-class OpMicroCopier : public OpMicro {
+template <typename FloatType,
+          typename ParamType,
+          uint32_t HEIGHT,
+          uint32_t WIDTH>
+class OpMicroCopier : public OpMicro<FloatType, ParamType> {
 public:
   OpMicroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
 
@@ -142,84 +138,38 @@ public:
 
   virtual ~OpMicroCopier() = default;
 
-  virtual void exec() override = 0;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMicroCopier1x1 : public OpMicroCopier {
-public:
-  OpMicroCopier1x1(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicroCopier1x1(const OpMicroCopier1x1 &operation) = default;
-  OpMicroCopier1x1 &operator=(const OpMicroCopier1x1 &operation) = default;
-
-  virtual ~OpMicroCopier1x1() = default;
-
   virtual void exec() final;
 };
 
 
-template <typename ParamType,
-          typename FloatType>
-class OpMicroCopier2x2 : public OpMicroCopier {
-public:
-  OpMicroCopier2x2(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicroCopier2x2(const OpMicroCopier2x2 &operation) = default;
-  OpMicroCopier2x2 &operator=(const OpMicroCopier2x2 &operation) = default;
-
-  virtual ~OpMicroCopier2x2() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMicroCopier4x4 : public OpMicroCopier {
-public:
-  OpMicroCopier4x4(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicroCopier4x4(const OpMicroCopier4x4 &operation) = default;
-  OpMicroCopier4x4 &operator=(const OpMicroCopier4x4 &operation) = default;
-
-  virtual ~OpMicroCopier4x4() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMicroCopier8x8 : public OpMicroCopier {
-public:
-  OpMicroCopier8x8(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicroCopier8x8(const OpMicroCopier8x8 &operation) = default;
-  OpMicroCopier8x8 &operator=(const OpMicroCopier8x8 &operation) = default;
-
-  virtual ~OpMicroCopier8x8() = default;
-
-  virtual void exec() final;
-};
-
-
-class OpMacro : public Operation {
+template <typename FloatType,
+          typename ParamType,
+          uint32_t HEIGHT,
+          uint32_t WIDTH>
+class OpMacro : public Operation<FloatType, ParamType> {
 public:
   OpMacro(const std::shared_ptr<ParamType<FloatType>> &param);
 
   OpMacro(const OpMacro &operation) = default;
   OpMacro &operator=(const OpMacro &operation) = default;
 
-  virtual ~OpMacro() = default;
+  virtual ~OpMacro();
 
   virtual void exec() override = 0;
+
+protected:
+  inline void exec_all();
+
+private:
+  Operation<FloatType, ParamType> *operations[HEIGHT * WIDTH];
 };
 
 
-class OpMacroCopier : public OpMacro {
+template <typename FloatType,
+          typename ParamType,
+          uint32_t HEIGHT,
+          uint32_t WIDTH>
+class OpMacroCopier : public OpMacro<FloatType, ParamType, HEIGHT, WIDTH> {
 public:
   OpMacroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
 
@@ -228,102 +178,42 @@ public:
 
   virtual ~OpMacroCopier() = default;
 
-  virtual void exec() override = 0;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier8x16 : public OpMacroCopier {
-public:
-  OpMacroCopier8x16(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier8x16(const OpMacroCopier8x16 &operation) = default;
-  OpMacroCopier8x16 &operator=(const OpMacroCopier8x16 &operation) = default;
-
-  virtual ~OpMacroCopier8x16() = default;
-
   virtual void exec() final;
 };
 
 
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier16x8 : public OpMacroCopier {
-public:
-  OpMacroCopier16x8(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier16x8(const OpMacroCopier16x8 &operation) = default;
-  OpMacroCopier16x8 &operator=(const OpMacroCopier16x8 &operation) = default;
-
-  virtual ~OpMacroCopier() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier16x16 : public OpMacroCopier {
-public:
-  OpMacroCopier16x16(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier16x16(const OpMacroCopier16x16 &operation) = default;
-  OpMacroCopier16x16 &operator=(const OpMacroCopier16x16 &operation) = default;
-
-  virtual ~OpMacroCopier16x16() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier16x32 : public OpMacroCopier {
-public:
-  OpMacroCopier16x32(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier16x32(const OpMacroCopier16x32 &operation) = default;
-  OpMacroCopier16x32 &operator=(const OpMacroCopier16x32 &operation) = default;
-
-  virtual ~OpMacroCopier16x32() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier32x16 : public OpMacroCopier {
-public:
-  OpMacroCopier32x16(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier32x16(const OpMacroCopier32x16 &operation) = default;
-  OpMacroCopier32x16 &operator=(const OpMacroCopier32x16 &operation) = default;
-
-  virtual ~OpMacroCopier32x16() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename ParamType,
-          typename FloatType>
-class OpMacroCopier32x32 : public OpMacroCopier {
-public:
-  OpMacroCopier32x32(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier32x32(const OpMacroCopier32x32 &operation) = default;
-  OpMacroCopier32x32 &operator=(const OpMacroCopier32x32 &operation) = default;
-
-  virtual ~OpMacroCopier32x32() = default;
-
-  virtual void exec() final;
-};
-
-
-// Import implementation
+/*
+ * Import implementation
+ */
 #include "operation.tcc"
+
+
+/*
+ * Template instantiation typedef for micro/macro kernels
+ */
+template <typename FloatType,
+          typename ParamType = ParamTrans<FloatType>>
+using MicroCopier1x1 = MicroCopier<FloatType, ParamType, 1, 1>;
+
+
+template <typename FloatType,
+          typename ParamType = ParamTrans<FloatType>>
+using MicroCopier2x2 = MicroCopier<FloatType, ParamType, 2, 2>;
+
+
+template <typename FloatType,
+          typename ParamType = ParamTrans<FloatType>>
+using MicroCopier4x4 = MicroCopier<FloatType, ParamType, 4, 4>;
+
+
+template <typename FloatType,
+          typename ParamType = ParamTrans<FloatType>>
+using MicroCopier8x8 = MicroCopier<FloatType, ParamType, 8, 8>;
+
+
+template <typename FloatType,
+          typename ParamType = ParamTrans<FloatType>>
+using MacroCopier8x16 = MacroCopier<FloatType, ParamType, 8, 16>;
 
 }
 
