@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_PARAMETER_H_
-#define HPTC_PARAMETER_H_
+#ifndef HPTC_PARAMETER_TRANS_H_
+#define HPTC_PARAMETER_TRANS_H_
 
 #include <algorithm>
 
@@ -90,4 +90,4 @@ ParamTrans<FloatType>::~ParamTrans() {
 
 }
 
-#endif // HPTC_PARAMETER_H_
+#endif // HPTC_PARAMETER_TRANS_H_
