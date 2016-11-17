@@ -90,5 +90,4 @@ ParamTrans<FloatType>::~ParamTrans() {
 
 }
 
-
 #endif // HPTC_PARAMETER_H_

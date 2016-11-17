@@ -1,6 +1,7 @@
 #pragma once
-#ifndef HPTC_OPERATION_TCC_
-#define HPTC_OPERATION_TCC_
+#ifndef HPTC_OPERATION_BASE_TCC_
+#define HPTC_OPERATION_BASE_TCC_
+
 
 /*
  * Implementation for class Operation
@@ -52,7 +53,7 @@ template <typename FloatType,
           uint32_t OPER_NUM>
 OpLoop<FloatType, ParamType, OPER_NUM>::OpLoop(
     const std::shared_ptr<ParamType<FloatType>> &param)
-    : Operation(param) {
+    : Operation<FloatType, ParamType>(param) {
   for (uint32_t idx = 0; idx < OPER_NUM; ++idx)
     this->operations[idx] = nullptr;
 }
@@ -72,8 +73,7 @@ template <typename FloatType,
           typename ParamType,
           uint32_t OPER_NUM>
 inline void OpLoop<FloatType, ParamType, OPER_NUM>::exec_all() {
-  constexpr auto UNROLL_DEPTH = OPER_NUM - 1;
-  op_arr_unroller(this->operations, UnrollControllor<UNROLL_DEPTH>());
+  op_arr_unroller(this->operations, UnrollControllor<OPER_NUM - 1>());
 }
 
 
@@ -111,31 +111,12 @@ inline void OpLoopFor<FloatType, ParamType, OPER_NUM>::exec() {
  * Implementation for class OpMicro
  */
 template <typename FloatType,
-          typename ParamType>
-OpMicro<ParamType, FloatType>::OpMicro(
-    const std::shared_ptr<ParamType<FloatType>> &param)
-    : Operation(param) {
-}
-
-
-/*
- * Implementation for class OpMicroCopier
- */
-template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
-OpMicroCopier<FloatType, ParamType, HEIGHT, WIDTH>::OpMicroCopier(
+          uint32_t WIDTH = HEIGHT>
+OpMicro<ParamType, FloatType, HEIGHT, WIDTH>::OpMicro(
     const std::shared_ptr<ParamType<FloatType>> &param)
-    : OpMicro(param) {
-}
-
-
-template <typename FloatType,
-          typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH>
-void OpMicroCopier<FloatType, ParamType, HEIGHT, WIDTH>::exec() {
+    : Operation<FloatType, ParamType>(param) {
 }
 
 
@@ -145,22 +126,10 @@ void OpMicroCopier<FloatType, ParamType, HEIGHT, WIDTH>::exec() {
 template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
+          uint32_t WIDTH = HEIGHT>
 OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
     const std::shared_ptr<ParamType<FloatType>> &param)
-    : Operation(param) {
-  constexpr auto OPER_NUM = HEIGHT * WIDTH;
-  for (TensorIdx idx = 0; idx < OPER_NUM; ++idx)
-    this->operations[idx] = nullptr;
-}
-
-
-template <typename FloatType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH>
-OpMacro<FloatType, ParamTrans, HEIGHT, WIDTH>::OpMacro(
-    const std::shared_ptr<ParamTrans<FloatType>> &param)
-    : Operation(param) {
+    : Operation<FloatType, ParamType>(param) {
   constexpr auto OPER_NUM = HEIGHT * WIDTH;
   for (TensorIdx idx = 0; idx < OPER_NUM; ++idx)
     this->operations[idx] = nullptr;
@@ -170,44 +139,30 @@ OpMacro<FloatType, ParamTrans, HEIGHT, WIDTH>::OpMacro(
 template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
-OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::~OpMacro() {
-  constexpr auto OPER_NUM = HEIGHT * WIDTH;
-  for (TensorIdx idx = 0; idx < OPER_NUM; ++idx)
-    delete this->operations[idx];
-  delete [] operations;
+          uint32_t WIDTH = HEIGHT>
+OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
+    const OpMacro &operation) {
+  ;
 }
 
 
 template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
+          uint32_t WIDTH = HEIGHT>
+template <typename UnrollerType, UnrollerType unroller>
 inline void OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::exec_all() {
-  constexpr auto UNROLL_DEPTH = HEIGHT * WIDTH - 1;
-  op_arr_unroller(this->operations, UnrollControllor<UNROLL_DEPTH>());
-}
-
-
-/*
- * Implementation for class OpMacroCopier
- */
-template <typename FloatType,
-          typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH>
-OpMacroCopier<FloatType, ParamType, HEIGHT, WIDTH>::OpMacroCopier(
-    const std::shared_ptr<ParamType<FloatType>> &param)
-    : OpMacro(param) {
+  unroller(this->operations, UnrollControllor<HEIGHT * WIDTH - 1>());
 }
 
 
 template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
-void OpMacroCopier<FloatType, ParamType, HEIGHT, WIDTH>::exec() {
-  this->exec_all();
+          uint32_t WIDTH = HEIGHT>
+inline void OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::init_operation(
+    uint32_t operation_idx, Operation<FloatType, ParamType> *oper) {
+  this->operations[operation_idx] = oper;
 }
 
-#endif // HPTC_OPERATION_TCC_
+#endif // HPTC_OPERATION_BASE_TCC_

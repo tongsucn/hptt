@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_OPERATION_H_
-#define HPTC_OPERATION_H_
+#ifndef HPTC_OPERATION_BASE_H_
+#define HPTC_OPERATION_BASE_H_
 
 #include <cstdint>
 
@@ -9,7 +9,6 @@
 
 #include <hptc/types.h>
 #include <hptc/util.h>
-#include <htpc/parameter.h>
 
 namespace hptc {
 
@@ -34,8 +33,6 @@ public:
 
 protected:
   std::shared_ptr<ParamType<FloatType>> param;
-
-private:
   Operation *prev;
   Operation *next;
 };
@@ -111,7 +108,9 @@ private:
 
 
 template <typename FloatType,
-          typename ParamType>
+          typename ParamType,
+          uint32_t HEIGHT,
+          uint32_t WIDTH = HEIGHT>
 class OpMicro : public Operation<FloatType, ParamType> {
 public:
   OpMicro(const std::shared_ptr<ParamType<FloatType>> &param);
@@ -122,99 +121,43 @@ public:
   virtual ~OpMicro() = default;
 
   virtual void exec() override = 0;
+
+protected:
+  virtual void exec_internal() = 0;
 };
 
 
 template <typename FloatType,
           typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH>
-class OpMicroCopier : public OpMicro<FloatType, ParamType> {
-public:
-  OpMicroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicroCopier(const OpMicroCopier &operation) = default;
-  OpMicroCopier &operator=(const OpMicroCopier &operation) = default;
-
-  virtual ~OpMicroCopier() = default;
-
-  virtual void exec() final;
-};
-
-
-template <typename FloatType,
-          typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH>
+          uint32_t WIDTH = HEIGHT>
 class OpMacro : public Operation<FloatType, ParamType> {
 public:
   OpMacro(const std::shared_ptr<ParamType<FloatType>> &param);
 
-  OpMacro(const OpMacro &operation) = default;
-  OpMacro &operator=(const OpMacro &operation) = default;
+  OpMacro(const OpMacro &operation) = delete;
+  OpMacro &operator=(const OpMacro &operation) = delete;
 
   virtual ~OpMacro();
 
   virtual void exec() override = 0;
 
+  inline void init_operation(uint32_t operation_idx,
+      Operation<FloatType, ParamType> *oper);
+
 protected:
-  inline void exec_all();
-
-private:
   Operation<FloatType, ParamType> *operations[HEIGHT * WIDTH];
-};
 
-
-template <typename FloatType,
-          typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH>
-class OpMacroCopier : public OpMacro<FloatType, ParamType, HEIGHT, WIDTH> {
-public:
-  OpMacroCopier(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMacroCopier(const OpMacroCopier &operation) = default;
-  OpMacroCopier &operator=(const OpMacroCopier &operation) = default;
-
-  virtual ~OpMacroCopier() = default;
-
-  virtual void exec() final;
+  template <typename UnrollerType, UnrollerType unroller>
+  inline void exec_all();
 };
 
 
 /*
  * Import implementation
  */
-#include "operation.tcc"
-
-
-/*
- * Template instantiation typedef for micro/macro kernels
- */
-template <typename FloatType,
-          typename ParamType = ParamTrans<FloatType>>
-using MicroCopier1x1 = MicroCopier<FloatType, ParamType, 1, 1>;
-
-
-template <typename FloatType,
-          typename ParamType = ParamTrans<FloatType>>
-using MicroCopier2x2 = MicroCopier<FloatType, ParamType, 2, 2>;
-
-
-template <typename FloatType,
-          typename ParamType = ParamTrans<FloatType>>
-using MicroCopier4x4 = MicroCopier<FloatType, ParamType, 4, 4>;
-
-
-template <typename FloatType,
-          typename ParamType = ParamTrans<FloatType>>
-using MicroCopier8x8 = MicroCopier<FloatType, ParamType, 8, 8>;
-
-
-template <typename FloatType,
-          typename ParamType = ParamTrans<FloatType>>
-using MacroCopier8x16 = MacroCopier<FloatType, ParamType, 8, 16>;
+#include "operation_base.tcc"
 
 }
 
-#endif // HPTC_OPERATION_H_
+#endif // HPTC_OPERATION_BASE_H_
