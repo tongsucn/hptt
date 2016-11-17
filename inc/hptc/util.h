@@ -14,26 +14,55 @@ struct UnrollControllor {
 
 
 template <typename ArrType, uint32_t UnrollDepth>
-inline void op_arr_unroller(ArrType operations, UnrollControllor<UnrollDepth>);
+inline void op_arr_unroller(ArrType oper, UnrollControllor<UnrollDepth>);
 
 
 template <typename ArrType>
-inline void op_arr_unroller(ArrType operations, UnrollControllor<0>);
+inline void op_arr_unroller(ArrType oper, UnrollControllor<0>);
+
+
+template <typename ArrType, uint32_t UnrollDepth>
+using ArrUnroller = decltype(op_arr_unroller<ArrType, UnrollDepth>);
+
+
+template <typename OpType, uint32_t UnrollDepth>
+inline void op_repeat_unroller(OpType oper, UnrollControllor<UnrollDepth>);
+
+
+template <typename OpType>
+inline void op_repeat_unroller(OpType oper, UnrollControllor<0>);
+
+
+template <typename OpType, uint32_t UnrollDepth>
+using RepeatUnroller = decltype(op_repeat_unroller<ArrType, UnrollDepth>);
 
 
 /*
  * Implementation for Unroller
  */
 template <typename ArrType, uint32_t UnrollDepth>
-inline void op_arr_unroller(ArrType operations, UnrollControllor<UnrollDepth>) {
+inline void op_arr_unroller(ArrType oper, UnrollControllor<UnrollDepth>) {
   op_arr_unroller(operations, UnrollControllor<UnrollDepth - 1>());
-  operations[UnrollDepth]->exec();
+  oper[UnrollDepth]->exec();
 }
 
 
 template <typename ArrType>
-inline void op_arr_unroller(ArrType operations, UnrollControllor<0>) {
-  operations[0]->exec();
+inline void op_arr_unroller(ArrType oper, UnrollControllor<0>) {
+  oper[0]->exec();
+}
+
+
+template <typename OpType, uint32_t UnrollDepth>
+inline void op_repeat_unroller(OpType oper, UnrollControllor<UnrollDepth>) {
+  op_repeat_unroller(oper, UnrollControllor<UnrollDepth - 1>());
+  oper[0]->exec();
+}
+
+
+template <typename OpType>
+inline void op_repeat_unroller(OpType oper, UnrollControllor<0>) {
+  oper[0]->exec();
 }
 
 }
