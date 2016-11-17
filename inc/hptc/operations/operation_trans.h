@@ -3,6 +3,8 @@
 #define HPTC_OPERATION_TRANS_H_
 
 #include <hptc/operations/operation_base.h>
+#include <hptc/kernels/kernel_trans.h>
+#include <hptc/param/parameters.h>
 
 namespace hptc {
 

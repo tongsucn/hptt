@@ -2,6 +2,8 @@
 #ifndef HPTC_PARAMETER_TRANS_H_
 #define HPTC_PARAMETER_TRANS_H_
 
+#include <memory>
+#include <vector>
 #include <algorithm>
 
 #include <hptc/types.h>
@@ -14,7 +16,7 @@ struct ParamTrans {
   ParamTrans() = delete;
   ParamTrans(const TensorWrapper<FloatType> &input_tensor,
       TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
-      CoefficientType<FloatType> beta);
+      CoefficientType<FloatType> beta, std::initializer_list<TensorDim> perm);
 
   ParamTrans(const ParamTrans &param_obj);
   ParamTrans(ParamTrans &&param_obj) noexcept;
@@ -30,6 +32,7 @@ struct ParamTrans {
   CoefficientType<FloatType> beta;
 
   TensorDim tensor_dim;
+  std::vector<TensorDim> perm;
   TensorIdx *macro_loop_idx;
   TensorIdx *remainder_loop_idx;
 };
@@ -41,12 +44,13 @@ struct ParamTrans {
 template <typename FloatType>
 ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
     TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
-    CoefficientType<FloatType> beta)
+    CoefficientType<FloatType> beta, std::initializer_list<TensorDim> perm)
     : input_tensor(input_tensor),
       output_tensor(output_tensor),
       alpha(alpha),
       beta(beta),
-      tensor_dim(input_tensor.get_size().get_dim()) {
+      tensor_dim(input_tensor.get_size().get_dim()),
+      perm(perm) {
   this->macro_loop_idx = new TensorIdx [tensor_dim];
   this->remainder_loop_idx = new TensorIdx [tensor_dim];
 }
@@ -58,7 +62,8 @@ ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj) {
       output_tensor(param_obj.output_tensor),
       alpha(param_obj.alpha),
       beta(param_obj.beta),
-      tensor_dim(param_obj.tensor_dim) {
+      tensor_dim(param_obj.tensor_dim),
+      perm(param_obj.perm) {
   this->macro_loop_idx = new TensorIdx [tensor_dim];
   std::copy(param_obj.macro_loop_idx, param_obj.macro_loop_idx + tensor_dim,
       this->macro_loop_idx);
@@ -75,6 +80,7 @@ ParamTrans<FloatType>::ParamTrans(ParamTrans &&param_obj) noexcept
       alpha(param_obj.alpha),
       beta(param_obj.beta),
       tensor_dim(param_obj.tensor_dim),
+      perm(std::move(param_obj.perm))
       macro_loop_idx(param_obj.macro_loop_idx),
       remainder_loop_idx(param_obj.remainder_loop_idx) {
   param_obj.macro_loop_idx = nullptr;
