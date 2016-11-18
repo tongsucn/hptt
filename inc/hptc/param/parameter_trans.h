@@ -32,6 +32,8 @@ struct ParamTrans {
   CoefficientType<FloatType> beta;
 
   TensorDim tensor_dim;
+  TensorIdx input_offset;
+  TensorIdx output_offset;
   std::vector<TensorDim> perm;
   TensorIdx *macro_loop_idx;
   TensorIdx *remainder_loop_idx;
@@ -50,7 +52,13 @@ ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
       alpha(alpha),
       beta(beta),
       tensor_dim(input_tensor.get_size().get_dim()),
+      input_offset(input_tensor.get_outer_size()[0]),
+      output_offset(output_tensor.get_outer_size()[0]),
       perm(perm) {
+  for (int dim_idx = 1; dim_idx < this->tensor_dim; ++dim_idx) {
+    input_offset *= input_tensor.get_outer_size()[dim_idx];
+    output_offset *= output_tensor.get_outer_size()[dim_idx];
+  }
   this->macro_loop_idx = new TensorIdx [tensor_dim];
   this->remainder_loop_idx = new TensorIdx [tensor_dim];
 }
@@ -63,6 +71,8 @@ ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj) {
       alpha(param_obj.alpha),
       beta(param_obj.beta),
       tensor_dim(param_obj.tensor_dim),
+      input_offset(param_obj.input_tensor),
+      output_offset(param_obj.output_tensor),
       perm(param_obj.perm) {
   this->macro_loop_idx = new TensorIdx [tensor_dim];
   std::copy(param_obj.macro_loop_idx, param_obj.macro_loop_idx + tensor_dim,
@@ -80,7 +90,9 @@ ParamTrans<FloatType>::ParamTrans(ParamTrans &&param_obj) noexcept
       alpha(param_obj.alpha),
       beta(param_obj.beta),
       tensor_dim(param_obj.tensor_dim),
-      perm(std::move(param_obj.perm))
+      input_offset(param_obj.input_tensor),
+      output_offset(param_obj.output_tensor),
+      perm(std::move(param_obj.perm)),
       macro_loop_idx(param_obj.macro_loop_idx),
       remainder_loop_idx(param_obj.remainder_loop_idx) {
   param_obj.macro_loop_idx = nullptr;
