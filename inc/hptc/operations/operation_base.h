@@ -129,8 +129,7 @@ protected:
 
 template <typename FloatType,
           typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
+          uint32_t OPER_NUM>
 class OpMacro : public Operation<FloatType, ParamType> {
 public:
   OpMacro(const std::shared_ptr<ParamType<FloatType>> &param);
@@ -146,7 +145,7 @@ public:
       Operation<FloatType, ParamType> *oper);
 
 protected:
-  Operation<FloatType, ParamType> *operations[HEIGHT * WIDTH];
+  Operation<FloatType, ParamType> *operations[OPER_NUM];
 
   template <typename UnrollerType, UnrollerType unroller>
   inline void exec_all();

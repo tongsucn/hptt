@@ -125,12 +125,10 @@ OpMicro<ParamType, FloatType, HEIGHT, WIDTH>::OpMicro(
  */
 template <typename FloatType,
           typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
-OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
+          uint32_t OPER_NUM>
+OpMacro<FloatType, ParamType, OPER_NUM>::OpMacro(
     const std::shared_ptr<ParamType<FloatType>> &param)
     : Operation<FloatType, ParamType>(param) {
-  constexpr auto OPER_NUM = HEIGHT * WIDTH;
   for (TensorIdx idx = 0; idx < OPER_NUM; ++idx)
     this->operations[idx] = nullptr;
 }
@@ -138,9 +136,8 @@ OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
 
 template <typename FloatType,
           typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
-OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
+          uint32_t OPER_NUM>
+OpMacro<FloatType, ParamType, OPER_NUM>::OpMacro(
     const OpMacro &operation) {
   ;
 }
@@ -148,19 +145,17 @@ OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::OpMacro(
 
 template <typename FloatType,
           typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
+          uint32_t OPER_NUM>
 template <typename UnrollerType, UnrollerType unroller>
-inline void OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::exec_all() {
-  unroller(this->operations, UnrollControllor<HEIGHT * WIDTH - 1>());
+inline void OpMacro<FloatType, ParamType, OPER_NUM>::exec_all() {
+  unroller(this->operations, UnrollControllor<OPER_NUM - 1>());
 }
 
 
 template <typename FloatType,
           typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
-inline void OpMacro<FloatType, ParamType, HEIGHT, WIDTH>::init_operation(
+          uint32_t OPER_NUM>
+inline void OpMacro<FloatType, ParamType, OPER_NUM>::init_operation(
     uint32_t operation_idx, Operation<FloatType, ParamType> *oper) {
   this->operations[operation_idx] = oper;
 }
