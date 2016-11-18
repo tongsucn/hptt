@@ -63,12 +63,13 @@ public:
   ~TensorWrapper();
 
   template <typename... Idx>
-  FloatType &operator()(Idx... indices);
+  inline FloatType &operator()(Idx... indices);
+  FloatType &operator()(const TensorIdx *indices);
   template <typename... Ranges>
   TensorWrapper slice(TRI offset, Ranges... range);
 
   inline const TensorSize &get_size() const;
-  inline TensorSize get_outer_size() const;
+  inline const TensorSize &get_outer_size() const;
   inline FloatType *get_data();
   inline const FloatType *get_data() const;
 

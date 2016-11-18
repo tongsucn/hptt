@@ -86,7 +86,7 @@ TensorWrapper &TensorWrapper<FloatType>::operator=(
 
 template <typename FloatType>
 template <typename... Idx>
-FloatType &TensorWrapper<FloatType>::operator()(Idx... indices) {
+inline FloatType &TensorWrapper<FloatType>::operator()(Idx... indices) {
   return this->get_element(0, 0, indices...);
 }
 
@@ -109,7 +109,7 @@ inline const TensorSize &TensorWrapper<FloatType>::get_size() const {
 
 
 template <typename FloatType>
-inline TensorSize TensorWrapper<FloatType>::get_outer_size() const {
+inline const TensorSize &TensorWrapper<FloatType>::get_outer_size() const {
   return this->outer_size_;
 }
 
