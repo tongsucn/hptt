@@ -6,7 +6,7 @@
 #
 # ----------------------------------------------------------------------------
 cmake_minimum_required (VERSION 3.4)
-project (Tensor Computing Lib)
+project (HPTC)
 
 
 # ----------------------------------------------------------------------------
@@ -23,6 +23,23 @@ option(BUILD_DOC "Create the HTML based API documentation (requires doxygen)."
 option(BUILD_TEST "Generate executable test program.")
 set(BUILD_DEBUG OFF CACHE BOOL "Build debug version of library.")
 
+
+# ----------------------------------------------------------------------------
+# Compiler options
+# ----------------------------------------------------------------------------
+set(TENSOR_CXX_FLAGS "-Wall -std=c++14")
+set(TENSOR_DEBUG_FLAG "-g")
+set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
+
+if (BUILD_TYPE STREQUAL "DEBUG")
+  # Use debug configurations.
+  set(TENSOR_CXX_FLAGS "${TENSOR_CXX_FLAGS} ${TENSOR_DEBUG_FLAG}")
+else ()
+  # Use release configuration.
+  set(TENSOR_CXX_FLAGS "${TENSOR_CXX_FLAGS} ${TENSOR_RELEASE_FLAG}")
+endif ()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TENSOR_CXX_FLAGS}")
 
 # ----------------------------------------------------------------------------
 # Directory setting
@@ -42,24 +59,6 @@ if (BUILD_TEST)
 endif ()
 
 if (BUILD_DOC)
-  add_subdirectory(doc)
+  #  add_subdirectory(doc)
 endif()
-
-
-# ----------------------------------------------------------------------------
-# Compiler options
-# ----------------------------------------------------------------------------
-set(TENSOR_CC_FLAGS "-Wall -std=c++14")
-set(TENSOR_DEBUG_FLAG "")
-set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
-
-if (BUILD_TYPE STREQUAL "DEBUG")
-  # Use debug configurations.
-  set(TENSOR_CC_FLAGS "${TENSOR_CC_FALGS} ${TENSOR_DEBUG_FLAG}")
-else ()
-  # Use release configuration.
-  set(TENSOR_CC_FLAGS "${TENSOR_CC_FALGS} ${TENSOR_RELEASE_FLAG}")
-endif ()
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TENSOR_CC_FLAGS}")
 
