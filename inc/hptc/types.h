@@ -1,6 +1,6 @@
 #pragma once
 #ifndef HPTC_TYPES_H_
-#ifndef HPTC_TYPES_H_
+#define HPTC_TYPES_H_
 
 #include <cstdint>
 #include <ccomplex>
@@ -54,7 +54,7 @@ struct FloatTypeDeducer<LongDoubleComplex> {
   using type = long double;
 };
 
-template <FloatType>
+template <typename FloatType>
 using CoefficientType = typename FloatTypeDeducer<FloatType>::type;
 
 }

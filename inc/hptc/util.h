@@ -4,8 +4,6 @@
 
 #include <cstdint>
 
-#include <hptc/operation.h>
-
 namespace hptc {
 
 template <uint32_t UnrollDepth>
@@ -34,7 +32,7 @@ inline void op_repeat_unroller(OpType oper, UnrollControllor<0>);
 
 
 template <typename OpType, uint32_t UnrollDepth>
-using RepeatUnroller = decltype(op_repeat_unroller<ArrType, UnrollDepth>);
+using RepeatUnroller = decltype(op_repeat_unroller<OpType, UnrollDepth>);
 
 
 /*

@@ -55,8 +55,8 @@ public:
   TensorWrapper(const TensorSize &size_obj, const TensorSize &outer_size_obj,
       TensorIdx data_offset, FloatType *raw_data);
 
-  TensorWrapper(const TensorWrapper<FloatType> &wrapper_obj);
-  TensorWrapper(TensorWrapper<FloatType> &&wrapper_obj) noexcept;
+  TensorWrapper(const TensorWrapper &wrapper_obj);
+  TensorWrapper(TensorWrapper &&wrapper_obj) noexcept;
   TensorWrapper &operator=(const TensorWrapper &wrapper_obj);
   TensorWrapper &operator=(TensorWrapper &&wrapper_obj) noexcept;
 
@@ -64,9 +64,10 @@ public:
 
   template <typename... Idx>
   inline FloatType &operator()(Idx... indices);
-  FloatType &operator()(const TensorIdx *indices);
+  FloatType &operator[](const TensorIdx *indices);
+  const FloatType &operator[](const TensorIdx *indices) const;
   template <typename... Ranges>
-  TensorWrapper slice(TRI offset, Ranges... range);
+  TensorWrapper slice(Ranges... range);
 
   inline const TensorSize &get_size() const;
   inline const TensorSize &get_outer_size() const;
@@ -92,6 +93,7 @@ private:
       TensorSize &size_obj, TRI curr_range, Ranges... range);
   inline TensorIdx get_sub_offset_(TensorDim curr_dim, TensorIdx curr_offset,
       TensorSize &size_obj);
+
 };
 
 

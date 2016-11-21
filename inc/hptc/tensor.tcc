@@ -3,6 +3,17 @@
 #define HPTC_TENSOR_TCC_
 
 /*
+ * Implementation for class TensorSize
+ */
+inline TensorIdx &TensorSize::operator[](TensorIdx idx) {
+  return this->size_[idx];
+}
+
+inline TensorDim TensorSize::get_dim() const {
+  return this->dim_;
+}
+
+/*
  * Implementation for class TensorWrapper
  */
 template <typename FloatType>
@@ -32,7 +43,7 @@ TensorWrapper<FloatType>::TensorWrapper(const TensorSize &size_obj,
 
 template <typename FloatType>
 TensorWrapper<FloatType>::TensorWrapper(
-    const TensorWrapper<FloatType> &wrapper_obj)
+    const TensorWrapper &wrapper_obj)
     : size_(wrapper_obj.size_),
       outer_size_(wrapper_obj.outer_size_),
       data_offset_(wrapper_obj.data_offset_),
@@ -44,7 +55,7 @@ TensorWrapper<FloatType>::TensorWrapper(
 
   template <typename FloatType>
 TensorWrapper<FloatType>::TensorWrapper(
-    TensorWrapper<FloatType> &&wrapper_obj) noexcept
+    TensorWrapper &&wrapper_obj) noexcept
     : size_(std::move(wrapper_obj.size_)),
       outer_size_(std::move(wrapper_obj.outer_size_)),
       data_offset_(wrapper_obj.data_offset_),
@@ -61,7 +72,7 @@ TensorWrapper<FloatType>::~TensorWrapper() {
 
 
 template <typename FloatType>
-TensorWrapper &TensorWrapper<FloatType>::operator=(
+TensorWrapper<FloatType> &TensorWrapper<FloatType>::operator=(
     const TensorWrapper &wrapper_obj) {
   this->size_ = wrapper_obj.size_;
   this->outer_size_ = wrapper_obj.outer_size_;
@@ -73,7 +84,7 @@ TensorWrapper &TensorWrapper<FloatType>::operator=(
 
 
 template <typename FloatType>
-TensorWrapper &TensorWrapper<FloatType>::operator=(
+TensorWrapper<FloatType> &TensorWrapper<FloatType>::operator=(
     TensorWrapper &&wrapper_obj) noexcept {
   this->size_ = std::move(wrapper_obj.size_);
   this->outer_size_ = std::move(wrapper_obj.outer_size_);
@@ -87,7 +98,26 @@ TensorWrapper &TensorWrapper<FloatType>::operator=(
 template <typename FloatType>
 template <typename... Idx>
 inline FloatType &TensorWrapper<FloatType>::operator()(Idx... indices) {
-  return this->get_element(0, 0, indices...);
+  return this->get_element_(0, 0, idx, indices...);
+}
+
+
+template <typename FloatType>
+FloatType &TensorWrapper<FloatType>::operator[](const TensorIdx *indices) {
+  TensorIdx offset = indices[0];
+  for (TensorIdx idx = 1; idx < size_.get_dim(); ++idx)
+    offset += indices[idx] * this->dim_offset_[idx];
+  return *(this->raw_data_ + this->data_offset_ + offset);
+}
+
+
+template <typename FloatType>
+const FloatType &TensorWrapper<FloatType>::operator[](
+    const TensorIdx *indices) const {
+  TensorIdx offset = indices[0];
+  for (TensorIdx idx = 1; idx < size_.get_dim(); ++idx)
+    offset += indices[idx] * this->dim_offset_[idx];
+  return *(this->raw_data_ + this->data_offset_ + offset);
 }
 
 
@@ -145,7 +175,7 @@ inline FloatType &TensorWrapper<FloatType>::get_element_(TensorDim curr_dim,
     next_idx += this->size_[curr_dim];
   curr_idx += next_idx * this->dim_offset_[curr_dim];
 
-  return this->get_element(curr_dim + 1, curr_idx, idx...);
+  return this->get_element_(curr_dim + 1, curr_idx, idx...);
 }
 
 
@@ -156,6 +186,7 @@ inline FloatType &TensorWrapper<FloatType>::get_element_(TensorDim curr_dim,
 }
 
 
+template <typename FloatType>
 template <typename... Ranges>
 inline TensorIdx TensorWrapper<FloatType>::get_sub_offset_(TensorDim curr_dim,
     TensorIdx curr_offset, TensorSize &size_obj, TRI curr_range,
@@ -174,6 +205,7 @@ inline TensorIdx TensorWrapper<FloatType>::get_sub_offset_(TensorDim curr_dim,
 }
 
 
+template <typename FloatType>
 inline TensorIdx TensorWrapper<FloatType>::get_sub_offset_(TensorDim curr_dim,
     TensorIdx curr_offset, TensorSize &size_obj) {
   return curr_offset;

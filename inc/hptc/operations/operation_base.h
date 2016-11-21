@@ -13,7 +13,7 @@
 namespace hptc {
 
 template <typename FloatType,
-          typename ParamType>
+          template <typename> typename ParamType>
 class Operation {
 public:
   Operation(const std::shared_ptr<ParamType<FloatType>> &param,
@@ -25,9 +25,9 @@ public:
   virtual ~Operation() = default;
 
   inline void set_prev(Operation *prev);
-  inline Operation *get_prev();
+  inline Operation<FloatType, ParamType> *get_prev();
   inline void set_next(Operation *next);
-  inline Operation *get_next();
+  inline Operation<FloatType, ParamType> *get_next();
 
   virtual void exec() = 0;
 
@@ -39,7 +39,7 @@ protected:
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 class OpLoop : public Operation<FloatType, ParamType> {
 public:
@@ -60,38 +60,35 @@ protected:
   inline void exec_all();
 
 private:
-  std::shared_ptr<Operation> operations[OPER_NUM];
+  std::shared_ptr<Operation<FloatType, ParamType>> operations[OPER_NUM];
 };
 
 
-template <typename IdxType>
-using ForCondType = std::function<bool(IdxType, IdxType)>;
+using ForCondType = std::function<bool(TensorIdx, TensorIdx)>;
 
-template <typename IdxType>
-struct ForCond {
-  constexpr static ForCondType<IdxType> Larger
-      = [] (IdxType curr, IdxType guard) -> bool { return curr > guard; };
-  constexpr static ForCondType<IdxType> LargerEq
-      = [] (IdxType curr, IdxType guard) -> bool { return curr >= guard; };
-  constexpr static ForCondType<IdxType> Smaller
-      = [] (IdxType curr, IdxType guard) -> bool { return curr < guard; };
-  constexpr static ForCondType<IdxType> SmallerEq
-      = [] (IdxType curr, IdxType guard) -> bool { return curr <= guard; };
-  constexpr static ForCondType<IdxType> Equal
-      = [] (IdxType curr, IdxType guard) -> bool { return curr == guard; };
-  constexpr static ForCondType<IdxType> NonEqual
-      = [] (IdxType curr, IdxType guard) -> bool { return curr != guard; };
-};
-
+namespace ForCond {
+ForCondType Larger
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr > guard; };
+ForCondType LargerEq
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr >= guard; };
+ForCondType Smaller
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr < guard; };
+ForCondType SmallerEq
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr <= guard; };
+ForCondType Equal
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr == guard; };
+ForCondType NonEqual
+  = [] (TensorIdx curr, TensorIdx guard) -> bool { return curr != guard; };
+}
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 class OpLoopFor : public OpLoop<FloatType, ParamType, OPER_NUM> {
 public:
   OpLoopFor(const std::shared_ptr<ParamType<FloatType>> &param,
-      TensorIdx &target_idx, TensorIdx begin, TensorIdx end, TensorIdx step = 1,
-      ForCondType<TensorIdx> cond = ForCond::Smaller);
+      TensorIdx &target_idx, TensorIdx begin, TensorIdx end, TensorIdx step,
+      ForCondType cond);
 
   OpLoopFor(const OpLoopFor &operation) = default;
   OpLoopFor &operator=(const OpLoopFor &operation) = default;
@@ -103,12 +100,12 @@ public:
 private:
   TensorIdx &curr_idx;
   TensorIdx begin, end, step;
-  ForCondType<TensorIdx> cond;
+  ForCondType cond;
 };
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t HEIGHT,
           uint32_t WIDTH = HEIGHT>
 class OpMicro : public Operation<FloatType, ParamType> {
@@ -128,7 +125,7 @@ protected:
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 class OpMacro : public Operation<FloatType, ParamType> {
 public:

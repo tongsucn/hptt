@@ -7,10 +7,10 @@
  * Implementation for class Operation
  */
 template <typename FloatType,
-          typename ParamType>
-Operation<ParamType, FloatType>::Operation(
+          template <typename> typename ParamType>
+Operation<FloatType, ParamType>::Operation(
     const std::shared_ptr<ParamType<FloatType>> &param,
-    Operation *prev = nullptr, Operation *next = nullptr);
+    Operation *prev, Operation *next)
     : param(param),
       prev(prev),
       next(next) {
@@ -18,29 +18,31 @@ Operation<ParamType, FloatType>::Operation(
 
 
 template <typename FloatType,
-          typename ParamType>
-inline void Operation<ParamType, FloatType>::set_prev(Operation *prev) {
+          template <typename> typename ParamType>
+inline void Operation<FloatType, ParamType>::set_prev(Operation *prev) {
   this->prev = prev;
 }
 
 
 template <typename FloatType,
-          typename ParamType>
-inline Operation *Operation<ParamType, FloatType>::get_prev() {
+          template <typename> typename ParamType>
+inline Operation<FloatType, ParamType> *
+Operation<FloatType, ParamType>::get_prev() {
   return this->prev;
 }
 
 
 template <typename FloatType,
-          typename ParamType>
-inline void Operation<ParamType, FloatType>::set_next(Operation *next) {
+          template <typename> typename ParamType>
+inline void Operation<FloatType, ParamType>::set_next(Operation *next) {
   this->next = next;
 }
 
 
 template <typename FloatType,
-          typename ParamType>
-inline Operation *Operation<ParamType, FloatType>::get_next() {
+          template <typename> typename ParamType>
+inline Operation<FloatType, ParamType> *
+Operation<FloatType, ParamType>::get_next() {
   return this->prev;
 }
 
@@ -49,7 +51,7 @@ inline Operation *Operation<ParamType, FloatType>::get_next() {
  * Implementation for class OpLoop
  */
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 OpLoop<FloatType, ParamType, OPER_NUM>::OpLoop(
     const std::shared_ptr<ParamType<FloatType>> &param)
@@ -60,17 +62,18 @@ OpLoop<FloatType, ParamType, OPER_NUM>::OpLoop(
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 template <typename OperType>
 inline void OpLoop<FloatType, ParamType, OPER_NUM>::init_operation(
-    uint32_t operation_idx, const std::shared_ptr<OperType> &oper);
-  this->operations[operation_idx] = std::static_pointer_cast<Operation>(oper);
+    uint32_t operation_idx, const std::shared_ptr<OperType> &oper) {
+  this->operations[operation_idx]
+    = std::static_pointer_cast<Operation<FloatType, ParamType>>(oper);
 }
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 inline void OpLoop<FloatType, ParamType, OPER_NUM>::exec_all() {
   op_arr_unroller(this->operations, UnrollControllor<OPER_NUM - 1>());
@@ -81,12 +84,12 @@ inline void OpLoop<FloatType, ParamType, OPER_NUM>::exec_all() {
  * Implementation for class OpLoopFor
  */
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 OpLoopFor<FloatType, ParamType, OPER_NUM>::OpLoopFor(
     const std::shared_ptr<ParamType<FloatType>> &param, TensorIdx &target_idx,
-    TensorIdx begin, TensorIdx end, TensorIdx step = 1,
-    ForCondType<TensorIdx> cond = ForCond::Smaller)
+    TensorIdx begin, TensorIdx end, TensorIdx step,
+    ForCondType cond = ForCond::Smaller)
     : OpLoop<FloatType, ParamType, OPER_NUM>(param),
       curr_idx(target_idx),
       begin(begin),
@@ -97,7 +100,7 @@ OpLoopFor<FloatType, ParamType, OPER_NUM>::OpLoopFor(
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 inline void OpLoopFor<FloatType, ParamType, OPER_NUM>::exec() {
   for (this->curr_idx = this->begin; this->cond(this->curr_idx, this->end);
@@ -111,10 +114,10 @@ inline void OpLoopFor<FloatType, ParamType, OPER_NUM>::exec() {
  * Implementation for class OpMicro
  */
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
-OpMicro<ParamType, FloatType, HEIGHT, WIDTH>::OpMicro(
+          uint32_t WIDTH>
+OpMicro<FloatType, ParamType, HEIGHT, WIDTH>::OpMicro(
     const std::shared_ptr<ParamType<FloatType>> &param)
     : Operation<FloatType, ParamType>(param) {
 }
@@ -124,7 +127,7 @@ OpMicro<ParamType, FloatType, HEIGHT, WIDTH>::OpMicro(
  * Implementation for class OpMacro
  */
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 OpMacro<FloatType, ParamType, OPER_NUM>::OpMacro(
     const std::shared_ptr<ParamType<FloatType>> &param)
@@ -135,16 +138,7 @@ OpMacro<FloatType, ParamType, OPER_NUM>::OpMacro(
 
 
 template <typename FloatType,
-          typename ParamType,
-          uint32_t OPER_NUM>
-OpMacro<FloatType, ParamType, OPER_NUM>::OpMacro(
-    const OpMacro &operation) {
-  ;
-}
-
-
-template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 template <typename UnrollerType, UnrollerType unroller>
 inline void OpMacro<FloatType, ParamType, OPER_NUM>::exec_all() {
@@ -153,7 +147,7 @@ inline void OpMacro<FloatType, ParamType, OPER_NUM>::exec_all() {
 
 
 template <typename FloatType,
-          typename ParamType,
+          template <typename> typename ParamType,
           uint32_t OPER_NUM>
 inline void OpMacro<FloatType, ParamType, OPER_NUM>::init_operation(
     uint32_t operation_idx, Operation<FloatType, ParamType> *oper) {

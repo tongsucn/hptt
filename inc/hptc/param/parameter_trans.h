@@ -65,7 +65,7 @@ ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
 
 
 template <typename FloatType>
-ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj) {
+ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj)
     : input_tensor(param_obj.input_tensor),
       output_tensor(param_obj.output_tensor),
       alpha(param_obj.alpha),
