@@ -16,7 +16,7 @@
 namespace hptc {
 
 template <typename FloatType,
-          uint32_t HEIGHT = 0,
+          uint32_t HEIGHT = 1,
           uint32_t WIDTH = HEIGHT>
 inline void kernel_trans(std::shared_ptr<ParamTrans<FloatType>> &param);
 

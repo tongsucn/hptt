@@ -7,11 +7,20 @@ template <typename FloatType,
           uint32_t HEIGHT,
           uint32_t WIDTH>
 inline void kernel_trans(std::shared_ptr<ParamTrans<FloatType>> &param) {
-/*  for (int row_idx = 0; row_idx < HEIGHT; ++row_idx) {
-    for (int col_idx = 0; col_idx < WIDTH; ++col_idx) {
-    }
-  }*/
+  const FloatType *input_data = &param->input_tensor[param->macro_loop_idx];
+  FloatType *output_data = &param->output_tensor[param->macro_loop_idx];
+
+  using DecayType = CoefficientType<FloatType>;
+  const DecayType *decay_input
+    = reinterpret_cast<const DecayType *>(input_data);
+  DecayType *decay_output = reinterpret_cast<DecayType *>(output_data);
+
+  *decay_output = *decay_input * param->alpha + *decay_output * param->beta;
+  if (sizeof(FloatType) > sizeof(DecayType))
+    *(decay_output + 1)
+      = *(decay_input + 1) * param->alpha + *(decay_output + 1) * param->beta;
 }
+
 
 template <>
 inline void kernel_trans<float, 0, 0>(
@@ -280,7 +289,7 @@ inline void kernel_trans<DoubleComplex, 0, 0>(
   __m256d output_row_1 = _mm256_load_pd(
       reinterpret_cast<double *>(output_data + param->input_offset));
 
-  // Rescale input data
+  // Rescale putput data
   output_row_0 = _mm256_mul_pd(output_row_0, r_beta);
   output_row_1 = _mm256_mul_pd(output_row_1, r_beta);
 

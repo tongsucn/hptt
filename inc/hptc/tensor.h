@@ -12,7 +12,7 @@
 namespace hptc {
 
 struct TensorRangeIdx {
-  TensorRangeIdx(TensorIdx left, TensorIdx right)
+  TensorRangeIdx(TensorIdx left_idx, TensorIdx right_idx)
     : left_idx(left_idx),
       right_idx(right_idx) {
   }

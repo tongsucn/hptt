@@ -16,22 +16,23 @@ TensorSize::TensorSize()
 
 TensorSize::TensorSize(TensorDim dim)
   : dim_(dim),
-    size_(new TensorIdx [dim_]) {
+    size_(0 != dim ? new TensorIdx [dim] : nullptr) {
 }
 
 
 TensorSize::TensorSize(std::initializer_list<TensorIdx> size)
     : dim_(static_cast<TensorDim>(size.size())),
-      size_(new TensorIdx [dim_]) {
-  std::copy(size.begin(), size.end(), size_);
+      size_(0 == this->dim_ ? nullptr : new TensorIdx [dim_]) {
+  if (0 != this->dim_)
+    std::copy(size.begin(), size.end(), size_);
 }
 
 
 TensorSize::TensorSize(const TensorSize &size_obj)
     : dim_(size_obj.dim_),
-      size_(new TensorIdx [dim_]) {
-  this->dim_ = size_obj.dim_;
-  std::copy(size_obj.size_, size_obj.size_ + this->dim_, this->size_);
+      size_(0 == this->dim_ ? nullptr : new TensorIdx [dim_]) {
+  if (0 != this->dim_)
+    std::copy(size_obj.size_, size_obj.size_ + this->dim_, this->size_);
 }
 
 
@@ -46,8 +47,9 @@ TensorSize &TensorSize::operator=(const TensorSize &size_obj) {
   this->dim_ = size_obj.dim_;
 
   delete [] this->size_;
-  this->size_ = new TensorIdx [this->dim_];
-  std::copy(size_obj.size_, size_obj.size_ + this->dim_, this->size_);
+  this->size_ = 0 == this->dim_ ? nullptr : new TensorIdx [this->dim_];
+  if (0 != this->dim_)
+    std::copy(size_obj.size_, size_obj.size_ + this->dim_, this->size_);
 
   return *this;
 }

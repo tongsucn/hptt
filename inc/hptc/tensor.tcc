@@ -6,7 +6,8 @@
  * Implementation for class TensorSize
  */
 inline TensorIdx &TensorSize::operator[](TensorIdx idx) {
-  return this->size_[idx];
+  TensorIdx real_idx = idx >= 0 ? idx : this->dim_ + idx;
+  return this->size_[real_idx];
 }
 
 inline TensorDim TensorSize::get_dim() const {
