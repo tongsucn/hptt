@@ -20,11 +20,19 @@ TensorSize::TensorSize(TensorDim dim)
 }
 
 
-TensorSize::TensorSize(std::initializer_list<TensorIdx> size)
-    : dim_(static_cast<TensorDim>(size.size())),
-      size_(0 == this->dim_ ? nullptr : new TensorIdx [dim_]) {
+TensorSize::TensorSize(const std::vector<TensorIdx> &sizes)
+    : dim_(sizes.size()),
+      size_(0 == this->dim_ ? nullptr : new TensorIdx [this->dim_]) {
   if (0 != this->dim_)
-    std::copy(size.begin(), size.end(), size_);
+    std::copy(sizes.begin(), sizes.end(), size_);
+}
+
+
+TensorSize::TensorSize(std::initializer_list<TensorIdx> sizes)
+    : dim_(static_cast<TensorDim>(sizes.size())),
+      size_(0 == this->dim_ ? nullptr : new TensorIdx [this->dim_]) {
+  if (0 != this->dim_)
+    std::copy(sizes.begin(), sizes.end(), size_);
 }
 
 
@@ -71,7 +79,7 @@ TensorSize::~TensorSize() {
 }
 
 
-bool TensorSize::operator==(const TensorSize &size_obj) {
+bool TensorSize::operator==(const TensorSize &size_obj) const {
   if (this->dim_ != size_obj.dim_)
     return false;
 

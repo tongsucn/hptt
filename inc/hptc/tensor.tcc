@@ -5,14 +5,25 @@
 /*
  * Implementation for class TensorSize
  */
-inline TensorIdx &TensorSize::operator[](TensorIdx idx) {
-  TensorIdx real_idx = idx >= 0 ? idx : this->dim_ + idx;
-  return this->size_[real_idx];
+inline TensorIdx &TensorSize::operator[](TensorDim dim_idx) {
+  return this->size_[dim_idx];
 }
+
+
+inline const TensorIdx &TensorSize::operator[](TensorDim dim_idx) const {
+  return this->size_[dim_idx];
+}
+
 
 inline TensorDim TensorSize::get_dim() const {
   return this->dim_;
 }
+
+
+inline const TensorIdx *TensorSize::shape() const {
+  return this->size_;
+}
+
 
 /*
  * Implementation for class TensorWrapper
@@ -22,23 +33,30 @@ TensorWrapper<FloatType>::TensorWrapper(const TensorSize &size_obj,
     FloatType *raw_data)
     : size_(size_obj),
       outer_size_(size_obj),
-      data_offset_(0),
-      raw_data_(raw_data),
-      dim_offset_(new TensorIdx [size_obj.get_dim()]) {
-  this->init_dim_offset_();
+      raw_data_(0 == size_obj.get_dim() ? nullptr : raw_data),
+      dim_offset_(
+        0 == size_obj.get_dim() ? nullptr : new TensorIdx [size_obj.get_dim()]),
+      abs_offset_(0 == size_obj.get_dim() ?
+        nullptr : new TensorIdx [size_obj.get_dim()]) {
+  this->init_offset_(std::vector<TensorIdx>());
 }
 
 
 template <typename FloatType>
 TensorWrapper<FloatType>::TensorWrapper(const TensorSize &size_obj,
-    const TensorSize &outer_size_obj, TensorIdx data_offset,
+    const TensorSize &outer_size_obj, const std::vector<TensorIdx> &dim_offset,
     FloatType *raw_data)
     : size_(size_obj),
       outer_size_(outer_size_obj),
-      data_offset_(data_offset),
-      raw_data_(raw_data),
-      dim_offset_(new TensorIdx [size_obj.get_dim()]) {
-  this->init_dim_offset_();
+      raw_data_(0 == size_obj.get_dim() ? nullptr : raw_data),
+      dim_offset_(0 == size_obj.get_dim() ?
+        nullptr : new TensorIdx [size_obj.get_dim()]),
+      abs_offset_(0 == size_obj.get_dim() ?
+        nullptr : new TensorIdx [size_obj.get_dim()]) {
+  if (this->size_ == this->outer_size_)
+    this->init_offset_(std::vector<TensorIdx>());
+  else
+    this->init_offset_(dim_offset);
 }
 
 
@@ -47,10 +65,18 @@ TensorWrapper<FloatType>::TensorWrapper(
     const TensorWrapper &wrapper_obj)
     : size_(wrapper_obj.size_),
       outer_size_(wrapper_obj.outer_size_),
-      data_offset_(wrapper_obj.data_offset_),
       raw_data_(wrapper_obj.raw_data_),
-      dim_offset_(new TensorIdx [wrapper_obj.size_.get_dim()]) {
-  this->init_dim_offset_();
+      dim_offset_(0 == size_.get_dim() ?
+        nullptr : new TensorIdx [size_.get_dim()]),
+      abs_offset_(0 == this->size_.get_dim() ?
+        nullptr : new TensorIdx [this->size_.get_dim()]) {
+  TensorDim dim = this->size_.get_dim();
+  if (0 == dim)
+    return;
+  std::copy(wrapper_obj.dim_offset_, wrapper_obj.dim_offset_ + dim,
+    this->dim_offset_);
+  std::copy(wrapper_obj.abs_offset_, wrapper_obj.abs_offset_ + dim,
+    this->abs_offset_);
 }
 
 
@@ -59,16 +85,18 @@ TensorWrapper<FloatType>::TensorWrapper(
     TensorWrapper &&wrapper_obj) noexcept
     : size_(std::move(wrapper_obj.size_)),
       outer_size_(std::move(wrapper_obj.outer_size_)),
-      data_offset_(wrapper_obj.data_offset_),
       raw_data_(wrapper_obj.raw_data_),
-      dim_offset_(wrapper_obj.dim_offset_) {
+      dim_offset_(wrapper_obj.dim_offset_),
+      abs_offset_(wrapper_obj.abs_offset_) {
   wrapper_obj.dim_offset_ = nullptr;
+  wrapper_obj.abs_offset_ = nullptr;
 }
 
 
 template <typename FloatType>
 TensorWrapper<FloatType>::~TensorWrapper() {
   delete [] this->dim_offset_;
+  delete [] this->abs_offset_;
 }
 
 
@@ -76,11 +104,22 @@ template <typename FloatType>
 TensorWrapper<FloatType> &TensorWrapper<FloatType>::operator=(
     const TensorWrapper &wrapper_obj) {
   this->size_ = wrapper_obj.size_;
+  TensorDim dim = this->size_.get_dim();
   this->outer_size_ = wrapper_obj.outer_size_;
-  this->data_offset_ = wrapper_obj.data_offset_;
   this->raw_data_ = wrapper_obj.raw_data_;
-  this->dim_offset_ = new TensorIdx [this->size_.get_dim()];
-  this->init_dim_offset_();
+  if (0 == dim) {
+    this->dim_offset_ = nullptr;
+    this->abs_offset_ = nullptr;
+  }
+  else {
+    this->dim_offset_ = new TensorIdx[dim];
+    this->abs_offset_ = new TensorIdx[dim];
+    std::copy(wrapper_obj.dim_offset_, wrapper_obj.dim_offset_ + dim,
+      this->dim_offset_);
+    std::copy(wrapper_obj.abs_offset_, wrapper_obj.abs_offset_ + dim,
+      this->abs_offset_);
+  }
+  return *this;
 }
 
 
@@ -89,47 +128,78 @@ TensorWrapper<FloatType> &TensorWrapper<FloatType>::operator=(
     TensorWrapper &&wrapper_obj) noexcept {
   this->size_ = std::move(wrapper_obj.size_);
   this->outer_size_ = std::move(wrapper_obj.outer_size_);
-  this->data_offset_ = wrapper_obj.data_offset_;
   this->raw_data_ = wrapper_obj.raw_data_;
   this->dim_offset_ = wrapper_obj.dim_offset_;
+  this->abs_offset_ = wrapper_obj.abs_offset_;
   wrapper_obj.dim_offset_ = nullptr;
+  wrapper_obj.abs_offset_ = nullptr;
+  return *this;
 }
 
 
 template <typename FloatType>
 template <typename... Idx>
 inline FloatType &TensorWrapper<FloatType>::operator()(Idx... indices) {
-  return this->get_element_(0, 0, idx, indices...);
+  return this->get_element_(0, 0, indices...);
+}
+
+
+template <typename FloatType>
+FloatType &TensorWrapper<FloatType>::operator[](
+    const std::vector<TensorIdx> &indices) {
+  return this->get_element_vec_(indices.begin(), indices.end());
+}
+
+
+template <typename FloatType>
+const FloatType &TensorWrapper<FloatType>::operator[](
+    const std::vector<TensorIdx> &indices) const {
+  return this->get_element_vec_(indices.begin(), indices.end());
 }
 
 
 template <typename FloatType>
 FloatType &TensorWrapper<FloatType>::operator[](const TensorIdx *indices) {
-  TensorIdx offset = indices[0];
-  for (TensorIdx idx = 1; idx < size_.get_dim(); ++idx)
-    offset += indices[idx] * this->dim_offset_[idx];
-  return *(this->raw_data_ + this->data_offset_ + offset);
+  return this->get_element_vec_(indices, indices + this->size_.get_dim());
 }
 
 
 template <typename FloatType>
 const FloatType &TensorWrapper<FloatType>::operator[](
     const TensorIdx *indices) const {
-  TensorIdx offset = indices[0];
-  for (TensorIdx idx = 1; idx < size_.get_dim(); ++idx)
-    offset += indices[idx] * this->dim_offset_[idx];
-  return *(this->raw_data_ + this->data_offset_ + offset);
+  return this->get_element_vec_(indices, indices + this->size_.get_dim());
 }
 
 
 template <typename FloatType>
 template <typename... Ranges>
-TensorWrapper<FloatType> TensorWrapper<FloatType>::slice(Ranges... range) {
-  TensorSize size_obj(this->size_.get_dim());
-  TensorIdx offset = this->data_offset_
-      + this->get_sub_offset_(0, 0, size_obj, range...);
-  return TensorWrapper<FloatType>(size_obj, this->outer_size_, offset,
-      this->raw_data_);
+TensorWrapper<FloatType> TensorWrapper<FloatType>::slice(TRI range,
+    Ranges... rest) {
+  vector<TensorIdx> new_sizes(this->size_.get_dim());
+  vector<TensorIdx> new_dim_offset(this->size_.get_dim());
+  std::copy(this->dim_offset_, this->dim_offset_ + this->size_.get_dim(),
+    new_dim_offset.begin());
+
+  auto sizes_iter = new_sizes.begin();
+  auto dim_offset_iter = new_dim_offset.begin();
+  this->get_sliced(sizes_iter, dim_offset_iter, range, rest...);
+  TensorSize size_obj(new_sizes);
+
+  return TensorWrapper<FloatType>(size_obj, this->outer_size_, new_dim_offset,
+    this->raw_data_);
+}
+
+
+template <typename FloatType>
+TensorWrapper<FloatType> TensorWrapper<FloatType>::slice(
+    const std::vector<TRI> &ranges) {
+  return this->get_sliced(ranges.begin(), ranges.end());
+}
+
+
+template <typename FloatType>
+TensorWrapper<FloatType> TensorWrapper<FloatType>::slice(const TRI *ranges) {
+  return this->get_sliced(ranges, ranges + this->size_.get_dim());
 }
 
 
@@ -158,58 +228,120 @@ inline const FloatType *TensorWrapper<FloatType>::get_data() const {
 
 
 template <typename FloatType>
-inline void TensorWrapper<FloatType>::init_dim_offset_() {
-  TensorDim dim_upper = this->size_.get_dim() - 1;
-  this->dim_offset_[0] = 1;
-  for (uint32_t dim_idx = 0; dim_idx < dim_upper; ++dim_idx)
-    this->dim_offset_[dim_idx + 1]
-        = this->outer_size_[dim_idx] * this->dim_offset_[dim_idx];
+inline void TensorWrapper<FloatType>::init_offset_(
+    const std::vector<TensorIdx> &dim_offset) {
+  TensorDim dim = this->size_.get_dim();
+  if (0 == this->size_.get_dim())
+    return;
+
+  // Initialize dim_offset_
+  if (0 == dim_offset.size())
+    std::fill(this->dim_offset_, this->dim_offset_ + dim, 0);
+  else
+    std::copy(dim_offset.begin(), dim_offset.end(), this->dim_offset_);
+
+  // Initialize abs_offset_
+  this->abs_offset_[dim - 1] = 1;
+  for (TensorDim dim_idx = dim - 1; dim_idx > 0; --dim_idx)
+    this->abs_offset_[dim_idx - 1]
+      = this->outer_size_[dim_idx] * this->abs_offset_[dim_idx];
 }
 
 
 template <typename FloatType>
 template <typename... Idx>
 inline FloatType &TensorWrapper<FloatType>::get_element_(TensorDim curr_dim,
-    TensorIdx curr_idx, TensorIdx next_idx, Idx... idx) {
+    TensorIdx curr_offset, TensorIdx next_idx, Idx... idx) {
   // Compute current index
   if (next_idx < 0)
     next_idx += this->size_[curr_dim];
-  curr_idx += next_idx * this->dim_offset_[curr_dim];
+  next_idx += this->dim_offset_[curr_dim];
+  curr_offset += next_idx * this->abs_offset_[curr_dim];
 
-  return this->get_element_(curr_dim + 1, curr_idx, idx...);
+  return this->get_element_(curr_dim + 1, curr_offset, idx...);
 }
 
 
 template <typename FloatType>
 inline FloatType &TensorWrapper<FloatType>::get_element_(TensorDim curr_dim,
-    TensorIdx curr_idx) {
-  return this->raw_data_[curr_idx + this->data_offset_];
+    TensorIdx curr_offset) {
+  return this->raw_data_[curr_offset];
+}
+
+
+template <typename FloatType>
+template <typename Iterator>
+inline FloatType &TensorWrapper<FloatType>::get_element_vec_(Iterator begin,
+    Iterator end) {
+  TensorIdx abs_offset = 0;
+  TensorIdx *abs_offset_ptr = this->abs_offset_;
+  while (begin != end) {
+    TensorDim dim_idx = std::distance(this->abs_offset_, abs_offset_ptr);
+    TensorIdx next_idx = *begin + this->dim_offset_[dim_idx];
+    next_idx += *begin < 0 ? this->size_[dim_idx] : 0;
+    abs_offset += (*abs_offset_ptr) * next_idx;
+    ++begin, ++abs_offset_ptr;
+  }
+
+  return *(this->raw_data_ + abs_offset);
+}
+
+
+template <typename FloatType>
+template <typename Iterator>
+inline const FloatType &TensorWrapper<FloatType>::get_element_vec_(
+    Iterator begin, Iterator end) const {
+  TensorIdx abs_offset = 0;
+  TensorIdx *abs_offset_ptr = this->abs_offset_;
+  while (begin != end) {
+    TensorDim dim_idx = std::distance(this->abs_offset_, abs_offset_ptr);
+    TensorIdx next_idx = *begin + this->dim_offset_[dim_idx];
+    next_idx += *begin < 0 ? this->size_[dim_idx] : 0;
+    abs_offset += (*abs_offset_ptr) * next_idx;
+    ++begin, ++abs_offset_ptr;
+  }
+
+  return *(this->raw_data_ + abs_offset);
 }
 
 
 template <typename FloatType>
 template <typename... Ranges>
-inline TensorIdx TensorWrapper<FloatType>::get_sub_offset_(TensorDim curr_dim,
-    TensorIdx curr_offset, TensorSize &size_obj, TRI curr_range,
-    Ranges... range) {
-  // Compute size for current dimension
-  if (curr_range.right_idx < 0)
-    curr_range.right_idx += this->size_[curr_dim];
-  if (curr_range.left_idx < 0)
-    curr_range.left_idx += this->size_[curr_dim];
-  size_obj[curr_dim] = curr_range.right_idx - curr_range.left_idx + 1;
-
-  // Compute current offset
-  curr_offset += curr_range.left_idx * this->dim_offset_[curr_dim];
-
-  return this->get_sub_offset_(curr_dim + 1, curr_offset, size_obj, range...);
+inline void TensorWrapper<FloatType>::get_sliced(TVecIter &sizes_iter,
+    TVecIter &dim_offset_iter, TRI range, Ranges... rest) {
+  *size_iter = range.right_idx - range.left_idx;
+  *dim_offset_iter += range.left_idx;
+  this->get_sliced(++sizes_iter, ++dim_offset_iter, rest...);
+  return;
 }
 
 
 template <typename FloatType>
-inline TensorIdx TensorWrapper<FloatType>::get_sub_offset_(TensorDim curr_dim,
-    TensorIdx curr_offset, TensorSize &size_obj) {
-  return curr_offset;
+inline void TensorWrapper<FloatType>::get_sliced(TVecIter &sizes_iter,
+    TVecIter &dim_offset_iter, TRI range) {
+  *size_iter = range.right_idx - range.left_idx;
+  *dim_offset_iter += range.left_idx;
+  return;
+}
+
+
+template <typename FloatType>
+template <typename Iterator>
+inline TensorWrapper<FloatType> TensorWrapper<FloatType>::get_sliced(
+    Iterator begin, Iterator end) {
+  TensorSize size_obj(this->size_.get_dim());
+  vector<TensorIdx> new_dim_offset(this->size_.get_dim());
+  Iterator ptr = begin;
+  while (ptr != end) {
+    TensorDim dim_idx = std::distance(begin, ptr);
+    size_obj[dim_idx] = ranges[dim_idx].right_idx - ranges[dim_idx].left_idx;
+    new_dim_offset[dim_idx]
+        = this->dim_offset_[dim_idx] + ranges[dim_idx].left_idx;
+    ++ptr;
+  }
+
+  return TensorWrapper<FloatType>(size_obj, this->outer_size_, new_dim_offset,
+      this->raw_data_);
 }
 
 #endif // HPTC_TENSOR_TCC_
