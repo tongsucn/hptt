@@ -2,16 +2,12 @@
 #ifndef TEST_TENSOR_UTIL_H_
 #define TEST_TENSOR_UTIL_H_
 
-#include <cstdint>
-
-#include <vector>
-
 #include <gtest/gtest.h>
 
 #include <hptc/tensor.h>
+#include <hptc/types.h>
 
 using namespace hptc;
-using namespace std;
 
 class TestTensorUtil : public ::testing::Test {
 protected:
@@ -99,10 +95,8 @@ TEST_F(TestTensorUtil, TestTensorSizeCreation) {
 
 TEST_F(TestTensorUtil, TestTensorSizeRandomAccess) {
   // Size object constructed from initializer list
-  for (int32_t idx = -10; idx < 10; ++idx) {
-    TensorIdx curr_val = this->size_obj_lst_nonzero[idx];
-    TensorIdx expect_val = idx < 0 ? -idx : 10 - idx;
-    EXPECT_EQ(expect_val, curr_val)
+  for (TensorIdx idx = 0; idx < 10; ++idx) {
+    EXPECT_EQ(10 - idx, this->size_obj_lst_nonzero[idx])
       << "Returned size value does not equal to expectation, target index: "
       << idx;
   }
@@ -121,4 +115,4 @@ TEST_F(TestTensorUtil, TestTensorSizeRandomAccess) {
     << "object creates wrong result.";
 }
 
-#endif
+#endif // TEST_TENSOR_UTIL_H_
