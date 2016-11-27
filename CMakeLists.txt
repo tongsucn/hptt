@@ -12,10 +12,6 @@ project (HPTC)
 # ----------------------------------------------------------------------------
 # Build options
 # ----------------------------------------------------------------------------
-# Find dependencies
-find_package(Doxygen)
-find_package(GTest)
-
 # Options
 option(BUILD_TEST "Generate executable test program.")
 option(BUILD_DOC "Create the HTML based API documentation (requires doxygen)."
@@ -24,23 +20,28 @@ option(BUILD_TEST "Generate executable test program (requires Google Test)."
   ${GTEST_FOUND})
 set(BUILD_DEBUG OFF CACHE BOOL "Build debug version of library.")
 
+# Find dependencies
+find_package(Doxygen)
+find_package(GTest)
+
 
 # ----------------------------------------------------------------------------
 # Compiler options
 # ----------------------------------------------------------------------------
-set(TENSOR_CXX_FLAGS "-Wall -Werror -std=c++14")
+set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14")
 set(TENSOR_DEBUG_FLAG "-g")
 set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
 
 if (BUILD_TYPE STREQUAL "DEBUG")
   # Use debug configurations.
-  set(TENSOR_CXX_FLAGS "${TENSOR_CXX_FLAGS} ${TENSOR_DEBUG_FLAG}")
+  string(CONCAT TENSOR_CXX_FLAG ${TENSOR_CXX_FLAG} " " ${TENSOR_DEBUG_FLAG})
 else ()
   # Use release configuration.
-  set(TENSOR_CXX_FLAGS "${TENSOR_CXX_FLAGS} ${TENSOR_RELEASE_FLAG}")
+  string(CONCAT TENSOR_CXX_FLAG ${TENSOR_CXX_FLAG} " " ${TENSOR_RELEASE_FLAG})
 endif ()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TENSOR_CXX_FLAGS}")
+string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " " ${TENSOR_CXX_FLAG})
+
 
 # ----------------------------------------------------------------------------
 # Directory setting
@@ -51,14 +52,11 @@ include_directories(inc)
 # Add source directory
 add_subdirectory(src)
 
-# ----------------------------------------------------------------------------
-# Build setting
-# ----------------------------------------------------------------------------
 if (BUILD_TEST AND GTEST_FOUND)
   add_subdirectory(test)
 endif ()
 
-if (BUILD_DOC)
-  add_subdirectory(doc)
-endif()
+#if (BUILD_DOC)
+#  add_subdirectory(doc)
+#endif()
 
