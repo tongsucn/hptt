@@ -40,7 +40,7 @@ using RepeatUnroller = decltype(op_repeat_unroller<OpType, UnrollDepth>);
  */
 template <typename ArrType, uint32_t UnrollDepth>
 inline void op_arr_unroller(ArrType oper, UnrollControllor<UnrollDepth>) {
-  op_arr_unroller(operations, UnrollControllor<UnrollDepth - 1>());
+  op_arr_unroller(oper, UnrollControllor<UnrollDepth - 1>());
   oper[UnrollDepth]->exec();
 }
 

@@ -66,7 +66,7 @@ template <typename FloatType,
           uint32_t OPER_NUM>
 template <typename OperType>
 inline void OpLoop<FloatType, ParamType, OPER_NUM>::init_operation(
-    uint32_t operation_idx, const std::shared_ptr<OperType> &oper) {
+    const std::shared_ptr<OperType> &oper, uint32_t operation_idx) {
   this->operations[operation_idx]
     = std::static_pointer_cast<Operation<FloatType, ParamType>>(oper);
 }
@@ -105,7 +105,7 @@ template <typename FloatType,
 inline void OpLoopFor<FloatType, ParamType, OPER_NUM>::exec() {
   for (this->curr_idx = this->begin; this->cond(this->curr_idx, this->end);
       this->curr_idx += this->step) {
-    this->OpLoop::exec_all();
+    this->exec_all();
   }
 }
 
@@ -150,7 +150,7 @@ template <typename FloatType,
           template <typename> typename ParamType,
           uint32_t OPER_NUM>
 inline void OpMacro<FloatType, ParamType, OPER_NUM>::init_operation(
-    uint32_t operation_idx, Operation<FloatType, ParamType> *oper) {
+    Operation<FloatType, ParamType> *oper, uint32_t operation_idx) {
   this->operations[operation_idx] = oper;
 }
 

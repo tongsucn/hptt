@@ -53,8 +53,8 @@ public:
   virtual void exec() override = 0;
 
   template <typename OperType>
-  inline void init_operation(uint32_t operation_idx,
-      const std::shared_ptr<OperType> &oper);
+  inline void init_operation(const std::shared_ptr<OperType> &oper,
+      uint32_t operation_idx = 0);
 
 protected:
   inline void exec_all();
@@ -138,8 +138,8 @@ public:
 
   virtual void exec() override = 0;
 
-  inline void init_operation(uint32_t operation_idx,
-      Operation<FloatType, ParamType> *oper);
+  inline void init_operation(Operation<FloatType, ParamType> *oper,
+      uint32_t operation_idx);
 
 protected:
   Operation<FloatType, ParamType> *operations[OPER_NUM];

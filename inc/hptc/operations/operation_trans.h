@@ -22,7 +22,7 @@ public:
 
   virtual void exec() final;
 
-protected:
+private:
   virtual void exec_internal() final;
 };
 
