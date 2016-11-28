@@ -3,7 +3,6 @@
 #define TEST_TENSOR_WRAPPER_H_
 
 #include <vector>
-#include <iostream>
 
 #include <gtest/gtest.h>
 
@@ -13,15 +12,16 @@
 using namespace std;
 using namespace hptc;
 
+
 template <typename FloatType>
 class TestTensorWrapper : public ::testing::Test {
 protected:
   TestTensorWrapper()
       : test_num(4),
-        size_obj{ { 9 }, { 7, 23 }, { 23, 13, 33 }, { 38, 1, 64, 54 } },
-        sub_size_obj{ { 3 }, { 2, 15 }, { 20, 9, 6 }, { 20, 1, 32, 2 } },
+        size_obj{ { 9 }, { 7, 23 }, { 1, 23, 1 }, { 38, 1, 64, 54 } },
+        sub_size_obj{ { 3 }, { 2, 15 }, { 1, 13, 1 }, { 20, 1, 32, 2 } },
         raw_data(this->test_num, nullptr),
-        dim_offset{ { 3 }, { 3, 0 }, { 0, 2, 23 }, { 8, 0, 31, 50 } } {
+        dim_offset{ { 3 }, { 3, 0 }, { 0, 10, 0 }, { 8, 0, 31, 50 } } {
     for (TensorIdx tensor_idx = 0; tensor_idx < this->test_num; ++tensor_idx) {
       // Initialize raw data
       TensorIdx total_size = 1;
@@ -55,59 +55,59 @@ TYPED_TEST(TestTensorWrapper, TestTensorWrapperCreation) {
     // Creating original tensor from constructor
     TensorWrapper<TypeParam> tensor(this->size_obj[idx], this->raw_data[idx]);
     EXPECT_EQ(this->size_obj[idx], tensor.get_size())
-      << "Size does not match in original tensor: " << idx;
+        << "Size does not match in original tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], tensor.get_outer_size())
-      << "Outer size does not match in original tensor: " << idx;
+        << "Outer size does not match in original tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], tensor.get_data())
-      << "Raw data does not match in original tensor: " << idx;
+        << "Raw data does not match in original tensor: " << idx;
 
     // Creating sub-tensor from constructor
     TensorWrapper<TypeParam> sub_tensor(this->sub_size_obj[idx],
         this->size_obj[idx], this->dim_offset[idx], this->raw_data[idx]);
     EXPECT_EQ(this->sub_size_obj[idx], sub_tensor.get_size())
-      << "Size does not match in sub-tensor: " << idx;
+        << "Size does not match in sub-tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], sub_tensor.get_outer_size())
-      << "Outer size does not match in sub-tensor: " << idx;
+        << "Outer size does not match in sub-tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], sub_tensor.get_data())
-      << "Raw data does not match in sub-tensor: " << idx;
+        << "Raw data does not match in sub-tensor: " << idx;
 
     // Creating original tensor from copy
     TensorWrapper<TypeParam> copied_tensor(tensor);
     EXPECT_EQ(this->size_obj[idx], copied_tensor.get_size())
-      << "Size does not match in copied original tensor: " << idx;
+        << "Size does not match in copied original tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], copied_tensor.get_outer_size())
-      << "Outer size does not match in copied original tensor: " << idx;
+        << "Outer size does not match in copied original tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], copied_tensor.get_data())
-      << "Raw data does not match in copied original tensor: " << idx;
+        << "Raw data does not match in copied original tensor: " << idx;
 
     // Creating sub-tensor from copy constructor
     TensorWrapper<TypeParam> copied_sub_tensor(sub_tensor);
     EXPECT_EQ(this->sub_size_obj[idx], copied_sub_tensor.get_size())
-      << "Size does not match in copied sub-tensor: " << idx;
+        << "Size does not match in copied sub-tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], copied_sub_tensor.get_outer_size())
-      << "Outer size does not match in copied sub-tensor: " << idx;
+        << "Outer size does not match in copied sub-tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], copied_sub_tensor.get_data())
-      << "Raw data does not match in copied sub-tensor: " << idx;
+        << "Raw data does not match in copied sub-tensor: " << idx;
 
     // Creating original tensor from copy assignment
     TensorWrapper<TypeParam> &assigned_tensor = copied_sub_tensor;
     assigned_tensor = tensor;
     EXPECT_EQ(this->size_obj[idx], assigned_tensor.get_size())
-      << "Size does not match in assigned original tensor: " << idx;
+        << "Size does not match in assigned original tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], assigned_tensor.get_outer_size())
-      << "Outer size does not match in assigned original tensor: " << idx;
+        << "Outer size does not match in assigned original tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], assigned_tensor.get_data())
-      << "Raw data does not match in assigned original tensor: " << idx;
+        << "Raw data does not match in assigned original tensor: " << idx;
 
     // Creating sub-tensor from copy assignment
     TensorWrapper<TypeParam> &assigned_sub_tensor = copied_tensor;
     assigned_sub_tensor = sub_tensor;
     EXPECT_EQ(this->sub_size_obj[idx], assigned_sub_tensor.get_size())
-      << "Size does not match in assigned sub-tensor: " << idx;
+        << "Size does not match in assigned sub-tensor: " << idx;
     EXPECT_EQ(this->size_obj[idx], assigned_sub_tensor.get_outer_size())
-      << "Outer size does not match in assigned sub-tensor: " << idx;
+        << "Outer size does not match in assigned sub-tensor: " << idx;
     ASSERT_EQ(this->raw_data[idx], assigned_sub_tensor.get_data())
-      << "Raw data does not match in assigned sub-tensor: " << idx;
+        << "Raw data does not match in assigned sub-tensor: " << idx;
   }
 }
 
@@ -120,23 +120,23 @@ TYPED_TEST(TestTensorWrapper, TestTensorWrapperIndexing) {
     // Variadic-template-based indexing
     TensorIdx expect_val = idx < 0 ? this->size_obj[0][0] + idx : idx;
     ASSERT_EQ(static_cast<TypeParam>(expect_val), tensor_1_dim(idx))
-      << "Template-based indexed content does not match at index: " << idx
-      << ", raw data head address: " << tensor_1_dim.get_data()
-      << ", element address: " << &tensor_1_dim(idx);
+        << "Template-based indexed content does not match at index: " << idx
+        << ", raw data head address: " << tensor_1_dim.get_data()
+        << ", element address: " << &tensor_1_dim(idx);
 
     // Vector-based indexing
     vector<TensorIdx> vec_idx{idx};
     ASSERT_EQ(expect_val, tensor_1_dim[vec_idx])
-      << "Vector-based indexed content does not match at index: " << idx
-      << ", raw data head address: " << tensor_1_dim.get_data()
-      << ", element address: " << &tensor_1_dim[vec_idx];
+        << "Vector-based indexed content does not match at index: " << idx
+        << ", raw data head address: " << tensor_1_dim.get_data()
+        << ", element address: " << &tensor_1_dim[vec_idx];
 
     // Array-based indexing
     TensorIdx arr_idx[1] = {idx};
     ASSERT_EQ(expect_val, tensor_1_dim[arr_idx])
-      << "Array-based indexed content does not match at index: " << idx
-      << ", raw data head address: " << tensor_1_dim.get_data()
-      << ", element address: " << &tensor_1_dim[arr_idx];
+        << "Array-based indexed content does not match at index: " << idx
+        << ", raw data head address: " << tensor_1_dim.get_data()
+        << ", element address: " << &tensor_1_dim[arr_idx];
   }
 
   // Test 4-dim original tensor indexing
@@ -225,15 +225,15 @@ TYPED_TEST(TestTensorWrapper, TestTensorWrapperIndexing) {
 
     // Variadic-template-based indexing
     ASSERT_EQ(static_cast<TypeParam>(expect_val), sub_tensor_1_dim(idx))
-      << "Template-based indexed content does not match at index: " << idx
-      << ", raw data head address: " << sub_tensor_1_dim.get_data()
-      << ", element address: " << &sub_tensor_1_dim(idx);
+        << "Template-based indexed content does not match at index: " << idx
+        << ", raw data head address: " << sub_tensor_1_dim.get_data()
+        << ", element address: " << &sub_tensor_1_dim(idx);
 
     // Vector-based indexing
     ASSERT_EQ(static_cast<TypeParam>(expect_val), sub_tensor_1_dim[{idx}])
-      << "Vector-based indexed content does not match at index: " << idx
-      << ", raw data head address: " << sub_tensor_1_dim.get_data()
-      << ", element address: " << &sub_tensor_1_dim[{idx}];
+        << "Vector-based indexed content does not match at index: " << idx
+        << ", raw data head address: " << sub_tensor_1_dim.get_data()
+        << ", element address: " << &sub_tensor_1_dim[{idx}];
     ++expect_val;
   }
 

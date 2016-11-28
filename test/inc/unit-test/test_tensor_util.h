@@ -36,60 +36,60 @@ protected:
 
 TEST_F(TestTensorUtil, TestTensorRangeIdxCreation) {
   EXPECT_EQ(this->RANGE_ZERO, range.left_idx)
-    << "Left index value does not match.";
+      << "Left index value does not match.";
   EXPECT_EQ(this->RANGE_NONZERO, range.right_idx)
-    << "Right index value does not match.";
+      << "Right index value does not match.";
 }
 
 
 TEST_F(TestTensorUtil, TestTensorSizeCreation) {
   // Default construction
   EXPECT_EQ(this->RANGE_ZERO, this->size_obj_default.get_dim())
-    << "Default constructor does not create a zero-dim size object.";
+      << "Default constructor does not create a zero-dim size object.";
 
   // Construction from number of dimension
   EXPECT_EQ(this->RANGE_ZERO, this->size_obj_dim_zero.get_dim())
-    << "Cannot create a " << this->RANGE_ZERO << "-dim size object by with-dim "
-    << "constructor.";
+      << "Cannot create a " << this->RANGE_ZERO << "-dim size object by with-"
+      << "dim constructor.";
   EXPECT_EQ(this->RANGE_NONZERO, this->size_obj_dim_nonzero.get_dim())
-    << "Cannot create a " << this->RANGE_NONZERO << "-dim size object by with-"
-    << "dim constructor.";
+      << "Cannot create a " << this->RANGE_NONZERO << "-dim size object by "
+      << "with-dim constructor.";
 
   // Construction from initializer list
   EXPECT_EQ(this->RANGE_ZERO, this->size_obj_lst_zero.get_dim())
-    << "Cannot create a " << this->RANGE_ZERO << "-dim null size object from "
-    << "initializer_list.";
+      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object from "
+      << "initializer_list.";
   EXPECT_EQ(this->RANGE_NONZERO, this->size_obj_lst_nonzero.get_dim())
-    << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size object "
-    << "from initializer_list.";
+      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
+      << "object from initializer_list.";
 
   // Copy construction
   TensorSize size_obj_copy_zero(this->size_obj_lst_zero);
   EXPECT_EQ(this->RANGE_ZERO, size_obj_copy_zero.get_dim())
-    << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
-    << "from copy.";
+      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
+      << "from copy.";
 
   TensorSize size_obj_copy_nonzero(this->size_obj_lst_nonzero);
   EXPECT_EQ(this->RANGE_NONZERO, size_obj_copy_nonzero.get_dim())
-    << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size object "
-    << "from copy.";
+      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
+      << "object from copy.";
   EXPECT_EQ(1, size_obj_copy_nonzero[this->RANGE_NONZERO - 1])
-    << "Cannot access edge element after copy construction, target index: "
-    << this->RANGE_NONZERO - 1;
+      << "Cannot access edge element after copy construction, target index: "
+      << this->RANGE_NONZERO - 1;
 
   // Copy assignment
   size_obj_copy_nonzero = this->size_obj_lst_zero;
   EXPECT_EQ(this->RANGE_ZERO, size_obj_copy_nonzero.get_dim())
-    << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
-    << "from copy assignment.";
+      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
+      << "from copy assignment.";
 
   size_obj_copy_zero = this->size_obj_lst_nonzero;
   EXPECT_EQ(this->RANGE_NONZERO, size_obj_copy_zero.get_dim())
-    << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size object "
-    << "from copy assignment.";
+      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
+      << "object from copy assignment.";
   EXPECT_EQ(1, size_obj_copy_zero[this->RANGE_NONZERO - 1])
-    << "Cannot access edge element after copy assignment, target index: "
-    << this->RANGE_NONZERO - 1;
+      << "Cannot access edge element after copy assignment, target index: "
+      << this->RANGE_NONZERO - 1;
 }
 
 
@@ -97,22 +97,22 @@ TEST_F(TestTensorUtil, TestTensorSizeRandomAccess) {
   // Size object constructed from initializer list
   for (TensorIdx idx = 0; idx < 10; ++idx) {
     EXPECT_EQ(10 - idx, this->size_obj_lst_nonzero[idx])
-      << "Returned size value does not equal to expectation, target index: "
-      << idx;
+        << "Returned size value does not equal to expectation, target index: "
+        << idx;
   }
 
   // Size object comparison
   EXPECT_TRUE(this->size_obj_lst_zero == this->size_obj_lst_zero)
-    << "Comparison between the same 0-dim size object creates wrong result.";
+      << "Comparison between the same 0-dim size object creates wrong result.";
   EXPECT_FALSE(this->size_obj_lst_nonzero == this->size_obj_lst_zero)
-    << "Comparison between 0-dim and " << this->RANGE_NONZERO << "-dim size "
-    << "object creates wrong result.";
+      << "Comparison between 0-dim and " << this->RANGE_NONZERO << "-dim size "
+      << "object creates wrong result.";
   EXPECT_TRUE(this->size_obj_lst_nonzero == this->size_obj_lst_nonzero)
-    << "Comparison between the same " << this->RANGE_NONZERO << "-dim size "
-    << "object creates wrong result.";
+      << "Comparison between the same " << this->RANGE_NONZERO << "-dim size "
+      << "object creates wrong result.";
   EXPECT_FALSE(this->size_obj_dim_nonzero == this->size_obj_lst_nonzero)
-    << "Comparison between different " << this->RANGE_NONZERO << "-dim size "
-    << "object creates wrong result.";
+      << "Comparison between different " << this->RANGE_NONZERO << "-dim size "
+      << "object creates wrong result.";
 }
 
 #endif // TEST_TENSOR_UTIL_H_
