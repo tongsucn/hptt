@@ -13,10 +13,10 @@ namespace hptc {
 
 template <typename FloatType>
 struct ParamTrans {
-  ParamTrans() = delete;
   ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-      TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
-      CoefficientType<FloatType> beta, std::initializer_list<TensorDim> perm);
+      TensorWrapper<FloatType> &output_tensor,
+      DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta,
+      std::initializer_list<TensorDim> perm);
 
   ParamTrans(const ParamTrans &param_obj);
   ParamTrans(ParamTrans &&param_obj) noexcept;
@@ -28,8 +28,8 @@ struct ParamTrans {
   const TensorWrapper<FloatType> &input_tensor;
   TensorWrapper<FloatType> &output_tensor;
 
-  CoefficientType<FloatType> alpha;
-  CoefficientType<FloatType> beta;
+  DeducedFloatType<FloatType> alpha;
+  DeducedFloatType<FloatType> beta;
 
   TensorDim tensor_dim;
   TensorIdx input_offset;
@@ -45,8 +45,8 @@ struct ParamTrans {
  */
 template <typename FloatType>
 ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-    TensorWrapper<FloatType> &output_tensor, CoefficientType<FloatType> alpha,
-    CoefficientType<FloatType> beta, std::initializer_list<TensorDim> perm)
+    TensorWrapper<FloatType> &output_tensor, DeducedFloatType<FloatType> alpha,
+    DeducedFloatType<FloatType> beta, std::initializer_list<TensorDim> perm)
     : input_tensor(input_tensor),
       output_tensor(output_tensor),
       alpha(alpha),

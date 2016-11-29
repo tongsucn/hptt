@@ -5,6 +5,9 @@
 #include <cstdint>
 #include <ccomplex>
 
+#include <hptc/compat.h>
+
+
 namespace hptc {
 
 /*
@@ -55,7 +58,7 @@ struct FloatTypeDeducer<LongDoubleComplex> {
 };
 
 template <typename FloatType>
-using CoefficientType = typename FloatTypeDeducer<FloatType>::type;
+using DeducedFloatType = typename FloatTypeDeducer<FloatType>::type;
 
 }
 
