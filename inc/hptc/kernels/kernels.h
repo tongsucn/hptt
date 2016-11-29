@@ -1,7 +1,7 @@
 #pragma once
-#ifndef HPTC_KERNEL_KERNELS_H_
-#define HPTC_KERNEL_KERNELS_H_
+#ifndef HPTC_KERNELS_KERNELS_H_
+#define HPTC_KERNELS_KERNELS_H_
 
 #include <hptc/kernels/kernel_trans.h>
 
-#endif // HPTC_KERNEL_KERNELS_H_
+#endif // HPTC_KERNELS_KERNELS_H_

@@ -1,7 +1,7 @@
 #pragma once
-#ifndef HPTC_KERNEL_KERNEL_TRANS_H_
-#define HPTC_KERNEL_KERNEL_TRANS_H_
+#ifndef HPTC_KERNELS_KERNEL_TRANS_H_
+#define HPTC_KERNELS_KERNEL_TRANS_H_
 
-#include <hptc/kernels/kernel_trans_avx.h>
+#include <hptc/kernels/avx/kernel_trans_avx.h>
 
-#endif // HPTC_KERNEL_KERNEL_TRANS_H_
+#endif // HPTC_KERNELS_KERNEL_TRANS_H_

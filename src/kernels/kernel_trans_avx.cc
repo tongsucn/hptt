@@ -1,4 +1,4 @@
-#include <hptc/kernels/kernel_trans_avx.h>
+#include <hptc/kernels/kernel_trans.h>
 
 namespace hptc {
 }
