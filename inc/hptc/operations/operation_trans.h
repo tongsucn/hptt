@@ -16,14 +16,17 @@ public:
   OpMicroTrans(const std::shared_ptr<ParamTrans<FloatType>> &param);
 
   OpMicroTrans(const OpMicroTrans &operation) = default;
-  OpMicroTrans &operator=(const OpMicroTrans &operation) = default;
+  OpMicroTrans &operator=(const OpMicroTrans &operation) = delete;
 
   virtual ~OpMicroTrans() = default;
 
   virtual void exec() final;
 
 private:
-  virtual void exec_internal() final;
+  const FloatType *input_data;
+  FloatType *output_data;
+  TensorIdx input_offset, output_offset;
+  DeducedFloatType<FloatType> alpha, beta;
 };
 
 

@@ -2,7 +2,6 @@
 #ifndef HPTC_OPERATION_TRANS_TCC_
 #define HPTC_OPERATION_TRANS_TCC_
 
-
 /*
  * Implementation for class OpMicroTrans
  */
