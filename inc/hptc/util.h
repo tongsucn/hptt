@@ -4,6 +4,7 @@
 
 #include <cstdint>
 
+
 namespace hptc {
 
 using GenNumType = uint32_t;
@@ -41,13 +42,6 @@ template <GenNumType GEN_NUM>
 struct GenCounter {
 };
 
-template <GenNumType GEN_NUM, typename Func, typename... Args>
-inline void general_tiler(GenCounter<GEN_NUM>, Func func, Args... args);
-
-
-template <typename Func, typename... Args>
-inline void general_tiler(GenCounter<0>, Func func, Args... args);
-
 
 /*
  * Implementation for Unroller
@@ -75,19 +69,6 @@ inline void op_repeat_unroller(OpType oper, UnrollControllor<UnrollDepth>) {
 template <typename OpType>
 inline void op_repeat_unroller(OpType oper, UnrollControllor<0>) {
   oper[0]->exec();
-}
-
-
-template <GenNumType GEN_NUM, typename Func, typename... Args>
-inline void general_tiler(GenCounter<GEN_NUM>, Func func, Args... args) {
-  general_tiler(GenCounter<GEN_NUM - 1>(), func, args...);
-  func(args...);
-}
-
-
-template <typename Func, typename... Args>
-inline void general_tiler(GenCounter<0>, Func func, Args... args) {
-  func(args...);
 }
 
 }
