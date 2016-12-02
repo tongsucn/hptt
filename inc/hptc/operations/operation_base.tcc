@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_OPERATION_BASE_TCC_
-#define HPTC_OPERATION_BASE_TCC_
+#ifndef HPTC_OPERATIONS_OPERATION_BASE_TCC_
+#define HPTC_OPERATIONS_OPERATION_BASE_TCC_
 
 /*
  * Implementation for class Operation
@@ -153,4 +153,4 @@ inline void OpMacro<FloatType, ParamType, OPER_NUM>::init_operation(
   this->operations[operation_idx] = oper;
 }
 
-#endif // HPTC_OPERATION_BASE_TCC_
+#endif // HPTC_OPERATIONS_OPERATION_BASE_TCC_

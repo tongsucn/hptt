@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_PARAMETER_TRANS_H_
-#define HPTC_PARAMETER_TRANS_H_
+#ifndef HPTC_PARAM_PARAMETER_TRANS_H_
+#define HPTC_PARAM_PARAMETER_TRANS_H_
 
 #include <memory>
 #include <vector>
@@ -9,6 +9,7 @@
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 
+
 namespace hptc {
 
 template <typename FloatType>
@@ -16,7 +17,7 @@ struct ParamTrans {
   ParamTrans(const TensorWrapper<FloatType> &input_tensor,
       TensorWrapper<FloatType> &output_tensor,
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta,
-      std::initializer_list<TensorDim> perm);
+      std::vector<TensorDim> perm);
 
   ParamTrans(const ParamTrans &param_obj);
   ParamTrans(ParamTrans &&param_obj) noexcept;
@@ -46,7 +47,7 @@ struct ParamTrans {
 template <typename FloatType>
 ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
     TensorWrapper<FloatType> &output_tensor, DeducedFloatType<FloatType> alpha,
-    DeducedFloatType<FloatType> beta, std::initializer_list<TensorDim> perm)
+    DeducedFloatType<FloatType> beta, std::vector<TensorDim> perm)
     : input_tensor(input_tensor),
       output_tensor(output_tensor),
       alpha(alpha),
@@ -108,4 +109,4 @@ ParamTrans<FloatType>::~ParamTrans() {
 
 }
 
-#endif // HPTC_PARAMETER_TRANS_H_
+#endif // HPTC_PARAM_PARAMETER_TRANS_H_

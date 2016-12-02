@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_OPERATION_TRANS_TCC_
-#define HPTC_OPERATION_TRANS_TCC_
+#ifndef HPTC_OPERATIONS_OPERATION_TRANS_TCC_
+#define HPTC_OPERATIONS_OPERATION_TRANS_TCC_
 
 /*
  * Implementation for class OpMicroTrans
@@ -11,6 +11,38 @@ template <typename FloatType,
 OpMicroTrans<FloatType, HEIGHT, WIDTH>::OpMicroTrans(
     const std::shared_ptr<ParamTrans<FloatType>> &param)
     : OpMicro<FloatType, ParamTrans, HEIGHT, WIDTH>(param) {
+  DeducedFloatType<FloatType> alpha = param->alpha, beta = param->beta;
+  CoefUsage usage = CoefUsage::USE_NONE;
+  if (static_cast<DeducedFloatType<FloatType>>(1) != param->alpha)
+    usage |= CoefUsage::USE_ALPHA;
+  if (static_cast<DeducedFloatType<FloatType>>(0) != param->beta)
+    usage |= CoefUsage::USE_BETA;
+
+  switch (usage) {
+  case CoefUsage::NONE:
+    this->kernel = new KernelTransAvxDefault<FloatType, CoefUsage::NONE>;
+    break;
+  case CoefUsage::USE_ALPHA:
+    this->kernel = new KernelTransAvxDefault<FloatType, CoefUsage::USE_ALPHA>;
+    break;
+  case CoefUsage::USE_BETA:
+    this->kernel = new KernelTransAvxDefault<FloatType, CoefUsage::USE_BETA>;
+    break;
+  case CoefUsage::USE_BOTH:
+    this->kernel = new KernelTransAvxDefault<FloatType, CoefUsage::USE_BOTH>;
+    break;
+  default:
+    this->kernel = nullptr;
+    break;
+  }
+}
+
+
+template <typename FloatType,
+          uint32_t HEIGHT,
+          uint32_t WIDTH>
+OpMicroTrans<FloatType, HEIGHT, WIDTH>::~OpMicroTrans() {
+  delete kernel;
 }
 
 
@@ -18,7 +50,6 @@ template <typename FloatType,
           uint32_t HEIGHT,
           uint32_t WIDTH>
 void OpMicroTrans<FloatType, HEIGHT, WIDTH>::exec() {
-  kernel_trans<FloatType, HEIGHT, WIDTH>(this->Operation::param);
 }
 
 
@@ -49,4 +80,4 @@ void OpMacroTrans<FloatType, MicroType, HEIGHT, WIDTH>::exec() {
   this->OpMacro::exec_all<UnrollerType, op_repeat_unroller>();
 }
 
-#endif // HPTC_OPERATION_TRANS_TCC_
+#endif // HPTC_OPERATIONS_OPERATION_TRANS_TCC_

@@ -1,10 +1,11 @@
 #pragma once
-#ifndef HPTC_OPERATION_TRANS_H_
-#define HPTC_OPERATION_TRANS_H_
+#ifndef HPTC_OPERATIONS_OPERATION_TRANS_H_
+#define HPTC_OPERATIONS_OPERATION_TRANS_H_
 
-#include <hptc/operations/operation_base.h>
-#include <hptc/kernels/kernel_trans.h>
 #include <hptc/param/parameters.h>
+#include <hptc/kernels/kernel_trans.h>
+#include <hptc/operations/operation_base.h>
+
 
 namespace hptc {
 
@@ -18,15 +19,12 @@ public:
   OpMicroTrans(const OpMicroTrans &operation) = default;
   OpMicroTrans &operator=(const OpMicroTrans &operation) = delete;
 
-  virtual ~OpMicroTrans() = default;
+  virtual ~OpMicroTrans();
 
   virtual void exec() final;
 
 private:
-  const FloatType *input_data;
-  FloatType *output_data;
-  TensorIdx input_offset, output_offset;
-  DeducedFloatType<FloatType> alpha, beta;
+  KernelTransBase<FloatType> *kernel;
 };
 
 
@@ -54,7 +52,7 @@ public:
 
 
 /*
- * Transpose Macro kernels template specialization
+ * Transpose Macro kernels template instantiation
  */
 template <typename FloatType,
           typename MicroType>
@@ -132,4 +130,4 @@ using OpMacroTrans4x4 = OpMacroTrans<FloatType, MicroType, 4, 4>;
 
 }
 
-#endif // HPTC_OPERATION_TRANS_H_
+#endif // HPTC_OPERATIONS_OPERATION_TRANS_H_

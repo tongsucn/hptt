@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_OPERATION_BASE_H_
-#define HPTC_OPERATION_BASE_H_
+#ifndef HPTC_OPERATIONS_OPERATION_BASE_H_
+#define HPTC_OPERATIONS_OPERATION_BASE_H_
 
 #include <cstdint>
 
@@ -9,6 +9,7 @@
 
 #include <hptc/types.h>
 #include <hptc/util.h>
+
 
 namespace hptc {
 
@@ -156,4 +157,4 @@ protected:
 
 }
 
-#endif // HPTC_OPERATION_BASE_H_
+#endif // HPTC_OPERATIONS_OPERATION_BASE_H_

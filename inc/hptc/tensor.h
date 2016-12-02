@@ -122,5 +122,4 @@ private:
 
 }
 
-
 #endif // HPTC_TENSOR_H_
