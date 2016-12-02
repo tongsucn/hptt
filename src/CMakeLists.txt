@@ -10,8 +10,8 @@ file(GLOB HPTC_KERNEL_SRC kernels/*.cc)
 # Libraries setting
 # ----------------------------------------------------------------------------
 # Shared libraries
-add_library(hptc SHARED
-  ${HPTC_OPER_SRC} ${HPTC_PARAM_SRC} ${HPTC_KERNEL_SRC} ${HPTC_ROOT_SRC})
+add_library(hptc SHARED ${HPTC_ROOT_SRC} ${HPTC_OPER_SRC} ${HPTC_PARAM_SRC}
+    ${HPTC_KERNEL_SRC})
 
 # ----------------------------------------------------------------------------
 # Installation setting
