@@ -2,16 +2,11 @@
 #ifndef HPTC_KERNELS_AVX_INTRIN_AVX_H_
 #define HPTC_KERNELS_AVX_INTRIN_AVX_H_
 
-#include <cstdint>
 #include <xmmintrin.h>
 #include <immintrin.h>
 
-#include <memory>
-#include <utility>
-
 #include <hptc/types.h>
 #include <hptc/util.h>
-#include <hptc/kernels/kernel_trans_base.h>
 
 
 namespace hptc {
@@ -34,12 +29,12 @@ struct RegTypeDeducer<double> {
 };
 
 template <>
-struct RegTypeDeducer<FloatType> {
+struct RegTypeDeducer<FloatComplex> {
   using type = __m256;
 };
 
 template <>
-struct RegTypeDeducer<DoubleType> {
+struct RegTypeDeducer<DoubleComplex> {
   using type = __m256d;
 };
 
@@ -48,7 +43,7 @@ using DeducedRegType = typename RegTypeDeducer<FloatType>::type;
 
 
 template <GenNumType GEN_NUM,
-          template Intrin,
+          typename Intrin,
           typename... Args>
 INLINE void intrin_tiler(GenCounter<GEN_NUM>, Intrin intrinsic, Args... args);
 
@@ -61,12 +56,12 @@ INLINE void intrin_tiler(GenCounter<0>, Intrin intrinsic, Args... args);
 template <typename DeducedType>
 INLINE void intrin_load(GenNumType intrin_idx,
     const DeducedType * RESTRICT data, TensorIdx offset,
-    DeducedRegType<DeducedType> * const reg);
+    DeducedRegType<DeducedType> reg[]);
 
 
 template <typename DeducedType>
 INLINE void intrin_store(GenNumType intrin_idx, DeducedType * RESTRICT data,
-    TensorIdx offset, const DeducedRegType<DeducedType> * const reg);
+    TensorIdx offset, const DeducedRegType<DeducedType> reg[]);
 
 
 template <typename DeducedType>
@@ -75,15 +70,18 @@ INLINE void intrin_set1(DeducedType val, DeducedRegType<DeducedType> *reg);
 
 template <typename DeducedType>
 INLINE void intrin_mul(GenNumType intrin_idx,
-    DeducedRegType<DeducedType> * const reg_scaled,
+    DeducedRegType<DeducedType> reg_scaled[],
     DeducedRegType<DeducedType> reg_coef);
 
 
 template <typename DeducedType>
 INLINE void intrin_add(GenNumType intrin_idx,
-    DeducedRegType<DeducedType> * const reg_output,
-    const DeducedRegType<DeducedType> * const reg_input);
+    DeducedRegType<DeducedType> reg_output[],
+    const DeducedRegType<DeducedType> reg_input[]);
 
+
+template <typename FloatType>
+INLINE void intrin_trans(DeducedRegType<FloatType> reg_input[]);
 
 /*
  * Import implementation

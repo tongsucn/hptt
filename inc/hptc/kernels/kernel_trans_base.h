@@ -4,6 +4,7 @@
 
 #include <hptc/types.h>
 
+
 namespace hptc {
 
 enum class CoefUsage : uint8_t {
@@ -17,6 +18,11 @@ enum class CoefUsage : uint8_t {
 template <typename FloatType>
 class KernelTransBase {
 public:
+  KernelTransBase() = default;
+  KernelTransBase(const KernelTransBase &kernel) = delete;
+  KernelTransBase<FloatType> &operator=(const KernelTransBase &kernel) = delete;
+  ~KernelTransBase() = default;
+
   virtual void operator()(
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       TensorIdx input_offset, TensorIdx output_offset,
