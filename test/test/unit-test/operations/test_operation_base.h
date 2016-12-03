@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TEST_TENSOR_OPERATION_BASE_H_
-#define TEST_TENSOR_OPERATION_BASE_H_
+#ifndef TEST_UNIT_TEST_OPERATIONS_TEST_OPERATION_BASE_H_
+#define TEST_UNIT_TEST_OPERATIONS_TEST_OPERATION_BASE_H_
 
 #include <vector>
 #include <memory>
@@ -77,9 +77,8 @@ protected:
 };
 
 
-using TestFloatTypes
-    = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
-TYPED_TEST_CASE(TestOperationBase, TestFloatTypes);
+using FloatTypes = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
+TYPED_TEST_CASE(TestOperationBase, FloatTypes);
 
 
 TYPED_TEST(TestOperationBase, TestOpLoopForSingleOper) {
@@ -226,4 +225,4 @@ TYPED_TEST(TestOperationBase, TestOpLoopForMultiOper) {
       }
 }
 
-#endif // TEST_TENSOR_OPERATION_BASE_H_
+#endif // TEST_UNIT_TEST_OPERATIONS_TEST_OPERATION_BASE_H_

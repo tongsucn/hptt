@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TEST_TENSOR_WRAPPER_H_
-#define TEST_TENSOR_WRAPPER_H_
+#ifndef TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
+#define TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
 
 #include <vector>
 
@@ -45,9 +45,8 @@ protected:
 };
 
 
-using TestFloatTypes
-    = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
-TYPED_TEST_CASE(TestTensorWrapper, TestFloatTypes);
+using FloatTypes = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
+TYPED_TEST_CASE(TestTensorWrapper, FloatTypes);
 
 
 TYPED_TEST(TestTensorWrapper, TestTensorWrapperCreation) {
@@ -291,4 +290,4 @@ TYPED_TEST(TestTensorWrapper, TestTensorWrapperSlicing) {
   ;
 }
 
-#endif // TEST_TENSOR_WRAPPER_H_
+#endif // TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_

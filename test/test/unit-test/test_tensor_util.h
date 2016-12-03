@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TEST_TENSOR_UTIL_H_
-#define TEST_TENSOR_UTIL_H_
+#ifndef TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_
+#define TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_
 
 #include <gtest/gtest.h>
 
@@ -115,4 +115,4 @@ TEST_F(TestTensorUtil, TestTensorSizeRandomAccess) {
       << "object creates wrong result.";
 }
 
-#endif // TEST_TENSOR_UTIL_H_
+#endif // TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_
