@@ -75,7 +75,7 @@ template <typename FloatType,
           template <typename> typename ParamType,
           uint32_t OPER_NUM>
 inline void OpLoop<FloatType, ParamType, OPER_NUM>::exec_all() {
-  op_arr_unroller(this->operations, UnrollControllor<OPER_NUM - 1>());
+  op_arr_unroller(this->operations, GenCounter<OPER_NUM - 1>());
 }
 
 
@@ -141,7 +141,7 @@ template <typename FloatType,
           uint32_t OPER_NUM>
 template <typename UnrollerType, UnrollerType unroller>
 inline void OpMacro<FloatType, ParamType, OPER_NUM>::exec_all() {
-  unroller(this->operations, UnrollControllor<OPER_NUM - 1>());
+  unroller(this->operations, GenCounter<OPER_NUM - 1>());
 }
 
 
