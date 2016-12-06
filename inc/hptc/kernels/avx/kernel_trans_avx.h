@@ -21,7 +21,7 @@ template <typename FloatType,
           uint32_t REG_NUM = 1>
 class KernelTransAvxBase : public KernelTransBase<FloatType> {
 public:
-  KernelTransAvxBase() = default;
+  KernelTransAvxBase();
 
   KernelTransAvxBase(const KernelTransAvxBase &kernel) = delete;
   KernelTransAvxBase<FloatType> &
@@ -32,15 +32,16 @@ public:
 protected:
   DeducedRegType<FloatType> in_reg_arr[REG_NUM];
   DeducedRegType<FloatType> out_reg_arr[REG_NUM];
+  DeducedRegType<FloatType> *out_reg_arr_ptr;
+  TensorIdx offset_scale;
 
   virtual INLINE void in_reg_trans(const FloatType * RESTRICT input_data,
       TensorIdx input_offset) final;
-  virtual INLINE void write_back(FloatType * RESTRICT output_data,
-      TensorIdx output_offset) final;
-
   virtual INLINE void rescale_input(DeducedFloatType<FloatType> alpha) override;
   virtual INLINE void update_output(FloatType * RESTRICT output_data,
       TensorIdx output_offset, DeducedFloatType<FloatType> beta) override;
+  virtual INLINE void write_back(FloatType * RESTRICT output_data,
+      TensorIdx output_offset) final;
 };
 
 
@@ -112,7 +113,7 @@ class KernelTransAvx<DoubleComplex, USAGE, 0>
 
 
 template <typename FloatType,
-          CoefUsage USAGE>
+          CoefUsage USAGE = CoefUsage::USE_BOTH>
 using KernelTransAvxDefault = KernelTransAvx<FloatType, USAGE, 0>;
 
 

@@ -23,7 +23,7 @@ public:
   KernelTransBase<FloatType> &operator=(const KernelTransBase &kernel) = delete;
   ~KernelTransBase() = default;
 
-  virtual void operator()(
+  virtual INLINE void operator()(
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       TensorIdx input_offset, TensorIdx output_offset,
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
