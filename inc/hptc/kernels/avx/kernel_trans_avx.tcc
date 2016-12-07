@@ -3,7 +3,7 @@
 #define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_TCC_
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 KernelTransAvxBase<FloatType, REG_NUM>::KernelTransAvxBase()
     : offset_scale(sizeof(FloatType) / sizeof(DeducedFloatType<FloatType>)) {
   this->out_reg_arr_ptr = this->out_reg_arr;
@@ -11,7 +11,14 @@ KernelTransAvxBase<FloatType, REG_NUM>::KernelTransAvxBase()
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
+INLINE GenNumType KernelTransAvxBase<FloatType, REG_NUM>::get_reg_num() {
+  return REG_NUM;
+}
+
+
+template <typename FloatType,
+          GenNumType REG_NUM>
 INLINE void KernelTransAvxBase<FloatType, REG_NUM>::in_reg_trans(
     const FloatType * RESTRICT input_data, TensorIdx input_offset) {
   // Load input data into registers
@@ -26,7 +33,7 @@ INLINE void KernelTransAvxBase<FloatType, REG_NUM>::in_reg_trans(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void KernelTransAvxBase<FloatType, REG_NUM>::rescale_input(
     DeducedFloatType<FloatType> alpha) {
   // No implementation needed here
@@ -34,7 +41,7 @@ INLINE void KernelTransAvxBase<FloatType, REG_NUM>::rescale_input(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void KernelTransAvxBase<FloatType, REG_NUM>::update_output(
     FloatType * RESTRICT output_data, TensorIdx output_offset,
     DeducedFloatType<FloatType> beta) {
@@ -44,7 +51,7 @@ INLINE void KernelTransAvxBase<FloatType, REG_NUM>::update_output(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void KernelTransAvxBase<FloatType, REG_NUM>::write_back(
     FloatType * RESTRICT output_data, TensorIdx output_offset) {
   // Store reuslts
@@ -56,7 +63,7 @@ INLINE void KernelTransAvxBase<FloatType, REG_NUM>::write_back(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void
 KernelTransAvxImpl<FloatType, CoefUsage::USE_ALPHA, REG_NUM>::rescale_input(
     DeducedFloatType<FloatType> alpha) {
@@ -70,7 +77,7 @@ KernelTransAvxImpl<FloatType, CoefUsage::USE_ALPHA, REG_NUM>::rescale_input(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void
 KernelTransAvxImpl<FloatType, CoefUsage::USE_BETA, REG_NUM>::update_output(
     FloatType * RESTRICT output_data, TensorIdx output_offset,
@@ -95,7 +102,7 @@ KernelTransAvxImpl<FloatType, CoefUsage::USE_BETA, REG_NUM>::update_output(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void
 KernelTransAvxImpl<FloatType, CoefUsage::USE_BOTH, REG_NUM>::rescale_input(
     DeducedFloatType<FloatType> alpha) {
@@ -109,7 +116,7 @@ KernelTransAvxImpl<FloatType, CoefUsage::USE_BOTH, REG_NUM>::rescale_input(
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 INLINE void
 KernelTransAvxImpl<FloatType, CoefUsage::USE_BOTH, REG_NUM>::update_output(
     FloatType * RESTRICT output_data, TensorIdx output_offset,

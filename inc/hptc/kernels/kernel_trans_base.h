@@ -7,7 +7,7 @@
 
 namespace hptc {
 
-enum class CoefUsage : uint8_t {
+enum class CoefUsage : GenNumType {
   USE_NONE    = 0x0,
   USE_ALPHA   = 0x1,
   USE_BETA    = 0x2,
@@ -21,12 +21,14 @@ public:
   KernelTransBase() = default;
   KernelTransBase(const KernelTransBase &kernel) = delete;
   KernelTransBase<FloatType> &operator=(const KernelTransBase &kernel) = delete;
-  ~KernelTransBase() = default;
+  virtual ~KernelTransBase() = default;
 
   virtual INLINE void operator()(
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       TensorIdx input_offset, TensorIdx output_offset,
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+
+  virtual INLINE GenNumType get_reg_num() = 0;
 
 protected:
   virtual INLINE void in_reg_trans(const FloatType * RESTRICT input_data,

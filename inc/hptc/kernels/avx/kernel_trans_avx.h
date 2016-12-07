@@ -2,7 +2,6 @@
 #ifndef HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
 #define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
 
-#include <cstdint>
 #include <xmmintrin.h>
 #include <immintrin.h>
 
@@ -18,7 +17,7 @@
 namespace hptc {
 
 template <typename FloatType,
-          uint32_t REG_NUM = 1>
+          GenNumType REG_NUM = 1>
 class KernelTransAvxBase : public KernelTransBase<FloatType> {
 public:
   KernelTransAvxBase();
@@ -27,7 +26,9 @@ public:
   KernelTransAvxBase<FloatType> &
   operator=(const KernelTransAvxBase &kernel) = delete;
 
-  ~KernelTransAvxBase() = default;
+  virtual ~KernelTransAvxBase() = default;
+
+  INLINE GenNumType get_reg_num() final;
 
 protected:
   DeducedRegType<FloatType> in_reg_arr[REG_NUM];
@@ -47,12 +48,12 @@ protected:
 
 template <typename FloatType,
           CoefUsage USAGE,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 class KernelTransAvxImpl : public KernelTransAvxBase<FloatType, REG_NUM> {
 };
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 class KernelTransAvxImpl<FloatType, CoefUsage::USE_ALPHA, REG_NUM>
     : public KernelTransAvxBase<FloatType, REG_NUM> {
 protected:
@@ -61,7 +62,7 @@ protected:
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 class KernelTransAvxImpl<FloatType, CoefUsage::USE_BETA, REG_NUM>
     : public KernelTransAvxBase<FloatType, REG_NUM> {
 protected:
@@ -71,7 +72,7 @@ protected:
 
 
 template <typename FloatType,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 class KernelTransAvxImpl<FloatType, CoefUsage::USE_BOTH, REG_NUM>
     : public KernelTransAvxBase<FloatType, REG_NUM> {
 protected:
@@ -83,7 +84,7 @@ protected:
 
 template <typename FloatType,
           CoefUsage USAGE,
-          uint32_t REG_NUM>
+          GenNumType REG_NUM>
 class KernelTransAvx : public KernelTransAvxImpl<FloatType, USAGE, REG_NUM> {
 };
 
