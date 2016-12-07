@@ -4,7 +4,6 @@
 
 #include <type_traits>
 
-#include <immintrin.h>
 #include <gtest/gtest.h>
 
 #include <hptc/types.h>
@@ -16,10 +15,10 @@ using namespace hptc;
 
 
 template <typename FloatType>
-class TestIntrinAvx : public ::testing::Test {
+class TestIntrinSetAvx : public ::testing::Test {
 protected:
   using Deduced = DeducedFloatType<FloatType>;
-  TestIntrinAvx()
+  TestIntrinSetAvx()
       : data_len(4 * 32 / sizeof(FloatType)),
         input_scale(2.3),
         output_scale(4.2),
@@ -50,10 +49,10 @@ protected:
     }
   }
 
-  ~TestIntrinAvx() {
-    delete [] input_data;
-    delete [] output_data;
-    delete [] mat_data;
+  ~TestIntrinSetAvx() {
+    delete [] this->input_data;
+    delete [] this->output_data;
+    delete [] this->mat_data;
   }
 
   TensorIdx data_len;
@@ -67,11 +66,11 @@ protected:
 };
 
 
-using FloatTypes = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
-TYPED_TEST_CASE(TestIntrinAvx, FloatTypes);
+using IntFloatTypes = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
+TYPED_TEST_CASE(TestIntrinSetAvx, IntFloatTypes);
 
 
-TYPED_TEST(TestIntrinAvx, TestIntrinAvxBasicIntrinsics) {
+TYPED_TEST(TestIntrinSetAvx, AvxBasic) {
   using Deduced = DeducedFloatType<TypeParam>;
   DeducedRegType<TypeParam> reg_input[4], reg_output[4], reg_input_scale,
       reg_output_scale;
@@ -114,7 +113,7 @@ TYPED_TEST(TestIntrinAvx, TestIntrinAvxBasicIntrinsics) {
 }
 
 
-TYPED_TEST(TestIntrinAvx, TestIntrinAvxTransIntrinsics) {
+TYPED_TEST(TestIntrinSetAvx, AvxTrans) {
   using Deduced = DeducedFloatType<TypeParam>;
   constexpr TensorIdx NUM = 32 / sizeof(TypeParam);
   DeducedRegType<TypeParam> reg_input[NUM];
@@ -145,7 +144,7 @@ TYPED_TEST(TestIntrinAvx, TestIntrinAvxTransIntrinsics) {
 }
 
 
-TEST(TestIntrinAvxUtil, TestIntrinAvxRegTypeDeducer) {
+TEST(TestIntrinSetAvx, RegTypeDeducer) {
   EXPECT_TRUE((is_same<DeducedRegType<float>, __m256>::value))
     << "Incorrect register type deduce for type: float.";
   EXPECT_TRUE((is_same<DeducedRegType<double>, __m256d>::value))
