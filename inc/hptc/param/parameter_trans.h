@@ -14,30 +14,25 @@ namespace hptc {
 
 template <typename FloatType>
 struct ParamTrans {
+  using Deduced = DeducedFloatType<FloatType>;
+
   ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-      TensorWrapper<FloatType> &output_tensor,
-      DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta,
-      std::vector<TensorDim> perm);
-
-  ParamTrans(const ParamTrans &param_obj);
-  ParamTrans(ParamTrans &&param_obj) noexcept;
-
-  ParamTrans &operator=(const ParamTrans &param_obj) = delete;
+      const TensorWrapper<FloatType> &output_tensor,
+      const std::vector<TensorDim> &perm,
+      Deduced alpha = 1.0, Deduced beta = 0.0);
 
   ~ParamTrans();
 
-  const TensorWrapper<FloatType> &input_tensor;
-  TensorWrapper<FloatType> &output_tensor;
 
-  DeducedFloatType<FloatType> alpha;
-  DeducedFloatType<FloatType> beta;
+  TensorWrapper<FloatType> input_tensor, output_tensor;
+  const std::vector<TensorDim> perm;
+  Deduced alpha, beta;
 
-  TensorDim tensor_dim;
-  TensorIdx input_offset;
-  TensorIdx output_offset;
-  std::vector<TensorDim> perm;
-  TensorIdx *macro_loop_idx;
-  TensorIdx *remainder_loop_idx;
+  TensorIdx input_offset, output_offset;
+  TensorIdx *macro_loop_idx, *macro_loop_perm_idx;
+
+private:
+  const TensorDim tensor_dim_;
 };
 
 
@@ -46,65 +41,32 @@ struct ParamTrans {
  */
 template <typename FloatType>
 ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-    TensorWrapper<FloatType> &output_tensor, DeducedFloatType<FloatType> alpha,
-    DeducedFloatType<FloatType> beta, std::vector<TensorDim> perm)
+    const TensorWrapper<FloatType> &output_tensor,
+    const std::vector<TensorDim> &perm, Deduced alpha, Deduced beta)
     : input_tensor(input_tensor),
       output_tensor(output_tensor),
-      alpha(alpha),
-      beta(beta),
-      tensor_dim(input_tensor.get_size().get_dim()),
-      input_offset(input_tensor.get_outer_size()[0]),
-      output_offset(output_tensor.get_outer_size()[0]),
-      perm(perm) {
-  for (int dim_idx = 1; dim_idx < this->tensor_dim; ++dim_idx) {
-    input_offset *= input_tensor.get_outer_size()[dim_idx];
-    output_offset *= output_tensor.get_outer_size()[dim_idx];
-  }
-  this->macro_loop_idx = new TensorIdx [tensor_dim];
-  this->remainder_loop_idx = new TensorIdx [tensor_dim];
-}
+      perm(perm), alpha(alpha), beta(beta),
+      input_offset(1), output_offset(1),
+      tensor_dim_(input_tensor.get_size().get_dim()) {
+  // Initialize access stride for input tensor
+  TensorIdx upper = this->tensor_dim_ - this->perm[0] - 1;
+  for (TensorIdx idx = this->tensor_dim_ - 1; idx > upper; --idx)
+    this->input_offset *= input_tensor.get_outer_size()[idx];
 
+  // Initialize access stride for output tensor
+  for (TensorIdx idx = this->tensor_dim_ - 1; idx > 0; --idx)
+    this->output_offset *= output_tensor.get_outer_size()[idx];
 
-template <typename FloatType>
-ParamTrans<FloatType>::ParamTrans(const ParamTrans &param_obj)
-    : input_tensor(param_obj.input_tensor),
-      output_tensor(param_obj.output_tensor),
-      alpha(param_obj.alpha),
-      beta(param_obj.beta),
-      tensor_dim(param_obj.tensor_dim),
-      input_offset(param_obj.input_tensor),
-      output_offset(param_obj.output_tensor),
-      perm(param_obj.perm) {
-  this->macro_loop_idx = new TensorIdx [tensor_dim];
-  std::copy(param_obj.macro_loop_idx, param_obj.macro_loop_idx + tensor_dim,
-      this->macro_loop_idx);
-  this->remainder_loop_idx = new TensorIdx [tensor_dim];
-  std::copy(param_obj.remainder_loop_idx,
-      param_obj.remainder_loop_idx + tensor_dim, this->remainder_loop_idx);
-}
-
-
-template <typename FloatType>
-ParamTrans<FloatType>::ParamTrans(ParamTrans &&param_obj) noexcept
-    : input_tensor(param_obj.input_tensor),
-      output_tensor(param_obj.output_tensor),
-      alpha(param_obj.alpha),
-      beta(param_obj.beta),
-      tensor_dim(param_obj.tensor_dim),
-      input_offset(param_obj.input_tensor),
-      output_offset(param_obj.output_tensor),
-      perm(std::move(param_obj.perm)),
-      macro_loop_idx(param_obj.macro_loop_idx),
-      remainder_loop_idx(param_obj.remainder_loop_idx) {
-  param_obj.macro_loop_idx = nullptr;
-  param_obj.remainder_loop_idx = nullptr;
+  // Initialize loop indices
+  this->macro_loop_idx = new TensorIdx [this->tensor_dim_];
+  this->macro_loop_perm_idx = new TensorIdx [this->tensor_dim_];
 }
 
 
 template <typename FloatType>
 ParamTrans<FloatType>::~ParamTrans() {
   delete [] this->macro_loop_idx;
-  delete [] this->remainder_loop_idx;
+  delete [] this->macro_loop_perm_idx;
 }
 
 }
