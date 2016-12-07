@@ -25,10 +25,10 @@ public:
 
   virtual ~Operation() = default;
 
-  inline void set_prev(Operation *prev);
-  inline Operation<FloatType, ParamType> *get_prev();
-  inline void set_next(Operation *next);
-  inline Operation<FloatType, ParamType> *get_next();
+  INLINE void set_prev(Operation *prev);
+  INLINE Operation<FloatType, ParamType> *get_prev();
+  INLINE void set_next(Operation *next);
+  INLINE Operation<FloatType, ParamType> *get_next();
 
   virtual void exec() = 0;
 
@@ -41,7 +41,7 @@ protected:
 
 template <typename FloatType,
           template <typename> typename ParamType,
-          uint32_t OPER_NUM>
+          GenNumType OPER_NUM>
 class OpLoop : public Operation<FloatType, ParamType> {
 public:
   OpLoop(const std::shared_ptr<ParamType<FloatType>> &param);
@@ -54,14 +54,14 @@ public:
   virtual void exec() override = 0;
 
   template <typename OperType>
-  inline void init_operation(const std::shared_ptr<OperType> &oper,
-      uint32_t operation_idx = 0);
+  INLINE void init_operation(const std::shared_ptr<OperType> &oper,
+      GenNumType operation_idx = 0);
 
 protected:
-  inline void exec_all();
+  INLINE void exec_all();
 
 private:
-  std::shared_ptr<Operation<FloatType, ParamType>> operations[OPER_NUM];
+  std::shared_ptr<Operation<FloatType, ParamType>> operations_[OPER_NUM];
 };
 
 
@@ -84,50 +84,29 @@ ForCondType NonEqual
 
 template <typename FloatType,
           template <typename> typename ParamType,
-          uint32_t OPER_NUM>
+          GenNumType OPER_NUM>
 class OpLoopFor : public OpLoop<FloatType, ParamType, OPER_NUM> {
 public:
   OpLoopFor(const std::shared_ptr<ParamType<FloatType>> &param,
       TensorIdx &target_idx, TensorIdx begin, TensorIdx end, TensorIdx step,
-      ForCondType cond);
+      ForCondType cond = ForCond::Smaller);
 
   OpLoopFor(const OpLoopFor &operation) = default;
   OpLoopFor &operator=(const OpLoopFor &operation) = default;
 
   virtual ~OpLoopFor() = default;
 
-  virtual inline void exec() final;
+  virtual INLINE void exec() final;
 
 private:
-  TensorIdx &curr_idx;
-  TensorIdx begin, end, step;
-  ForCondType cond;
+  TensorIdx &curr_idx_;
+  TensorIdx begin_, end_, step_;
+  ForCondType cond_;
 };
 
 
 template <typename FloatType,
-          template <typename> typename ParamType,
-          uint32_t HEIGHT,
-          uint32_t WIDTH = HEIGHT>
-class OpMicro : public Operation<FloatType, ParamType> {
-public:
-  OpMicro(const std::shared_ptr<ParamType<FloatType>> &param);
-
-  OpMicro(const OpMicro &operation) = default;
-  OpMicro &operator=(const OpMicro &operation) = default;
-
-  virtual ~OpMicro() = default;
-
-  virtual void exec() override = 0;
-
-protected:
-  virtual void exec_internal() = 0;
-};
-
-
-template <typename FloatType,
-          template <typename> typename ParamType,
-          uint32_t OPER_NUM>
+          template <typename> typename ParamType>
 class OpMacro : public Operation<FloatType, ParamType> {
 public:
   OpMacro(const std::shared_ptr<ParamType<FloatType>> &param);
@@ -135,18 +114,9 @@ public:
   OpMacro(const OpMacro &operation) = delete;
   OpMacro &operator=(const OpMacro &operation) = delete;
 
-  virtual ~OpMacro();
+  virtual ~OpMacro() = default;
 
   virtual void exec() override = 0;
-
-  inline void init_operation(Operation<FloatType, ParamType> *oper,
-      uint32_t operation_idx);
-
-protected:
-  Operation<FloatType, ParamType> *operations[OPER_NUM];
-
-  template <typename UnrollerType, UnrollerType unroller>
-  inline void exec_all();
 };
 
 
