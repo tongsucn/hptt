@@ -90,7 +90,7 @@ private:
   TensorSize outer_size_;
   FloatType *raw_data_;
   TensorIdx *dim_offset_;
-  TensorIdx *abs_offset_;
+  TensorIdx *dim_stride_;
 
   inline void init_offset_(const std::vector<TensorIdx> &dim_offset);
 
@@ -113,7 +113,6 @@ private:
     TRI range);
   template <typename Iterator>
   inline TensorWrapper<FloatType> get_sliced(Iterator begin, Iterator end);
-
 };
 
 
