@@ -56,6 +56,7 @@ private:
 template <typename FloatType>
 class TensorWrapper {
 public:
+  TensorWrapper();
   TensorWrapper(const TensorSize &size_obj, FloatType *raw_data);
   TensorWrapper(const TensorSize &size_obj, const TensorSize &outer_size_obj,
     const std::vector<TensorIdx> &dim_offset, FloatType *raw_data);
@@ -74,6 +75,8 @@ public:
   const FloatType &operator[](const std::vector<TensorIdx> &indices) const;
   FloatType &operator[](const TensorIdx *indices);
   const FloatType &operator[](const TensorIdx *indices) const;
+  FloatType &operator[](TensorIdx **indices);
+  const FloatType &operator[](TensorIdx **indices) const;
 
   template <typename... Ranges>
   TensorWrapper<FloatType> slice(TRI range, Ranges... rest);

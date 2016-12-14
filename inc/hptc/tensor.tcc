@@ -29,6 +29,16 @@ inline const TensorIdx *TensorSize::shape() const {
  * Implementation for class TensorWrapper
  */
 template <typename FloatType>
+TensorWrapper<FloatType>::TensorWrapper()
+    : size_(),
+      outer_size_(),
+      raw_data_(nullptr),
+      dim_offset_(nullptr),
+      dim_stride_(nullptr) {
+}
+
+
+template <typename FloatType>
 TensorWrapper<FloatType>::TensorWrapper(const TensorSize &size_obj,
     FloatType *raw_data)
     : size_(size_obj),
@@ -168,6 +178,41 @@ template <typename FloatType>
 const FloatType &TensorWrapper<FloatType>::operator[](
     const TensorIdx *indices) const {
   return this->get_element_vec_(indices, indices + this->size_.get_dim());
+}
+
+
+template <typename FloatType>
+FloatType &TensorWrapper<FloatType>::operator[](TensorIdx **indices) {
+  TensorIdx **begin = indices, **end = indices + this->size_.get_dim();
+  TensorIdx abs_offset = 0;
+  TensorIdx *dim_stride_ptr = this->dim_stride_;
+  while (begin != end) {
+    TensorDim dim_idx = std::distance(this->dim_stride_, dim_stride_ptr);
+    TensorIdx next_idx = **begin + this->dim_offset_[dim_idx];
+    next_idx += **begin < 0 ? this->size_[dim_idx] : 0;
+    abs_offset += (*dim_stride_ptr) * next_idx;
+    ++begin, ++dim_stride_ptr;
+  }
+
+  return *(this->raw_data_ + abs_offset);
+}
+
+
+template <typename FloatType>
+const FloatType &TensorWrapper<FloatType>::operator[](
+    TensorIdx **indices) const {
+  TensorIdx **begin = indices, **end = indices + this->size_.get_dim();
+  TensorIdx abs_offset = 0;
+  TensorIdx *dim_stride_ptr = this->dim_stride_;
+  while (begin != end) {
+    TensorDim dim_idx = std::distance(this->dim_stride_, dim_stride_ptr);
+    TensorIdx next_idx = **begin + this->dim_offset_[dim_idx];
+    next_idx += **begin < 0 ? this->size_[dim_idx] : 0;
+    abs_offset += (*dim_stride_ptr) * next_idx;
+    ++begin, ++dim_stride_ptr;
+  }
+
+  return *(this->raw_data_ + abs_offset);
 }
 
 
