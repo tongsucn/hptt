@@ -8,14 +8,8 @@
 namespace hptc {
 
 template <typename FloatType,
-          CoefUsage USAGE,
-          GenNumType REG_NUM>
-using KernelTrans = KernelTransAvx<FloatType, USAGE, REG_NUM>;
-
-
-template <typename FloatType,
           CoefUsage USAGE>
-using KernelTransDefault = KernelTransAvxDefault<FloatType, USAGE>;
+using KernelTrans = KernelTransAvxImpl<FloatType, USAGE>;
 
 }
 

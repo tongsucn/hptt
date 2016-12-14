@@ -2,120 +2,52 @@
 #ifndef HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
 #define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
 
-#include <xmmintrin.h>
 #include <immintrin.h>
 
-#include <memory>
-#include <utility>
+#include <type_traits>
+#include <iostream>
 
 #include <hptc/types.h>
-#include <hptc/util.h>
 #include <hptc/kernels/kernel_trans_base.h>
-#include <hptc/kernels/avx/intrin_avx.h>
 
 
 namespace hptc {
 
 template <typename FloatType,
-          GenNumType REG_NUM = 1>
-class KernelTransAvxBase : public KernelTransBase<FloatType> {
+          CoefUsage USAGE>
+class KernelTransAvxImpl final : public KernelTransBase<FloatType> {
 public:
-  KernelTransAvxBase();
+  KernelTransAvxImpl(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta);
 
-  KernelTransAvxBase(const KernelTransAvxBase &kernel) = delete;
-  KernelTransAvxBase<FloatType> &
-  operator=(const KernelTransAvxBase &kernel) = delete;
+  KernelTransAvxImpl(const KernelTransAvxImpl<FloatType, USAGE> &) = delete;
+  KernelTransAvxImpl<FloatType, USAGE> &operator=(
+      const KernelTransAvxImpl<FloatType, USAGE> &) = delete;
 
-  virtual ~KernelTransAvxBase() = default;
+  virtual ~KernelTransAvxImpl() = default;
+
+  virtual INLINE void operator()(const float * RESTRICT input_data,
+      float * RESTRICT output_data, TensorIdx input_stride,
+      TensorIdx output_stride) final;
+
+  virtual INLINE void operator()(const double * RESTRICT input_data,
+      double * RESTRICT output_data, TensorIdx input_stride,
+      TensorIdx output_stride) final;
+
+  virtual INLINE void operator()(const FloatComplex * RESTRICT input_data,
+      FloatComplex * RESTRICT output_data, TensorIdx input_stride,
+      TensorIdx output_stride) final;
+
+  virtual INLINE void operator()(const DoubleComplex * RESTRICT input_data,
+      DoubleComplex * RESTRICT output_data, TensorIdx input_stride,
+      TensorIdx output_stride) final;
 
   INLINE GenNumType get_reg_num() final;
 
 protected:
-  DeducedRegType<FloatType> in_reg_arr[REG_NUM];
-  DeducedRegType<FloatType> out_reg_arr[REG_NUM];
-  DeducedRegType<FloatType> *out_reg_arr_ptr;
-  TensorIdx offset_scale;
-
-  virtual INLINE void in_reg_trans(const FloatType * RESTRICT input_data,
-      TensorIdx input_offset) final;
-  virtual INLINE void rescale_input(DeducedFloatType<FloatType> alpha) override;
-  virtual INLINE void update_output(FloatType * RESTRICT output_data,
-      TensorIdx output_offset, DeducedFloatType<FloatType> beta) override;
-  virtual INLINE void write_back(FloatType * RESTRICT output_data,
-      TensorIdx output_offset) final;
+  __m256 reg_alpha, reg_beta;
+  __m256d regd_alpha, regd_beta;
 };
-
-
-template <typename FloatType,
-          CoefUsage USAGE,
-          GenNumType REG_NUM>
-class KernelTransAvxImpl : public KernelTransAvxBase<FloatType, REG_NUM> {
-};
-
-template <typename FloatType,
-          GenNumType REG_NUM>
-class KernelTransAvxImpl<FloatType, CoefUsage::USE_ALPHA, REG_NUM>
-    : public KernelTransAvxBase<FloatType, REG_NUM> {
-protected:
-  virtual INLINE void rescale_input(DeducedFloatType<FloatType> alpha) final;
-};
-
-
-template <typename FloatType,
-          GenNumType REG_NUM>
-class KernelTransAvxImpl<FloatType, CoefUsage::USE_BETA, REG_NUM>
-    : public KernelTransAvxBase<FloatType, REG_NUM> {
-protected:
-  virtual INLINE void update_output(FloatType * RESTRICT output_data,
-      TensorIdx output_offset, DeducedFloatType<FloatType> beta) final;
-};
-
-
-template <typename FloatType,
-          GenNumType REG_NUM>
-class KernelTransAvxImpl<FloatType, CoefUsage::USE_BOTH, REG_NUM>
-    : public KernelTransAvxBase<FloatType, REG_NUM> {
-protected:
-  virtual INLINE void rescale_input(DeducedFloatType<FloatType> alpha) final;
-  virtual INLINE void update_output(FloatType * RESTRICT output_data,
-      TensorIdx output_offset, DeducedFloatType<FloatType> beta) final;
-};
-
-
-template <typename FloatType,
-          CoefUsage USAGE,
-          GenNumType REG_NUM>
-class KernelTransAvx : public KernelTransAvxImpl<FloatType, USAGE, REG_NUM> {
-};
-
-
-template <CoefUsage USAGE>
-class KernelTransAvx<float, USAGE, 0>
-    : public KernelTransAvxImpl<float, USAGE, 8> {
-};
-
-
-template <CoefUsage USAGE>
-class KernelTransAvx<double, USAGE, 0>
-    : public KernelTransAvxImpl<double, USAGE, 4> {
-};
-
-
-template <CoefUsage USAGE>
-class KernelTransAvx<FloatComplex, USAGE, 0>
-    : public KernelTransAvxImpl<FloatComplex, USAGE, 4> {
-};
-
-
-template <CoefUsage USAGE>
-class KernelTransAvx<DoubleComplex, USAGE, 0>
-    : public KernelTransAvxImpl<DoubleComplex, USAGE, 2> {
-};
-
-
-template <typename FloatType,
-          CoefUsage USAGE = CoefUsage::USE_BOTH>
-using KernelTransAvxDefault = KernelTransAvx<FloatType, USAGE, 0>;
 
 
 /*

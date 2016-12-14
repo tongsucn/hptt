@@ -23,21 +23,11 @@ public:
   KernelTransBase<FloatType> &operator=(const KernelTransBase &kernel) = delete;
   virtual ~KernelTransBase() = default;
 
-  virtual INLINE void operator()(
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      TensorIdx input_offset, TensorIdx output_offset,
-      DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+  virtual void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, TensorIdx input_stride,
+      TensorIdx output_stride) = 0;
 
   virtual INLINE GenNumType get_reg_num() = 0;
-
-protected:
-  virtual INLINE void in_reg_trans(const FloatType * RESTRICT input_data,
-      TensorIdx input_offset) = 0;
-  virtual INLINE void rescale_input(DeducedFloatType<FloatType> alpha) = 0;
-  virtual INLINE void update_output(FloatType * RESTRICT output_data,
-      TensorIdx output_offset, DeducedFloatType<FloatType> beta) = 0;
-  virtual INLINE void write_back(FloatType * RESTRICT output_data,
-      TensorIdx output_offset) = 0;
 };
 
 
