@@ -20,9 +20,9 @@ public:
   KernelTransAvxImpl(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
 
-  KernelTransAvxImpl(const KernelTransAvxImpl<FloatType, USAGE> &) = delete;
-  KernelTransAvxImpl<FloatType, USAGE> &operator=(
-      const KernelTransAvxImpl<FloatType, USAGE> &) = delete;
+  KernelTransAvxImpl(const KernelTransAvxImpl<FloatType, USAGE> &kernel)
+      = delete;
+  KernelTransAvxImpl &operator=(const KernelTransAvxImpl &kernel) = delete;
 
   virtual ~KernelTransAvxImpl() = default;
 

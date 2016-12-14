@@ -21,6 +21,9 @@ struct ParamTrans {
       const std::vector<TensorDim> &perm,
       Deduced alpha = 1.0, Deduced beta = 0.0);
 
+  ParamTrans(const ParamTrans &param) = delete;
+  ParamTrans &operator=(const ParamTrans &param) = delete;
+
   ~ParamTrans();
 
 

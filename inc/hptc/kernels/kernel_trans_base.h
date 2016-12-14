@@ -20,7 +20,7 @@ class KernelTransBase {
 public:
   KernelTransBase() = default;
   KernelTransBase(const KernelTransBase &kernel) = delete;
-  KernelTransBase<FloatType> &operator=(const KernelTransBase &kernel) = delete;
+  KernelTransBase &operator=(const KernelTransBase &kernel) = delete;
   virtual ~KernelTransBase() = default;
 
   virtual void operator()(const FloatType * RESTRICT input_data,
