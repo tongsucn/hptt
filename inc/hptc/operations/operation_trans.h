@@ -42,8 +42,7 @@ template <typename FloatType,
 INLINE void kernel_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
     KernelTransBase<FloatType> *kernel,
     const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_offset, TensorIdx output_offset,
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+    TensorIdx input_stride, TensorIdx output_stride);
 
 
 template <typename FloatType,
@@ -51,8 +50,7 @@ template <typename FloatType,
 INLINE void kernel_tiler(DualCounter<0, COLS>, GenNumType kernel_size,
     KernelTransBase<FloatType> *kernel,
     const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_offset, TensorIdx output_offset,
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+    TensorIdx input_stride, TensorIdx output_stride);
 
 
 template <typename FloatType,
@@ -61,8 +59,7 @@ template <typename FloatType,
 INLINE void cols_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
     KernelTransBase<FloatType> *kernel,
     const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_offset, TensorIdx output_offset,
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+    TensorIdx input_stride, TensorIdx output_stride);
 
 
 template <typename FloatType,
@@ -70,8 +67,7 @@ template <typename FloatType,
 INLINE void cols_tiler(DualCounter<ROWS, 0>, GenNumType kernel_size,
     KernelTransBase<FloatType> *kernel,
     const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_offset, TensorIdx output_offset,
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+    TensorIdx input_stride, TensorIdx output_stride);
 
 /*
  * Import implementation

@@ -14,7 +14,7 @@
 namespace hptc {
 
 template <typename FloatType,
-          template <typename> typename ParamType>
+          template <typename = FloatType> class ParamType>
 class Operation {
 public:
   Operation(const std::shared_ptr<ParamType<FloatType>> &param,
