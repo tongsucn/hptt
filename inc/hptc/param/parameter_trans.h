@@ -25,11 +25,11 @@ struct ParamTrans {
 
 
   TensorWrapper<FloatType> input_tensor, output_tensor;
-  const std::vector<TensorDim> perm;
+  TensorDim *perm;
   Deduced alpha, beta;
 
-  TensorIdx input_offset, output_offset;
-  TensorIdx *macro_loop_idx, *macro_loop_perm_idx;
+  TensorIdx input_stride, output_stride;
+  TensorIdx *macro_loop_idx, **macro_loop_perm_idx;
 
 private:
   const TensorDim tensor_dim_;
@@ -45,28 +45,34 @@ ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
     const std::vector<TensorDim> &perm, Deduced alpha, Deduced beta)
     : input_tensor(input_tensor),
       output_tensor(output_tensor),
-      perm(perm), alpha(alpha), beta(beta),
-      input_offset(1), output_offset(1),
+      perm(new TensorDim [perm.size()]), alpha(alpha), beta(beta),
+      input_stride(1), output_stride(1),
       tensor_dim_(input_tensor.get_size().get_dim()) {
+  // Initialize permutation map
+  copy(perm.begin(), perm.end(), this->perm);
+
   // Initialize access stride for input tensor
   TensorIdx upper = this->tensor_dim_ - this->perm[0] - 1;
   for (TensorIdx idx = this->tensor_dim_ - 1; idx > upper; --idx)
-    this->input_offset *= input_tensor.get_outer_size()[idx];
+    this->input_stride *= input_tensor.get_outer_size()[idx];
 
   // Initialize access stride for output tensor
-  for (TensorIdx idx = this->tensor_dim_ - 1; idx > 0; --idx)
-    this->output_offset *= output_tensor.get_outer_size()[idx];
+  for (TensorIdx idx = 0; 0 != this->perm[idx]; ++idx)
+    this->output_stride
+        *= output_tensor.get_outer_size()[this->tensor_dim_ - 1 - idx];
 
   // Initialize loop indices
   this->macro_loop_idx = new TensorIdx [this->tensor_dim_];
-  this->macro_loop_perm_idx = new TensorIdx [this->tensor_dim_];
+  this->macro_loop_perm_idx = new TensorIdx * [this->tensor_dim_];
+  for (TensorDim idx = 0; idx < this->tensor_dim_; ++idx)
+    this->macro_loop_perm_idx[idx] = &this->macro_loop_idx[this->perm[idx]];
 }
 
 
 template <typename FloatType>
 ParamTrans<FloatType>::~ParamTrans() {
+  delete [] this->perm;
   delete [] this->macro_loop_idx;
-  delete [] this->macro_loop_perm_idx;
 }
 
 }
