@@ -60,10 +60,8 @@ protected:
   }
 
   void set_idx(TensorIdx row_idx, TensorIdx col_idx) {
-    this->param->macro_loop_idx[0] = this->param->macro_loop_perm_idx[1]
-        = row_idx;
-    this->param->macro_loop_idx[1] = this->param->macro_loop_perm_idx[0]
-        = col_idx;
+    this->param->macro_loop_idx[0] = row_idx;
+    this->param->macro_loop_idx[1] = col_idx;
   }
 
 
@@ -83,6 +81,7 @@ TYPED_TEST_CASE(TestOperationTrans, FloatTypes);
 TYPED_TEST(TestOperationTrans, MacroTransDefault) {
   using Tensor = TensorWrapper<TypeParam>;
   using Deduced = DeducedFloatType<TypeParam>;
+  TensorIdx inner_offset = sizeof(TypeParam) / sizeof(Deduced);
   this->set_idx(0, 0);
 
   this->reset_data();
@@ -91,8 +90,11 @@ TYPED_TEST(TestOperationTrans, MacroTransDefault) {
 
   for (TensorIdx row_idx = 0; row_idx < 4 * this->kernel_size; ++row_idx) {
     for (TensorIdx col_idx = 0; col_idx < 3 * this->kernel_size; ++col_idx) {
-      ASSERT_EQ(this->input_tensor(row_idx, col_idx),
-          this->output_tensor(col_idx, row_idx))
+      TypeParam input = this->input_tensor(row_idx, col_idx);
+      DeducedFloatType<TypeParam> *ptr = reinterpret_cast<Deduced *>(&input);
+      for (TensorIdx idx = 0; idx < inner_offset; ++idx)
+        ptr[idx] = ptr[idx] * this->alpha - this->beta;
+      ASSERT_EQ(input, this->output_tensor(col_idx, row_idx))
           << "4x3 transpose result does not match expectation at row: "
           << row_idx << ", col: " << col_idx;
     }
@@ -104,8 +106,11 @@ TYPED_TEST(TestOperationTrans, MacroTransDefault) {
 
   for (TensorIdx row_idx = 0; row_idx < this->kernel_size; ++row_idx) {
     for (TensorIdx col_idx = 0; col_idx < this->kernel_size; ++col_idx) {
-      ASSERT_EQ(this->input_tensor(row_idx, col_idx),
-          this->output_tensor(col_idx, row_idx))
+      TypeParam input = this->input_tensor(row_idx, col_idx);
+      DeducedFloatType<TypeParam> *ptr = reinterpret_cast<Deduced *>(&input);
+      for (TensorIdx idx = 0; idx < inner_offset; ++idx)
+        ptr[idx] = ptr[idx] * this->alpha - this->beta;
+      ASSERT_EQ(input, this->output_tensor(col_idx, row_idx))
           << "1x1 transpose result does not match expectation at row: "
           << row_idx << ", col: " << col_idx;
     }
@@ -117,8 +122,11 @@ TYPED_TEST(TestOperationTrans, MacroTransDefault) {
 
   for (TensorIdx row_idx = 0; row_idx < 2 * this->kernel_size; ++row_idx) {
     for (TensorIdx col_idx = 0; col_idx < 2 * this->kernel_size; ++col_idx) {
-      ASSERT_EQ(this->input_tensor(row_idx, col_idx),
-          this->output_tensor(col_idx, row_idx))
+      TypeParam input = this->input_tensor(row_idx, col_idx);
+      DeducedFloatType<TypeParam> *ptr = reinterpret_cast<Deduced *>(&input);
+      for (TensorIdx idx = 0; idx < inner_offset; ++idx)
+        ptr[idx] = ptr[idx] * this->alpha - this->beta;
+      ASSERT_EQ(input, this->output_tensor(col_idx, row_idx))
           << "2x2 transpose result does not match expectation at row: "
           << row_idx << ", col: " << col_idx;
     }
@@ -130,8 +138,11 @@ TYPED_TEST(TestOperationTrans, MacroTransDefault) {
 
   for (TensorIdx row_idx = 0; row_idx < this->kernel_size; ++row_idx) {
     for (TensorIdx col_idx = 0; col_idx < 3 * this->kernel_size; ++col_idx) {
-      ASSERT_EQ(this->input_tensor(row_idx, col_idx),
-          this->output_tensor(col_idx, row_idx))
+      TypeParam input = this->input_tensor(row_idx, col_idx);
+      DeducedFloatType<TypeParam> *ptr = reinterpret_cast<Deduced *>(&input);
+      for (TensorIdx idx = 0; idx < inner_offset; ++idx)
+        ptr[idx] = ptr[idx] * this->alpha - this->beta;
+      ASSERT_EQ(input, this->output_tensor(col_idx, row_idx))
           << "1x3 transpose result does not match expectation at row: "
           << row_idx << ", col: " << col_idx;
     }
