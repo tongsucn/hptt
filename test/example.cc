@@ -11,6 +11,9 @@
 #include <hptc/param/parameter_trans.h>
 #include <hptc/operations/operation_trans.h>
 
+#include "ttc/sTranspose_210_384x2320x64.h"
+#include "ttc/sTranspose_210_64x2320x384.h"
+
 
 using namespace std;
 using namespace hptc;
@@ -143,7 +146,6 @@ public:
     return this->output_tensor;
   }
 
-private:
   TensorIdx micro_size_, macro_height_, macro_width_;
 
   TensorIdx input_data_len, output_data_len;
@@ -155,6 +157,7 @@ private:
 
 
 int main(int argc, char *argv[]) {
+  // 3-dim
   // Prepare data
   vector<TensorIdx> size{ 384, 2320, 64 };
   vector<TensorDim> perm{ 2, 1, 0 };
@@ -164,29 +167,59 @@ int main(int argc, char *argv[]) {
 
   // Execute transpose
   inst.reset_data();
-  auto input_tensor = inst.get_input_tensor();
-  auto output_tensor = inst.get_output_tensor();
   auto begin_time = chrono::high_resolution_clock::now();
   inst.exec();
   auto time_diff = chrono::high_resolution_clock::now() - begin_time;
   auto ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
-  cout << "Elapsed time: " << ms << "ms." << endl;
+  cout << "3-dim Elapsed time: " << ms << "ms." << endl;
 
   // Verification
-  for (TensorIdx idx_0 = 0; idx_0 < 384; ++idx_0) {
+  /*for (TensorIdx idx_0 = 0; idx_0 < 384; ++idx_0) {
     for (TensorIdx idx_1 = 0; idx_1 < 2320; ++idx_1) {
       for (TensorIdx idx_2 = 0; idx_2 < 64; ++idx_2) {
-        if (0 != input_tensor(idx_0, idx_1, idx_2) * 2.3f - 4.2f
-            - output_tensor(idx_2, idx_1, idx_0)) {
+        if (0 != inst.input_tensor(idx_0, idx_1, idx_2) * 2.3f - 4.2f
+            - inst.output_tensor(idx_2, idx_1, idx_0)) {
           cout << "Result does not match at: " << idx_0 << ", " << idx_1
               << ", " << idx_2 << endl;
-          cout << "Input: " << input_tensor(idx_0, idx_1, idx_2) << endl;
-          cout << "Output: " << output_tensor(idx_2, idx_1, idx_0) << endl;
+          cout << "Input: " << inst.input_tensor(idx_0, idx_1, idx_2) << endl;
+          cout << "Output: " << inst.output_tensor(idx_2, idx_1, idx_0) << endl;
           return -1;
         }
       }
     }
-  }
+  }*/
+
+  // 4-dim
+  // Prepare data
+  vector<TensorIdx> size4{ 96, 96, 96, 96 };
+  vector<TensorDim> perm4{ 3, 2, 1, 0 };
+
+  // Create transpose computational graph
+  BenchmarkCreator<float, 2, 2> inst4(size4, perm4, 2.3, 4.2);
+
+  // Execute transpose
+  inst4.reset_data();
+  begin_time = chrono::high_resolution_clock::now();
+  inst4.exec();
+  time_diff = chrono::high_resolution_clock::now() - begin_time;
+  ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
+  cout << "4-dim Elapsed time: " << ms << "ms." << endl;
+
+  // 5-dim
+  // Prepare data
+  vector<TensorIdx> size5{ 64, 64, 64, 64, 64};
+  vector<TensorDim> perm5{ 4, 3, 2, 1, 0 };
+
+  // Create transpose computational graph
+  BenchmarkCreator<float, 2, 2> inst5(size5, perm5, 2.3, 4.2);
+
+  // Execute transpose
+  inst5.reset_data();
+  begin_time = chrono::high_resolution_clock::now();
+  inst5.exec();
+  time_diff = chrono::high_resolution_clock::now() - begin_time;
+  ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
+  cout << "5-dim Elapsed time: " << ms << "ms." << endl;
 
   cout << "Transpose done!" << endl;
   return 0;
