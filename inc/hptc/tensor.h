@@ -42,10 +42,10 @@ public:
 
   bool operator==(const TensorSize &size_obj) const;
 
-  inline TensorIdx &operator[](TensorDim dim_idx);
-  inline const TensorIdx &operator[](TensorDim dim_idx) const;
-  inline TensorDim get_dim() const;
-  inline const TensorIdx *shape() const;
+  INLINE TensorIdx &operator[](TensorDim dim_idx);
+  INLINE const TensorIdx &operator[](TensorDim dim_idx) const;
+  INLINE TensorDim get_dim() const;
+  INLINE const TensorIdx *shape() const;
 
 private:
   TensorDim dim_;
@@ -53,7 +53,14 @@ private:
 };
 
 
-template <typename FloatType>
+enum class MemLayout : bool {
+  COL_MAJOR = true,
+  ROW_MAJOR = false
+};
+
+
+template <typename FloatType,
+          MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
   TensorWrapper();
@@ -69,53 +76,40 @@ public:
   ~TensorWrapper();
 
   template <typename... Idx>
-  inline FloatType &operator()(Idx... indices);
+  INLINE FloatType &operator()(Idx... indices);
 
-  FloatType &operator[](const std::vector<TensorIdx> &indices);
-  const FloatType &operator[](const std::vector<TensorIdx> &indices) const;
-  FloatType &operator[](const TensorIdx *indices);
-  const FloatType &operator[](const TensorIdx *indices) const;
-  FloatType &operator[](TensorIdx **indices);
-  const FloatType &operator[](TensorIdx **indices) const;
+  INLINE FloatType &operator[](const TensorIdx *indices);
+  INLINE const FloatType &operator[](const TensorIdx *indices) const;
+  INLINE FloatType &operator[](TensorIdx **indices);
+  INLINE const FloatType &operator[](TensorIdx **indices) const;
 
   template <typename... Ranges>
   TensorWrapper<FloatType> slice(TRI range, Ranges... rest);
   TensorWrapper<FloatType> slice(const std::vector<TRI> &ranges);
   TensorWrapper<FloatType> slice(const TRI *ranges);
 
-  inline const TensorSize &get_size() const;
-  inline const TensorSize &get_outer_size() const;
-  inline FloatType *get_data();
-  inline const FloatType *get_data() const;
+  INLINE TensorDim get_dim() const;
+  INLINE const TensorSize &get_size() const;
+  INLINE const TensorSize &get_outer_size() const;
+  INLINE FloatType *get_data();
+  INLINE const FloatType *get_data() const;
 
 private:
+  // Internal function member
+  INLINE void init_offset_(const std::vector<TensorIdx> &dim_offset);
+
+  template <typename... Idx>
+  INLINE FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset,
+    TensorIdx next_idx, Idx... idx);
+  INLINE FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset);
+
+  // Internal data member
   TensorSize size_;
   TensorSize outer_size_;
+  TensorDim dim_;
   FloatType *raw_data_;
   TensorIdx *dim_offset_;
   TensorIdx *dim_stride_;
-
-  inline void init_offset_(const std::vector<TensorIdx> &dim_offset);
-
-  template <typename... Idx>
-  inline FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset,
-    TensorIdx next_idx, Idx... idx);
-  inline FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset);
-
-  template <typename Iterator>
-  inline FloatType &get_element_vec_(Iterator begin, Iterator end);
-  template <typename Iterator>
-  inline const FloatType &get_element_vec_(Iterator begin, Iterator end) const;
-
-  using TVecIter = std::vector<TensorIdx>::iterator;
-
-  template <typename... Ranges>
-  inline void get_sliced(TVecIter &sizes_iter, TVecIter &dim_offset_iter,
-    TRI range, Ranges... rest);
-  inline void get_sliced(TVecIter &sizes_iter, TVecIter &dim_offset_iter,
-    TRI range);
-  template <typename Iterator>
-  inline TensorWrapper<FloatType> get_sliced(Iterator begin, Iterator end);
 };
 
 

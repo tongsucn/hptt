@@ -12,12 +12,13 @@
 
 namespace hptc {
 
-template <typename FloatType>
+template <typename FloatType,
+          MemLayout LAYOUT = COL_MAJOR>
 struct ParamTrans {
   using Deduced = DeducedFloatType<FloatType>;
 
-  ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-      const TensorWrapper<FloatType> &output_tensor,
+  ParamTrans(const TensorWrapper<FloatType, LAYOUT> &input_tensor,
+      const TensorWrapper<FloatType, LAYOUT> &output_tensor,
       const std::vector<TensorDim> &perm,
       Deduced alpha = 1.0, Deduced beta = 0.0);
 
@@ -27,7 +28,7 @@ struct ParamTrans {
   ~ParamTrans();
 
 
-  TensorWrapper<FloatType> input_tensor, output_tensor;
+  TensorWrapper<FloatType, LAYOUT> input_tensor, output_tensor;
   TensorDim *perm;
   Deduced alpha, beta;
 
@@ -43,26 +44,33 @@ private:
  * Implementation for class ParamTrans
  */
 template <typename FloatType>
-ParamTrans<FloatType>::ParamTrans(const TensorWrapper<FloatType> &input_tensor,
-    const TensorWrapper<FloatType> &output_tensor,
+ParamTrans<FloatType>::ParamTrans(
+    const TensorWrapper<FloatType, LAYOUT> &input_tensor,
+    const TensorWrapper<FloatType, LAYOUT> &output_tensor,
     const std::vector<TensorDim> &perm, Deduced alpha, Deduced beta)
-    : input_tensor(input_tensor),
-      output_tensor(output_tensor),
-      perm(new TensorDim [perm.size()]), alpha(alpha), beta(beta),
+    : input_tensor(input_tensor), output_tensor(output_tensor),
+      perm(new TensorDim [perm.size()]),
+      alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
-      tensor_dim_(input_tensor.get_size().get_dim()) {
+      tensor_dim_(input_tensor.get_dim()) {
   // Initialize permutation map
   copy(perm.begin(), perm.end(), this->perm);
 
-  // Initialize access stride for input tensor
-  TensorIdx upper = this->tensor_dim_ - this->perm[0] - 1;
-  for (TensorIdx idx = this->tensor_dim_ - 1; idx > upper; --idx)
-    this->input_stride *= input_tensor.get_outer_size()[idx];
-
-  // Initialize access stride for output tensor
-  for (TensorIdx idx = 0; 0 != this->perm[idx]; ++idx)
-    this->output_stride
-        *= output_tensor.get_outer_size()[this->tensor_dim_ - 1 - idx];
+  // Initialize access stride
+  if (MemLayout::COL_MAJOR == LAYOUT) {
+    for (TensorIdx idx = 0; idx < this->perm[0]; ++idx)
+      this->input_stride *= input_tensor.get_outer_size()[idx];
+    for (TensorIdx idx = 0; 0 != this->perm[idx]; ++idx)
+      this->output_stride *= output_tensor.get_outer_size()[idx];
+  }
+  else {
+    for (TensorIdx idx = this->tensor_dim_ - 1;
+        idx > this->perm[this->tensor_dim_ - 1]; --idx)
+      this->input_stride *= input_tensor.get_outer_size()[idx];
+    for (TensorIdx idx = this->tensor_dim_ - 1;
+        this->tensor_dim_ - 1 != this->perm[idx]; --idx)
+      this->output_stride *= output_stride.get_outer_size()[idx];
+  }
 
   // Initialize loop indices
   this->macro_loop_idx = new TensorIdx [this->tensor_dim_];

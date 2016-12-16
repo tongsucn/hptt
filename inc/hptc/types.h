@@ -13,8 +13,8 @@ namespace hptc {
 /*
  * Tensor assistant types
  */
-using TensorIdx = int32_t;
 using GenNumType = uint32_t;
+using TensorIdx = int32_t;
 using TensorDim = GenNumType;
 
 
@@ -23,7 +23,6 @@ using TensorDim = GenNumType;
  */
 using FloatComplex = float _Complex;
 using DoubleComplex = double _Complex;
-using LongDoubleComplex = long double _Complex;
 
 
 /*
@@ -51,11 +50,6 @@ struct FloatTypeDeducer<double> {
 template <>
 struct FloatTypeDeducer<DoubleComplex> {
   using type = double;
-};
-
-template <>
-struct FloatTypeDeducer<LongDoubleComplex> {
-  using type = long double;
 };
 
 template <typename FloatType>
