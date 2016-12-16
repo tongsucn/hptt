@@ -15,38 +15,99 @@ namespace hptc {
 
 template <typename FloatType,
           CoefUsage USAGE>
-class KernelTransAvxImpl final : public KernelTransBase<FloatType> {
+class KernelTransAvxFull final
+    : public KernelTransBase<FloatType, KernelTransType::KERNEL_FULL> {
+};
+
+
+template <CoefUsage USAGE>
+class KernelTransFull<float, USAGE> final
+    : public KernelTransBase<float, KernelTransType::KERNEL_FULL> {
 public:
-  KernelTransAvxImpl(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta);
+  KernelTransAvxFull(float alpha, float beta);
 
-  KernelTransAvxImpl(const KernelTransAvxImpl<FloatType, USAGE> &kernel)
-      = delete;
-  KernelTransAvxImpl &operator=(const KernelTransAvxImpl &kernel) = delete;
-
-  virtual ~KernelTransAvxImpl() = default;
+  KernelTransAvxFull(const KernelTransAvxFull &kernel) = delete;
+  KernelTransAvxFull &operator=(const KernelTransAvxFull &kernel) = delete;
+  ~KernelTransAvxFull() = default;
 
   virtual INLINE void operator()(const float * RESTRICT input_data,
-      float * RESTRICT output_data, TensorIdx input_stride,
-      TensorIdx output_stride) final;
+      float * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final;
+
+  virtual INLINE GenNumType get_reg_num() final;
+
+private:
+  __m256 reg_alpha, reg_beta;
+};
+
+
+template <CoefUsage USAGE>
+class KernelTransFull<double, USAGE> final
+    : public KernelTransBase<double, KernelTransType::KERNEL_FULL> {
+public:
+  KernelTransAvxFull(double alpha, double beta);
+
+  KernelTransAvxFull(const KernelTransAvxFull &kernel) = delete;
+  KernelTransAvxFull &operator=(const KernelTransAvxFull &kernel) = delete;
+  ~KernelTransAvxFull() = default;
 
   virtual INLINE void operator()(const double * RESTRICT input_data,
-      double * RESTRICT output_data, TensorIdx input_stride,
-      TensorIdx output_stride) final;
+      double * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final;
+
+  virtual INLINE GenNumType get_reg_num() final;
+
+private:
+  __m256d reg_alpha, reg_beta;
+};
+
+
+template <CoefUsage USAGE>
+class KernelTransFull<FloatComplex, USAGE> final
+    : public KernelTransBase<FloatComplex, KernelTransType::KERNEL_FULL> {
+public:
+  KernelTransAvxFull(float alpha, float beta);
+
+  KernelTransAvxFull(const KernelTransAvxFull &kernel) = delete;
+  KernelTransAvxFull &operator=(const KernelTransAvxFull &kernel) = delete;
+  ~KernelTransAvxFull() = default;
 
   virtual INLINE void operator()(const FloatComplex * RESTRICT input_data,
-      FloatComplex * RESTRICT output_data, TensorIdx input_stride,
-      TensorIdx output_stride) final;
+      FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final;
+
+  virtual INLINE GenNumType get_reg_num() final;
+
+private:
+  __m256 reg_alpha, reg_beta;
+};
+
+
+template <CoefUsage USAGE>
+class KernelTransFull<DoubleComplex, USAGE> final
+    : public KernelTransBase<DoubleComplex, KernelTransType::KERNEL_FULL> {
+public:
+  KernelTransAvxFull(double alpha, double beta);
+
+  KernelTransAvxFull(const KernelTransAvxFull &kernel) = delete;
+  KernelTransAvxFull &operator=(const KernelTransAvxFull &kernel) = delete;
+  ~KernelTransAvxFull() = default;
 
   virtual INLINE void operator()(const DoubleComplex * RESTRICT input_data,
-      DoubleComplex * RESTRICT output_data, TensorIdx input_stride,
-      TensorIdx output_stride) final;
+      DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final;
 
-  INLINE GenNumType get_reg_num() final;
+  virtual INLINE GenNumType get_reg_num() final;
 
-protected:
-  __m256 reg_alpha, reg_beta;
-  __m256d regd_alpha, regd_beta;
+private:
+  __m256d reg_alpha, reg_beta;
+};
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+class KernelTransAvxHalf final
+    : public KernelTransBase<FloatType, KernelTransType::KERNEL_HALF> {
 };
 
 

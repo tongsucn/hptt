@@ -9,7 +9,12 @@ namespace hptc {
 
 template <typename FloatType,
           CoefUsage USAGE>
-using KernelTrans = KernelTransAvxImpl<FloatType, USAGE>;
+using KernelTransFull = KernelTransAvxFull<FloatType, USAGE>;
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+using KernelTransHalf = KernelTransAvxHalf<FloatType, USAGE>;
 
 }
 

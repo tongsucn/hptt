@@ -15,7 +15,14 @@ enum class CoefUsage : GenNumType {
 };
 
 
-template <typename FloatType>
+enum class KernelTransType : bool {
+  KERNEL_FULL = true,
+  KERNEL_HALF = false
+};
+
+
+template <typename FloatType,
+          KernelTransType TYPE>
 class KernelTransBase {
 public:
   KernelTransBase() = default;
@@ -29,12 +36,6 @@ public:
 
   virtual INLINE GenNumType get_reg_num() = 0;
 };
-
-
-/*
- * Import implementation
- */
-#include "kernel_trans_base.tcc"
 
 }
 
