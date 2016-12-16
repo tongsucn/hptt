@@ -53,12 +53,6 @@ private:
 };
 
 
-enum class MemLayout : bool {
-  COL_MAJOR = true,
-  ROW_MAJOR = false
-};
-
-
 template <typename FloatType,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {

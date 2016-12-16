@@ -22,7 +22,7 @@ enum class KernelTransType : bool {
 
 
 template <typename FloatType,
-          KernelTransType TYPE>
+          KernelTransType KERNEL_TYPE>
 class KernelTransBase {
 public:
   KernelTransBase() = default;

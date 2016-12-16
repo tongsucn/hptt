@@ -13,4 +13,14 @@
 
 #define RESTRICT __restrict__
 
+
+namespace hptc {
+
+enum class MemLayout : bool {
+  COL_MAJOR = true,
+  ROW_MAJOR = false
+};
+
+}
+
 #endif // HPTC_COMPAT_H_
