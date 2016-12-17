@@ -3,81 +3,47 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
 #include <memory>
+#include <type_traits>
 
+#include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/kernels/kernel_trans.h>
 
 
 namespace hptc {
 
-template <typename FloatType,
-          GenNumType HEIGHT,
-          GenNumType WIDTH,
-          KernelTransType KERNEL_TYPE = KernelTransType::KERNEL_FULL,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
-class MacroTrans {
+template <typename FloatType>
+class MacroTransFunc {
 public:
-  MacroTrans(const std::shared_ptr<ParamTrans<FloatType, LAYOUT>> &param);
-
-  MacroTrans(const MacroTrans &operation) = delete;
-  MacroTrans(const MacroTrans &operation) = delete;
-
-  virtual ~MacroTransFull();
-
-  virtual INLINE void exec() final;
-
-private:
-  std::shared_ptr<ParamTrans<FloatType, LAYOUT>> param;
-  KernelTransBase<FloatType, KERNEL_TYPE> *kernel_;
-  GenNumType kernel_size_;
+  virtual void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) = 0;
 };
 
 
-template <GenNumType ROWS,
+template <typename FloatType,
+          typename KernelFunc>
+class MacroTransData {
+public:
+  MacroTransData(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta);
+
+protected:
+  KernelFunc kernel_;
+  DeducedRegType<FloatType> reg_alpha_, reg_beta_;
+  GenNumType reg_num_;
+};
+
+
+template <typename FloatType,
+          typename KernelFunc,
+          MemLayout LAYOUT,
+          GenNumType ROWS,
           GenNumType COLS>
-struct DualCounter {
+class MacroTrans final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
 };
-
-
-template <typename FloatType,
-          GenNumType ROWS,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void row_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride);
-
-
-template <typename FloatType,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void row_tiler(DualCounter<0, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride);
-
-
-template <typename FloatType,
-          GenNumType ROWS,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void col_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride);
-
-
-template <typename FloatType,
-          GenNumType ROWS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void col_tiler(DualCounter<ROWS, 0>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride);
 
 
 /*

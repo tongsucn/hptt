@@ -3,114 +3,290 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
 
 template <typename FloatType,
-          GenNumType HEIGHT,
-          GenNumType WIDTH,
-          KernelTransType KERNEL_TYPE = KernelTransType::KERNEL_FULL,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
-MacroTrans<FloatType, HEIGHT, WIDTH, KERNEL_TYPE, LAYOUT>::MacroTrans(
-    const std::shared_ptr<ParamTrans<FloatType, LAYOUT>> &param)
-    : param(param) {
+          typename KernelFunc>
+MacroTransData<FloatType, KernelFunc>::MacroTransData(
+    KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+    DeduceFloatType<FloatType> beta)
+    : kernel_(kernel),
+      reg_alpha_(reg_coef(alpha)),
+      reg_beta_(reg_coef(beta)) {
   template <CoefUsage USAGE>
-  using IntK = KernelTrans<FloatType, USAGE, KERNEL_TYPE, LAYOUT>;
+  using FullK = decltype(&kernel_trans_full<FloatType, USAGE>);
+  constexpr bool use_full
+      = std::is_same<FullK<CoefUsage::USE_NONE>, decltype(kernel)>::value or
+      std::is_same<FullK<CoefUsage::USE_ALPHA>, decltype(kernel)>::value or
+      std::is_same<FullK<CoefUsage::USE_BETA>, decltype(kernel)>::value or
+      std::is_same<FullK<CoefUsage::USE_BOTH>, decltype(kernel)>::value;
 
-  // Check coefficient and create correspondence kernel
-  if (static_cast<decltype(param->alpha)>(1) == param->alpha
-      and static_cast<decltype(param->beta)>(0) == param->beta)
-    this->kernel_ = new IntK<CoefUsage::USE_NONE>(param->alpha, param->beta);
-  else if (static_cast<decltype(param->alpha)>(1) == param->alpha)
-    this->kernel_ = new IntK<CoefUsage::USE_BETA>(param->alpha, param->beta);
-  else if (static_cast<decltype(param->beta)>(0) == param->beta)
-    this->kernel_ = new IntK<CoefUsage::USE_ALPHA>(param->alpha, param->beta);
+  if (use_full)
+    this->reg_num_ = reg_num_full<FloatType>();
   else
-    this->kernel_ = new IntK<CoefUsage::USE_BOTH>(param->alpha, param->beta);
-
-  this->kernel_size_ = this->kernel_->get_reg_num();
+    this->reg_num_ = reg_num_half<FloatType>();
 }
 
 
 template <typename FloatType,
-          GenNumType HEIGHT,
-          GenNumType WIDTH,
-          KernelTransType KERNEL_TYPE = KernelTransType::KERNEL_FULL,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
-MacroTrans<FloatType, HEIGHT, WIDTH, KERNEL_TYPE, LAYOUT>::~MacroTransFull() {
-  delete this->kernel_;
-}
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 1> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
 
-
-INLINE void MacroTrans<FloatType, HEIGHT, WIDTH, KERNEL_TYPE, LAYOUT>::exec() {
-  col_tiler(DualCounter<HEIGHT - 1, WIDTH - 1>(), this->kernel_size_,
-      this->kernel_, &this->param->input_tensor[this->param->macro_loop_idx],
-      &this->param->output_tensor[this->param->macro_loop_perm_idx],
-      this->param->input_stride, this->param->output_stride);
-}
-
-
-template <typename FloatType,
-          GenNumType ROWS,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void kernel_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride) {
-  // Tiling previous row
-  kernel_tiler(DualCounter<ROWS - 1, COLS>(), kernel_size, kernel,
-      input_data, output_data, input_stride, output_stride);
-
-  // Tiling current kernel
-  (*kernel)(input_data + COLS * kernel_size + ROWS * kernel_size * input_stride,
-      output_data + ROWS * kernel_size + COLS * kernel_size * output_stride,
-      input_stride, output_stride);
-}
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    this->kernel_(input_data, output_data, input_stride, output_stride,
+        this->reg_alpha_, this->reg_beta_);
+  }
+};
 
 
 template <typename FloatType,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void kernel_tiler(DualCounter<0, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride) {
-  // Tiling current kernel
-  (*kernel)(input_data + COLS * kernel_size,
-      output_data + COLS * kernel_size * output_stride,
-      input_stride, output_stride);
-}
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 2> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
+
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    // Tiling kernel according to memory layout
+    constexpr bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
+    if (is_col_major) {
+      this->kernel_(input_data, output_data, input_stride, output_stride,
+          this->reg_alpha_, this->reg_beta_);
+      this->kernel_(input_data + this->reg_num_ * input_stride,
+          output_data + this->reg_num_,
+          input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    }
+    else {
+      this->kernel_(input_data, output_data, input_stride, output_stride,
+          this->reg_alpha_, this->reg_beta_);
+      this->kernel_(input_data + this->reg_num_,
+          output_data + this->reg_num_ * output_stride,
+          input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    }
+  }
+};
 
 
 template <typename FloatType,
-          GenNumType ROWS,
-          GenNumType COLS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void cols_tiler(DualCounter<ROWS, COLS>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride) {
-  // Tiling left kernel
-  cols_tiler(DualCounter<ROWS, COLS - 1>(), kernel_size, kernel,
-      input_data, output_data, input_stride, output_stride);
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 1> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
 
-  // Tiling previous row
-  kernel_tiler(DualCounter<ROWS, COLS>(), kernel_size, kernel,
-      input_data, output_data, input_stride, output_stride);
-}
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    // Tiling kernel according to memory layout
+    constexpr bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
+    if (is_col_major) {
+      this->kernel_(input_data, output_data, input_stride, output_stride,
+          this->reg_alpha_, this->reg_beta_);
+      this->kernel_(input_data + this->reg_num_,
+          output_data + this->reg_num_ * output_stride,
+          input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    }
+    else {
+      this->kernel_(input_data, output_data, input_stride, output_stride,
+          this->reg_alpha_, this->reg_beta_);
+      this->kernel_(input_data + this->reg_num_ * input_stride,
+          output_data + this->reg_num_,
+          input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    }
+  }
+};
 
 
 template <typename FloatType,
-          GenNumType ROWS,
-          MemLayout LAYOUT,
-          KernelTransType KERNEL_TYPE>
-INLINE void cols_tiler(DualCounter<ROWS, 0>, GenNumType kernel_size,
-    KernelTransBase<FloatType, KERNEL_TYPE> *kernel,
-    const FloatType *input_data, FloatType *output_data,
-    TensorIdx input_stride, TensorIdx output_stride) {
-  // Tiling previous row
-  kernel_tiler(DualCounter<ROWS, 0>(), kernel_size, kernel,
-      input_data, output_data, input_stride, output_stride);
-}
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 2> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
+
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    // First non-continuous memory column
+    this->kernel_(input_data, output_data, input_stride, output_stride,
+        this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + this->reg_num_ * input_stride,
+        output_data + this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Second non-continuous memory column
+    this->kernel_(input_data + this->reg_num_,
+        output_data + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+  }
+};
+
+
+template <typename FloatType,
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 3, 3> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
+
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    // First non-continuous memory column
+    this->kernel_(input_data, output_data, input_stride, output_stride,
+        this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + this->reg_num_ * input_stride,
+        output_data + this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Second non-continuous memory column
+    this->kernel_(
+        input_data + this->reg_num_,
+        output_data + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + this->reg_num + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Third non-continuous memory column
+    this->kernel_(
+        input_data + 2 * this->reg_num_,
+        output_data + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 2 * this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 2 * this->reg_num + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_ + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+  }
+};
+
+
+template <typename FloatType,
+          typename KernelFunc,
+          MemLayout LAYOUT>
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 4, 4> final
+    : public MacroTransFunc<FloatType>,
+      public MacroTransData<FloatType, KernelFunc> {
+public:
+  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
+      DeduceFloatType<FloatType> beta)
+      : MacroTransData(kernel, alpha, beta) {
+  }
+
+  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) final {
+    // First non-continuous memory column
+    this->kernel_(input_data, output_data, input_stride, output_stride,
+        this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + this->reg_num_ * input_stride,
+        output_data + this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + 3 * this->reg_num_ * input_stride,
+        output_data + 3 * this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Second non-continuous memory column
+    this->kernel_(
+        input_data + this->reg_num_,
+        output_data + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + this->reg_num + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + this->reg_num + 3 * this->reg_num_ * input_stride,
+        output_data + 3 * this->reg_num_ + this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Third non-continuous memory column
+    this->kernel_(
+        input_data + 2 * this->reg_num_,
+        output_data + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 2 * this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 2 * this->reg_num + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_ + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 2 * this->reg_num + 3 * this->reg_num_ * input_stride,
+        output_data + 3 * this->reg_num_ + 2 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+
+    // Forth non-continuous memory column
+    this->kernel_(
+        input_data + 3 * this->reg_num_,
+        output_data + 3 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 3 * this->reg_num + this->reg_num_ * input_stride,
+        output_data + this->reg_num_ + 3 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 3 * this->reg_num + 2 * this->reg_num_ * input_stride,
+        output_data + 2 * this->reg_num_ + 3 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+    this->kernel_(
+        input_data + 3 * this->reg_num + 3 * this->reg_num_ * input_stride,
+        output_data + 3 * this->reg_num_ + 3 * this->reg_num_ * output_stride,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+  }
+};
 
 #endif // HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
