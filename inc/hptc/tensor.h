@@ -2,10 +2,10 @@
 #ifndef HPTC_TENSOR_H_
 #define HPTC_TENSOR_H_
 
-#include <vector>
+#include <array>
 #include <memory>
 #include <utility>
-#include <iterator>
+#include <algorithm>
 #include <initializer_list>
 
 #include <hptc/types.h>
@@ -26,48 +26,33 @@ struct TensorRangeIdx {
 using TRI = TensorRangeIdx;
 
 
+template <TensorOrder ORDER>
 class TensorSize {
 public:
   TensorSize();
-  TensorSize(TensorDim dim);
-  TensorSize(const std::vector<TensorIdx> &sizes);
+  TensorSize(const std::array<TensorIdx, ORDER> &sizes);
   TensorSize(std::initializer_list<TensorIdx> sizes);
 
-  TensorSize(const TensorSize &size_obj);
-  TensorSize(TensorSize &&size_obj) noexcept;
-  TensorSize &operator=(const TensorSize &size_obj);
-  TensorSize &operator=(TensorSize &&size_obj) noexcept;
+  bool operator==(const TensorSize<ORDER> &size_obj) const;
 
-  ~TensorSize();
-
-  bool operator==(const TensorSize &size_obj) const;
-
-  INLINE TensorIdx &operator[](TensorDim dim_idx);
-  INLINE const TensorIdx &operator[](TensorDim dim_idx) const;
-  INLINE TensorDim get_dim() const;
-  INLINE const TensorIdx *shape() const;
+  INLINE TensorIdx &operator[](TensorOrder order);
+  INLINE const TensorIdx &operator[](TensorOrder order) const;
 
 private:
-  TensorDim dim_;
-  TensorIdx *size_;
+  TensorIdx size_[ORDER];
 };
 
 
 template <typename FloatType,
+          TensorOrder ORDER,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
-  TensorWrapper();
+  TensorWrapper() = default;
+
   TensorWrapper(const TensorSize &size_obj, FloatType *raw_data);
   TensorWrapper(const TensorSize &size_obj, const TensorSize &outer_size_obj,
-    const std::vector<TensorIdx> &dim_offset, FloatType *raw_data);
-
-  TensorWrapper(const TensorWrapper &wrapper_obj);
-  TensorWrapper(TensorWrapper &&wrapper_obj) noexcept;
-  TensorWrapper &operator=(const TensorWrapper &wrapper_obj);
-  TensorWrapper &operator=(TensorWrapper &&wrapper_obj) noexcept;
-
-  ~TensorWrapper();
+      const std::array<TensorIdx, ORDER> &order_offset, FloatType *raw_data);
 
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);
@@ -79,10 +64,10 @@ public:
 
   template <typename... Ranges>
   TensorWrapper<FloatType> slice(TRI range, Ranges... rest);
-  TensorWrapper<FloatType> slice(const std::vector<TRI> &ranges);
+  TensorWrapper<FloatType> slice(const std::array<TRI, ORDER> &ranges);
   TensorWrapper<FloatType> slice(const TRI *ranges);
 
-  INLINE TensorDim get_dim() const;
+  INLINE TensorOrder get_order() const;
   INLINE const TensorSize &get_size() const;
   INLINE const TensorSize &get_outer_size() const;
   INLINE FloatType *get_data();
@@ -90,20 +75,19 @@ public:
 
 private:
   // Internal function member
-  INLINE void init_offset_(const std::vector<TensorIdx> &dim_offset);
+  INLINE void init_offset_(const std::array<TensorIdx, ORDER> &order_offset);
 
   template <typename... Idx>
-  INLINE FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset,
-    TensorIdx next_idx, Idx... idx);
-  INLINE FloatType &get_element_(TensorDim curr_dim, TensorIdx curr_offset);
+  INLINE FloatType &get_element_(TensorOrder curr_order, TensorIdx curr_offset,
+      TensorIdx next_idx, Idx... idx);
+  INLINE FloatType &get_element_(TensorOrder curr_order, TensorIdx curr_offset);
 
   // Internal data member
-  TensorSize size_;
-  TensorSize outer_size_;
-  TensorDim dim_;
+  TensorSize<ORDER> size_;
+  TensorSize<ORDER> outer_size_;
   FloatType *raw_data_;
-  TensorIdx *dim_offset_;
-  TensorIdx *dim_stride_;
+  TensorIdx offsets_[ORDER];
+  TensorIdx stride_[ORDER];
 };
 
 

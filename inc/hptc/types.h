@@ -15,7 +15,7 @@ namespace hptc {
  */
 using GenNumType = uint32_t;
 using TensorIdx = int32_t;
-using TensorDim = GenNumType;
+using TensorOrder = GenNumType;
 
 
 /*
