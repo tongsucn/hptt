@@ -2,7 +2,6 @@
 #ifndef HPTC_PARAM_PARAMETER_TRANS_H_
 #define HPTC_PARAM_PARAMETER_TRANS_H_
 
-#include <memory>
 #include <array>
 #include <algorithm>
 
@@ -12,26 +11,31 @@
 
 namespace hptc {
 
+enum class CoefUsage : GenNumType {
+  USE_NONE  = 0x0,
+  USE_ALPHA = 0x1,
+  USE_BETA  = 0x2,
+  USE_BOTH  = 0x3
+};
+
+
 template <typename FloatType,
           TensorOrder ORDER,
-          MemLayout LAYOUT = COL_MAJOR>
+          MemLayout LAYOUT,
+          CoefUsage USAGE>
 struct ParamTrans {
   ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
-      const TensorWrapper<FloatType, LAYOUT> &output_tensor,
+      const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
       const std::array<TensorOrder, ORDER> &perm,
-      DeducedFloatType<FloatType> alpha = 1.0,
-      DeducedFloatType<FloatType> beta = 0.0);
-
-  ParamTrans(const ParamTrans &param) = delete;
-  ParamTrans &operator=(const ParamTrans &param) = delete;
+      DeducedFloatType<FloatType> alpha = 1,
+      DeducedFloatType<FloatType> beta = 0);
 
   TensorWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
-  TensorOrder perm[ORDER];
   DeducedFloatType<FloatType> alpha, beta;
 
+  constexpr static CoefUsage COEF_USAGE = USAGE;
+  TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
-  TensorIdx macro_loop_idx[ORDER];
-  TensorIdx *macro_loop_perm_idx[ORDER];
 };
 
 
@@ -40,10 +44,11 @@ struct ParamTrans {
  */
 template <typename FloatType,
           TensorOrder ORDER,
-          MemLayout LAYOUT = COL_MAJOR>
-ParamTrans<FloatType, ORDER, LAYOUT>::ParamTrans(
-    const TensorWrapper<FloatType, LAYOUT> &input_tensor,
-    const TensorWrapper<FloatType, LAYOUT> &output_tensor,
+          MemLayout LAYOUT,
+          CoefUsage USAGE>
+ParamTrans<FloatType, ORDER, LAYOUT, USAGE>::ParamTrans(
+    const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
+    const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
     const std::array<TensorOrder, ORDER> &perm,
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
     : input_tensor(input_tensor), output_tensor(output_tensor),
@@ -65,10 +70,6 @@ ParamTrans<FloatType, ORDER, LAYOUT>::ParamTrans(
     for (TensorIdx idx = ORDER - 1; ORDER - 1 != this->perm[idx]; --idx)
       this->output_stride *= output_stride.get_outer_size()[idx];
   }
-
-  // Initialize loop indices
-  for (TensorOrder idx = 0; idx < ORDER; ++idx)
-    this->macro_loop_perm_idx[idx] = &this->macro_loop_idx[this->perm[idx]];
 }
 
 }

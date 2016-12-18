@@ -50,26 +50,28 @@ class TensorWrapper {
 public:
   TensorWrapper() = default;
 
-  TensorWrapper(const TensorSize &size_obj, FloatType *raw_data);
-  TensorWrapper(const TensorSize &size_obj, const TensorSize &outer_size_obj,
+  TensorWrapper(const TensorSize<ORDER> &size_obj, FloatType *raw_data);
+  TensorWrapper(const TensorSize<ORDER> &size_obj,
+      const TensorSize<ORDER> &outer_size_obj,
       const std::array<TensorIdx, ORDER> &order_offset, FloatType *raw_data);
 
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);
 
-  INLINE FloatType &operator[](const TensorIdx *indices);
-  INLINE const FloatType &operator[](const TensorIdx *indices) const;
+  INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
+  INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
   INLINE FloatType &operator[](TensorIdx **indices);
   INLINE const FloatType &operator[](TensorIdx **indices) const;
 
   template <typename... Ranges>
-  TensorWrapper<FloatType> slice(TRI range, Ranges... rest);
-  TensorWrapper<FloatType> slice(const std::array<TRI, ORDER> &ranges);
-  TensorWrapper<FloatType> slice(const TRI *ranges);
+  TensorWrapper<FloatType, ORDER, LAYOUT> slice(TRI range, Ranges... rest);
+  TensorWrapper<FloatType, ORDER, LAYOUT> slice(
+      const std::array<TRI, ORDER> &ranges);
+  TensorWrapper<FloatType, ORDER, LAYOUT> slice(const TRI *ranges);
 
   INLINE TensorOrder get_order() const;
-  INLINE const TensorSize &get_size() const;
-  INLINE const TensorSize &get_outer_size() const;
+  INLINE const TensorSize<ORDER> &get_size() const;
+  INLINE const TensorSize<ORDER> &get_outer_size() const;
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
 
