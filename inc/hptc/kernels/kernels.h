@@ -2,7 +2,7 @@
 #ifndef HPTC_KERNELS_KERNELS_H_
 #define HPTC_KERNELS_KERNELS_H_
 
-namespace hptc {
-}
+#include <hptc/kernels/kernel_trans.h>
+#include <hptc/kernels/macro_kernel_trans.h>
 
 #endif // HPTC_KERNELS_KERNELS_H_

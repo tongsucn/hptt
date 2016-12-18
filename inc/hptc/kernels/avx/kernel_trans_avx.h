@@ -7,6 +7,7 @@
 #include <type_traits>
 
 #include <hptc/types.h>
+#include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {

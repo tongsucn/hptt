@@ -6,27 +6,18 @@
 #include <type_traits>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
+#include <hptc/param/parameter_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 
 
 namespace hptc {
 
-template <typename FloatType>
-class MacroTransFunc {
-public:
-  virtual void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) = 0;
-};
-
-
 template <typename FloatType,
           typename KernelFunc>
 class MacroTransData {
 public:
-  MacroTransData(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta);
+  MacroTransData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta);
 
 protected:
   KernelFunc kernel_;
@@ -40,9 +31,7 @@ template <typename FloatType,
           MemLayout LAYOUT,
           GenNumType ROWS,
           GenNumType COLS>
-class MacroTrans final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans : public MacroTransData<FloatType, KernelFunc> {
 };
 
 

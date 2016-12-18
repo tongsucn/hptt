@@ -4,9 +4,8 @@
 
 template <typename FloatType,
           typename KernelFunc>
-MacroTransData<FloatType, KernelFunc>::MacroTransData(
-    KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-    DeduceFloatType<FloatType> beta)
+MacroTransData<FloatType, KernelFunc>::MacroTransData(KernelFunc kernel,
+    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
     : kernel_(kernel),
       reg_alpha_(reg_coef(alpha)),
       reg_beta_(reg_coef(beta)) {
@@ -28,18 +27,17 @@ MacroTransData<FloatType, KernelFunc>::MacroTransData(
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 1> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 1>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     this->kernel_(input_data, output_data, input_stride, output_stride,
         this->reg_alpha_, this->reg_beta_);
   }
@@ -49,18 +47,17 @@ public:
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 2> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 1, 2>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     // Tiling kernel according to memory layout
     constexpr bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
     if (is_col_major) {
@@ -84,18 +81,17 @@ public:
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 1> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 1>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     // Tiling kernel according to memory layout
     constexpr bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
     if (is_col_major) {
@@ -119,18 +115,17 @@ public:
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 2> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 2, 2>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     // First non-continuous memory column
     this->kernel_(input_data, output_data, input_stride, output_stride,
         this->reg_alpha_, this->reg_beta_);
@@ -152,18 +147,17 @@ public:
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 3, 3> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 3, 3>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     // First non-continuous memory column
     this->kernel_(input_data, output_data, input_stride, output_stride,
         this->reg_alpha_, this->reg_beta_);
@@ -208,18 +202,17 @@ public:
 template <typename FloatType,
           typename KernelFunc,
           MemLayout LAYOUT>
-class MacroTrans<FloatType, KernelFunc, LAYOUT, 4, 4> final
-    : public MacroTransFunc<FloatType>,
-      public MacroTransData<FloatType, KernelFunc> {
+class MacroTrans<FloatType, KernelFunc, LAYOUT, 4, 4>
+    : public MacroTransData<FloatType, KernelFunc> {
 public:
-  MacroTrans(KernelFunc kernel, DeduceFloatType<FloatType> alpha,
-      DeduceFloatType<FloatType> beta)
-      : MacroTransData(kernel, alpha, beta) {
+  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransData<FloatType, KernelFunc>(kernel, alpha, beta) {
   }
 
-  virtual INLINE void operator()(const FloatType * RESTRICT input_data,
+  INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) final {
+      const TensorIdx output_stride) {
     // First non-continuous memory column
     this->kernel_(input_data, output_data, input_stride, output_stride,
         this->reg_alpha_, this->reg_beta_);
