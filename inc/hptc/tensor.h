@@ -3,8 +3,6 @@
 #define HPTC_TENSOR_H_
 
 #include <array>
-#include <memory>
-#include <utility>
 #include <algorithm>
 #include <initializer_list>
 
@@ -58,8 +56,8 @@ public:
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);
 
-  INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
-  INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
+  INLINE FloatType &operator[](const TensorIdx *indices);
+  INLINE const FloatType &operator[](const TensorIdx *indices) const;
   INLINE FloatType &operator[](TensorIdx **indices);
   INLINE const FloatType &operator[](TensorIdx **indices) const;
 
@@ -69,14 +67,16 @@ public:
       const std::array<TRI, ORDER> &ranges);
   TensorWrapper<FloatType, ORDER, LAYOUT> slice(const TRI *ranges);
 
-  INLINE TensorOrder get_order() const;
   INLINE const TensorSize<ORDER> &get_size() const;
   INLINE const TensorSize<ORDER> &get_outer_size() const;
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
 
+  constexpr static TensorOrder TENSOR_ORDER = ORDER;
+
 private:
   // Internal function member
+  INLINE void init_offset_();
   INLINE void init_offset_(const std::array<TensorIdx, ORDER> &order_offset);
 
   template <typename... Idx>
@@ -89,7 +89,7 @@ private:
   TensorSize<ORDER> outer_size_;
   FloatType *raw_data_;
   TensorIdx offsets_[ORDER];
-  TensorIdx stride_[ORDER];
+  TensorIdx strides_[ORDER];
 };
 
 

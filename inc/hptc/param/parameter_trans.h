@@ -21,8 +21,8 @@ enum class CoefUsage : GenNumType {
 
 template <typename FloatType,
           TensorOrder ORDER,
-          MemLayout LAYOUT,
-          CoefUsage USAGE>
+          CoefUsage USAGE,
+          MemLayout LAYOUT = MemLayout::COL_MAJOR>
 struct ParamTrans {
   ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
       const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
@@ -44,9 +44,9 @@ struct ParamTrans {
  */
 template <typename FloatType,
           TensorOrder ORDER,
-          MemLayout LAYOUT,
-          CoefUsage USAGE>
-ParamTrans<FloatType, ORDER, LAYOUT, USAGE>::ParamTrans(
+          CoefUsage USAGE,
+          MemLayout LAYOUT>
+ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
     const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
     const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
     const std::array<TensorOrder, ORDER> &perm,
@@ -68,7 +68,7 @@ ParamTrans<FloatType, ORDER, LAYOUT, USAGE>::ParamTrans(
     for (TensorIdx idx = ORDER - 1; idx > this->perm[ORDER - 1]; --idx)
       this->input_stride *= input_tensor.get_outer_size()[idx];
     for (TensorIdx idx = ORDER - 1; ORDER - 1 != this->perm[idx]; --idx)
-      this->output_stride *= output_stride.get_outer_size()[idx];
+      this->output_stride *= output_tensor.get_outer_size()[idx];
   }
 }
 
