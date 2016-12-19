@@ -13,11 +13,16 @@
 namespace hptc {
 
 template <typename FloatType,
-          typename KernelFunc>
+          typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
 class MacroTransData {
 public:
   MacroTransData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
+
+  INLINE GenNumType get_cont_len();
+  INLINE GenNumType get_ncont_len();
 
 protected:
   KernelFunc kernel_;
@@ -28,10 +33,10 @@ protected:
 
 template <typename FloatType,
           typename KernelFunc,
-          MemLayout LAYOUT,
-          GenNumType ROWS,
-          GenNumType COLS>
-class MacroTrans : public MacroTransData<FloatType, KernelFunc> {
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+class MacroTrans
+    : public MacroTransData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN> {
 };
 
 
