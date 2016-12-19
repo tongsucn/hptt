@@ -28,7 +28,7 @@ find_package(GTest)
 # ----------------------------------------------------------------------------
 # Compiler options
 # ----------------------------------------------------------------------------
-set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14")
+set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14 -xhost")
 set(TENSOR_DEBUG_FLAG "-g")
 set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
 
