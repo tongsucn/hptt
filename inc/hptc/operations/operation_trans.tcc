@@ -6,14 +6,9 @@
  * Implementation for class OpForTransData
  */
 template <TensorOrder ORDER,
-          typename ParamType,
-          typename MacroType>
-OpForTransData<ORDER, ParamType, MacroType>::OpForTransData(
-    std::shared_ptr<ParamType> param, MacroType macro_kernel)
-    : param_(param),
-      macro_kernel_(macro_kernel),
-      input_stride_(param->input_stride_),
-      output_stride_(param->output_stride_) {
+          typename ParamType>
+OpForTransData<ORDER, ParamType>::OpForTransData(
+    std::shared_ptr<ParamType> param) : param_(param) {
   // Initialize loop indices
   std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
   for (TensorOrder idx = 0; idx < ORDER; ++idx)
@@ -26,27 +21,24 @@ OpForTransData<ORDER, ParamType, MacroType>::OpForTransData(
 
 
 template <TensorOrder ORDER,
-          typename ParamType,
-          typename MacroType>
-INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_begin(
+          typename ParamType>
+INLINE void OpForTransData<ORDER, ParamType>::set_begin(
     TensorIdx begin_val, TensorIdx idx) {
   this->loop_begin_[idx] = begin_val;
 }
 
 
 template <TensorOrder ORDER,
-          typename ParamType,
-          typename MacroType>
-INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_end(
+          typename ParamType>
+INLINE void OpForTransData<ORDER, ParamType>::set_end(
     TensorIdx end_val, TensorIdx idx) {
   this->loop_end_[idx] = end_val;
 }
 
 
 template <TensorOrder ORDER,
-          typename ParamType,
-          typename MacroType>
-INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_step(
+          typename ParamType>
+INLINE void OpForTransData<ORDER, ParamType>::set_step(
     TensorIdx step_val, TensorIdx idx) {
   this->loop_step_[idx] = step_val;
 }
@@ -63,27 +55,27 @@ INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_step(
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<0, ParamType, MacroType> final
-    : public OpForTransData<0, ParamType, MacroType> {
+    : public OpForTransData<0, ParamType> {
 };
 
 
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<1, ParamType, MacroType> final
-    : public OpForTransData<1, ParamType, MacroType> {
+    : public OpForTransData<1, ParamType> {
 };
 
 
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<2, ParamType, MacroType> final
-    : public OpForTransData<2, ParamType, MacroType> {
+    : public OpForTransData<2, ParamType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param, MacroType macro_kernel)
-      : OpForTransData<2, ParamType, MacroType>(param, macro_kernel) {
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<2, ParamType>(param) {
   }
 
-  INLINE void operator()() {
+  INLINE void operator()(MacroType &macro_kernel) {
     auto &input_tensor = this->param_->input_tensor;
     auto &output_tensor = this->param_->output_tensor;
 
@@ -93,9 +85,9 @@ public:
       for (this->loop_idx_[1] = this->loop_begin_[1];
           this->loop_idx_[1] < this->loop_end_[1];
           this->loop_idx_[1] += this->loop_step_[1]) {
-        this->macro_kernel_(input_tensor[this->loop_idx_],
-            output_tensor[this->loop_perm_idx_],
-            this->input_stride_, this->output_stride_);
+        macro_kernel(&input_tensor[this->loop_idx_],
+            &output_tensor[this->loop_perm_idx_],
+            this->param_->input_stride, this->param_->output_stride);
       }
     }
   }
@@ -105,13 +97,13 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<3, ParamType, MacroType> final
-    : public OpForTransData<3, ParamType, MacroType> {
+    : public OpForTransData<3, ParamType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param, MacroType macro_kernel)
-      : OpForTransData<3, ParamType, MacroType>(param, macro_kernel) {
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<3, ParamType>(param) {
   }
 
-  INLINE void operator()() {
+  INLINE void operator()(MacroType &macro_kernel) {
     auto &input_tensor = this->param_->input_tensor;
     auto &output_tensor = this->param_->output_tensor;
 
@@ -124,9 +116,9 @@ public:
         for (this->loop_idx_[2] = this->loop_begin_[2];
             this->loop_idx_[2] < this->loop_end_[2];
             this->loop_idx_[2] += this->loop_step_[2]) {
-          this->macro_kernel_(input_tensor[this->loop_idx_],
-              output_tensor[this->loop_perm_idx_],
-              this->input_stride_, this->output_stride_);
+          macro_kernel(&input_tensor[this->loop_idx_],
+              &output_tensor[this->loop_perm_idx_],
+              this->param_->input_stride, this->param_->output_stride);
         }
       }
     }
@@ -137,13 +129,13 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<4, ParamType, MacroType> final
-    : public OpForTransData<4, ParamType, MacroType> {
+    : public OpForTransData<4, ParamType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param, MacroType macro_kernel)
-      : OpForTransData<4, ParamType, MacroType>(param, macro_kernel) {
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<4, ParamType>(param) {
   }
 
-  INLINE void operator()() {
+  INLINE void operator()(MacroType &macro_kernel) {
     auto &input_tensor = this->param_->input_tensor;
     auto &output_tensor = this->param_->output_tensor;
 
@@ -159,9 +151,9 @@ public:
           for (this->loop_idx_[3] = this->loop_begin_[3];
               this->loop_idx_[3] < this->loop_end_[3];
               this->loop_idx_[3] += this->loop_step_[3]) {
-            this->macro_kernel_(input_tensor[this->loop_idx_],
-                output_tensor[this->loop_perm_idx_],
-                this->input_stride_, this->output_stride_);
+            macro_kernel(&input_tensor[this->loop_idx_],
+                &output_tensor[this->loop_perm_idx_],
+                this->param_->input_stride, this->param_->output_stride);
           }
         }
       }
@@ -173,13 +165,13 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<5, ParamType, MacroType> final
-    : public OpForTransData<5, ParamType, MacroType> {
+    : public OpForTransData<5, ParamType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param, MacroType macro_kernel)
-      : OpForTransData<5, ParamType, MacroType>(param, macro_kernel) {
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<5, ParamType>(param) {
   }
 
-  INLINE void operator()() {
+  INLINE void operator()(MacroType &macro_kernel) {
     auto &input_tensor = this->param_->input_tensor;
     auto &output_tensor = this->param_->output_tensor;
 
@@ -198,9 +190,9 @@ public:
             for (this->loop_idx_[4] = this->loop_begin_[4];
                 this->loop_idx_[4] < this->loop_end_[4];
                 this->loop_idx_[4] += this->loop_step_[4]) {
-              this->macro_kernel_(input_tensor[this->loop_idx_],
-                  output_tensor[this->loop_perm_idx_],
-                  this->input_stride_, this->output_stride_);
+              macro_kernel(&input_tensor[this->loop_idx_],
+                  &output_tensor[this->loop_perm_idx_],
+                  this->param_->input_stride, this->param_->output_stride);
             }
           }
         }
@@ -213,13 +205,13 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<6, ParamType, MacroType> final
-    : public OpForTransData<6, ParamType, MacroType> {
+    : public OpForTransData<6, ParamType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param, MacroType macro_kernel)
-      : OpForTransData<6, ParamType, MacroType>(param, macro_kernel) {
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<6, ParamType>(param) {
   }
 
-  INLINE void operator()() {
+  INLINE void operator()(MacroType &macro_kernel) {
     auto &input_tensor = this->param_->input_tensor;
     auto &output_tensor = this->param_->output_tensor;
 
@@ -241,9 +233,9 @@ public:
               for (this->loop_idx_[5] = this->loop_begin_[5];
                   this->loop_idx_[5] < this->loop_end_[5];
                   this->loop_idx_[5] += this->loop_step_[5]) {
-                this->macro_kernel_(input_tensor[this->loop_idx_],
-                    output_tensor[this->loop_perm_idx_],
-                    this->input_stride_, this->output_stride_);
+                macro_kernel(&input_tensor[this->loop_idx_],
+                    &output_tensor[this->loop_perm_idx_],
+                    this->param_->input_stride, this->param_->output_stride);
               }
             }
           }

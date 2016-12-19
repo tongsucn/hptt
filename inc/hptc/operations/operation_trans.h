@@ -13,11 +13,10 @@
 namespace hptc {
 
 template <TensorOrder ORDER,
-          typename ParamType,
-          typename MacroType>
+          typename ParamType>
 class OpForTransData {
 public:
-  OpForTransData(std::shared_ptr<ParamType> param, MacroType macro_kernel);
+  OpForTransData(std::shared_ptr<ParamType> param);
 
   INLINE void set_begin(TensorIdx begin_val, TensorIdx idx);
   INLINE void set_end(TensorIdx end_val, TensorIdx idx);
@@ -25,16 +24,15 @@ public:
 
 protected:
   std::shared_ptr<ParamType> param_;
-  MacroType macro_kernel_;
-  TensorIdx input_stride_, output_stride_;
-  TensorIdx loop_idx_[ORDER], *loop_perm_idx_[ORDER];
+  TensorIdx loop_idx_[ORDER];
+  TensorIdx *loop_perm_idx_[ORDER];
   TensorIdx loop_begin_[ORDER], loop_end_[ORDER], loop_step_[ORDER];
 };
 
 template <TensorOrder ORDER,
           typename ParamType,
           typename MacroType>
-class OpForTrans final : public OpForTransData<ORDER, ParamType, MacroType> {
+class OpForTrans final : public OpForTransData<ORDER, ParamType> {
 };
 
 
