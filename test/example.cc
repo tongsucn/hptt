@@ -1,226 +1,206 @@
-#include <memory>
-#include <vector>
-#include <numeric>
-#include <algorithm>
-#include <functional>
-#include <iostream>
+#include <array>
 #include <chrono>
+#include <random>
+#include <memory>
+#include <iostream>
+#include <algorithm>
+#include <type_traits>
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 #include <hptc/param/parameter_trans.h>
+#include <hptc/kernels/kernel_trans.h>
+#include <hptc/kernels/macro_kernel_trans.h>
 #include <hptc/operations/operation_trans.h>
 
-#include "ttc/sTranspose_210_384x2320x64.h"
-#include "ttc/sTranspose_210_64x2320x384.h"
+#include "sTranspose_210_384x2320x64.h"
+#include "sTranspose_102_384x2320x64.h"
+
+
+#define MEASURE_MAX 10
 
 
 using namespace std;
 using namespace hptc;
 
 
-template <typename FloatType,
-          GenNumType HEIGHT,
-          GenNumType WIDTH>
-class BenchmarkCreator {
-public:
-  using Deduced = DeducedFloatType<FloatType>;
-  using OpBase = Operation<FloatType, ParamTrans>;
-
-  BenchmarkCreator(vector<TensorIdx> input_size,
-      const vector<TensorDim> &perm, DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta) {
-    // Prepare internal data member
-    this->micro_size_ = 32 / sizeof(FloatType);
-    this->macro_height_ = HEIGHT * this->micro_size_;
-    this->macro_width_ = WIDTH * this->micro_size_;
-
-    // Create tensor size objects
-    TensorDim tensor_dim = static_cast<TensorDim>(input_size.size());
-    TensorSize input_size_obj(input_size), output_size_obj(tensor_dim);
-    for (TensorDim idx = 0; idx < tensor_dim; ++idx)
-      output_size_obj[idx] = input_size_obj[perm[idx]];
-
-    // Create raw data and initialize value
-    this->input_data_len = this->output_data_len = accumulate(
-        input_size.begin(), input_size.end(), 1, multiplies<TensorIdx>());
-    this->input_data = new FloatType [this->input_data_len];
-    this->output_data = new FloatType [this->output_data_len];
-    this->reset_data();
-
-    // Initialize tensor wrapper
-    this->input_tensor = TensorWrapper<FloatType>(input_size_obj,
-        this->input_data);
-    this->output_tensor = TensorWrapper<FloatType>(output_size_obj,
-        this->output_data);
-
-    // Initialize transpose parameter
-    this->param = make_shared<ParamTrans<FloatType>>(this->input_tensor,
-        this->output_tensor, perm, alpha, beta);
-
-    // Initialization computational graph
-    this->build_graph();
-  }
+void reset_data(float *data, TensorIdx len) {
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_real_distribution<float> dist(-500.0f, 500.0f);
+  for (TensorIdx idx = 0; idx < len; ++idx)
+    data[idx] = dist(gen);
+}
 
 
-  ~BenchmarkCreator() {
-    delete [] this->input_data;
-    delete [] this->output_data;
-  }
+bool verify(const float *input_data, const float *output_data, TensorIdx len) {
+  for (TensorIdx idx = 0; idx < len; ++idx) {
+    double input_abs = static_cast<double>(input_data[idx]);
+    if (input_abs < 0)
+      input_abs = -input_abs;
+    double output_abs = static_cast<double>(output_data[idx]);
+    if (output_abs < 0)
+      output_abs = -output_abs;
+    double diff = input_abs - output_abs;
+    if (diff < 0)
+      diff = -diff;
+    double max_abs = input_abs > output_abs ? input_abs : output_abs;
 
-
-  void reset_data() {
-    constexpr TensorIdx inner_offset = sizeof(FloatType) / sizeof(Deduced);
-    // Reset input data
-    for (TensorIdx idx = 0; idx < this->input_data_len; ++idx) {
-      Deduced *reset_ptr = reinterpret_cast<Deduced *>(&this->input_data[idx]);
-      for (TensorIdx inner_idx = 0; inner_idx < inner_offset; ++inner_idx)
-        reset_ptr[inner_idx] = static_cast<Deduced>(idx);
+    if (diff > 0) {
+      double rel_err = diff / max_abs;
+      if (rel_err > 4e-5) {
+        cout << "ERROR at abs. index: " << idx << ", ref: " << input_data[idx]
+            << ", fact: " << output_data[idx] << endl;
+        return false;
+      }
     }
-
-    // Reset output data
-    Deduced *reset_ptr = reinterpret_cast<Deduced *>(this->output_data);
-    fill(reset_ptr, reset_ptr + this->output_data_len * inner_offset,
-        static_cast<float>(-1));
   }
 
+  return true;
+}
 
-  shared_ptr<OpBase> build_graph() {
-    using SingleFor = OpLoopFor<FloatType, ParamTrans, 1>;
-    if (nullptr == this->input_data or nullptr == output_data)
-      return nullptr;
-
-    // Get dimension informaiton
-    TensorDim tensor_dim = this->input_tensor.get_size().get_dim();
-
-    // Create for loops
-    shared_ptr<SingleFor> curr_op
-        = static_pointer_cast<SingleFor>(this->operation);
-    for (TensorDim idx = 0; idx < tensor_dim; ++idx) {
-      // Compute parameters
-      TensorIdx begin = 0, end, step;
-      if (0 == idx) {
-        end = this->input_tensor.get_size()[0];
-        step = this->macro_height_;
-      }
-      else if (this->param->perm[0] == idx) {
-        end = this->input_tensor.get_size()[idx];
-        step = this->macro_width_;
-      }
-      else {
-        end = this->input_tensor.get_size()[idx];
-        step = 1;
-      }
-
-      // Create a new for loop
-      shared_ptr<SingleFor> new_op = make_shared<SingleFor>(this->param,
-          this->param->macro_loop_idx[idx], begin, end, step);
-
-      // Connect new for loop with previous one
-      if (nullptr == curr_op)
-        this->operation = new_op;
-      else
-        curr_op->init_operation(new_op);
-      curr_op = new_op;
-    }
-
-    // Create macro kernel
-    curr_op->init_operation(
-        make_shared<OpMacroTrans<FloatType, HEIGHT, WIDTH>>(this->param));
-
-    return this->operation;
-  }
-
-
-  inline void exec() {
-    this->operation->exec();
-  }
-
-
-  TensorWrapper<FloatType> &get_input_tensor() {
-    return this->input_tensor;
-  }
-
-
-  TensorWrapper<FloatType> &get_output_tensor() {
-    return this->output_tensor;
-  }
-
-  TensorIdx micro_size_, macro_height_, macro_width_;
-
-  TensorIdx input_data_len, output_data_len;
-  FloatType *input_data, *output_data;
-  TensorWrapper<FloatType> input_tensor, output_tensor;
-  shared_ptr<ParamTrans<FloatType>> param;
-  shared_ptr<OpBase> operation;
-};
-
+#define SIZE_0 384
+#define SIZE_1 2320
+#define SIZE_2 64
 
 int main(int argc, char *argv[]) {
   // 3-dim
   // Prepare data
-  vector<TensorIdx> size{ 384, 2320, 64 };
-  vector<TensorDim> perm{ 2, 1, 0 };
+  cout << "Preparing data..." << endl;
+  constexpr float alpha = 2.3f, beta = 4.2f;
+  constexpr TensorIdx dim_0 = SIZE_0, dim_1 = SIZE_1, dim_2 = SIZE_2;
+  constexpr TensorIdx len = dim_0 * dim_1 * dim_2;
+  array<TensorIdx, 3> size_3 = { dim_0, dim_1, dim_2 };
+  array<TensorOrder, 3> perm_3[2] = { { 2, 1, 0 }, { 1, 0, 2 } };
 
-  // Create transpose computational graph
-  BenchmarkCreator<float, 2, 2> inst(size, perm, 2.3, 4.2);
+  // Allocate memory and fill in contents
+  float *input_data = new float [len];
+  float *output_data_0 = new float [len];
+  float *output_data_1 = new float [len];
 
-  // Execute transpose
-  inst.reset_data();
-  auto begin_time = chrono::high_resolution_clock::now();
-  inst.exec();
-  auto time_diff = chrono::high_resolution_clock::now() - begin_time;
-  auto ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
-  cout << "3-dim Elapsed time: " << ms << "ms." << endl;
+  reset_data(input_data, len);
+  reset_data(output_data_0, len);
+  reset_data(output_data_1, len);
+
+  // Create reference
+  float *ref_data_0 = new float [len];
+  float *ref_data_1 = new float [len];
+
+  cout << "Calculating reference time..." << endl;
+  chrono::milliseconds ref_duration[2] = { {1000}, {1000} };
+  for (TensorIdx idx = 0; idx < MEASURE_MAX; ++idx) {
+    // Reset data
+    copy(output_data_0, output_data_0 + len, ref_data_0);
+    copy(output_data_1, output_data_1 + len, ref_data_1);
+
+    auto start = chrono::high_resolution_clock::now();
+    sTranspose_210_384x2320x64<SIZE_0, SIZE_1, SIZE_2>(input_data, ref_data_0,
+        alpha, beta, nullptr, nullptr);
+    auto diff = chrono::high_resolution_clock::now() - start;
+    auto duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < ref_duration[0])
+      ref_duration[0] = duration;
+
+    start = chrono::high_resolution_clock::now();
+    sTranspose_102_384x2320x64<SIZE_0, SIZE_1, SIZE_2>(input_data, ref_data_1,
+        alpha, beta, nullptr, nullptr);
+    diff = chrono::high_resolution_clock::now() - start;
+    duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < ref_duration[1])
+      ref_duration[1] = duration;
+  }
+  cout << "Ref. time: Perm. 2, 1, 0: " << ref_duration[0].count() << "ms."
+      << endl;
+  cout << "Ref. time: Perm. 1, 0, 2: " << ref_duration[1].count() << "ms."
+      << endl;
+
+
+  // Create actual data
+  cout << "Creating actual data..." << endl;
+  float *act_data_0 = new float [len];
+  float *act_data_1 = new float [len];
+
+  TensorSize<3> input_size(size_3);
+  TensorSize<3> output_size_0({ dim_2, dim_1, dim_0 });
+  TensorSize<3> output_size_1({ dim_1, dim_0, dim_2 });
+
+  TensorWrapper<float, 3> input_tensor(input_size, input_data);
+  TensorWrapper<float, 3> output_tensor_0(output_size_0, act_data_0);
+  TensorWrapper<float, 3> output_tensor_1(output_size_1, act_data_1);
+
+  // Create parameters
+  cout << "Creating parameter..." << endl;
+  auto param_0 = make_shared<ParamTrans<float, 3, CoefUsage::USE_BOTH>>(
+      input_tensor, output_tensor_0, perm_3[0], alpha, beta);
+  auto param_1 = make_shared<ParamTrans<float, 3, CoefUsage::USE_BOTH>>(
+      input_tensor, output_tensor_1, perm_3[1], alpha, beta);
+
+  // Build graph
+  cout << "Building graph..." << endl;
+  // Select kernels
+  MacroTrans<float, KernelTransFull<float, CoefUsage::USE_BOTH>, 2, 2> macro(
+      KernelTransFull<float, CoefUsage::USE_BOTH>(), alpha, beta);
+
+  // Create for loop
+  OpForTrans<3, ParamTrans<float, 3, CoefUsage::USE_BOTH>, decltype(macro)>
+      for_loop_0(param_0), for_loop_1(param_1);
+  for (TensorIdx idx = 0; idx < 3; ++idx) {
+    for_loop_0.set_end(size_3[idx], idx);
+    for_loop_1.set_end(size_3[idx], idx);
+  }
+
+  for_loop_0.set_step(macro.get_cont_len(), 0);
+  for_loop_0.set_step(macro.get_ncont_len(), param_0->perm[0]);
+  for_loop_1.set_step(macro.get_cont_len(), 0);
+  for_loop_1.set_step(macro.get_ncont_len(), param_1->perm[0]);
+
+  // Measure time
+  cout << "Calculating actual time..." << endl;
+  //cout << "From input wrapper: " << input_tensor[arr] << endl;
+  chrono::milliseconds act_duration[2] = { {1000}, {1000} };
+  for (TensorIdx idx = 0; idx < MEASURE_MAX; ++idx) {
+    // Reset data
+    copy(output_data_0, output_data_0 + len, act_data_0);
+    copy(output_data_1, output_data_1 + len, act_data_1);
+
+    auto start = chrono::high_resolution_clock::now();
+    for_loop_0(macro);
+    auto diff = chrono::high_resolution_clock::now() - start;
+    auto duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < act_duration[0])
+      act_duration[0] = duration;
+
+    start = chrono::high_resolution_clock::now();
+    for_loop_1(macro);
+    diff = chrono::high_resolution_clock::now() - start;
+    duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < act_duration[1])
+      act_duration[1] = duration;
+  }
+  cout << "Actual time: Perm. 2, 1, 0: " << act_duration[0].count() << "ms."
+      << endl;
+  cout << "Actual time: Perm. 1, 0, 2: " << act_duration[1].count() << "ms."
+      << endl;
 
   // Verification
-  /*for (TensorIdx idx_0 = 0; idx_0 < 384; ++idx_0) {
-    for (TensorIdx idx_1 = 0; idx_1 < 2320; ++idx_1) {
-      for (TensorIdx idx_2 = 0; idx_2 < 64; ++idx_2) {
-        if (0 != inst.input_tensor(idx_0, idx_1, idx_2) * 2.3f - 4.2f
-            - inst.output_tensor(idx_2, idx_1, idx_0)) {
-          cout << "Result does not match at: " << idx_0 << ", " << idx_1
-              << ", " << idx_2 << endl;
-          cout << "Input: " << inst.input_tensor(idx_0, idx_1, idx_2) << endl;
-          cout << "Output: " << inst.output_tensor(idx_2, idx_1, idx_0) << endl;
-          return -1;
-        }
-      }
-    }
-  }*/
+  cout << "Verifying results..." << endl;
+  if (verify(ref_data_0, act_data_0, len))
+    cout << "Perm 2, 1, 0 SUCCEED!" << endl;
+  else
+    cout << "Perm 2, 1, 0 FAILED!" << endl;
+  if (verify(ref_data_1, act_data_1, len))
+    cout << "Perm 1, 0, 2 SUCCEED!" << endl;
+  else
+    cout << "Perm 1, 0, 2 FAILED!" << endl;
 
-  // 4-dim
-  // Prepare data
-  vector<TensorIdx> size4{ 96, 96, 96, 96 };
-  vector<TensorDim> perm4{ 3, 2, 1, 0 };
+  // Release resource
+  delete [] input_data;
+  delete [] output_data_0;
+  delete [] output_data_1;
+  delete [] ref_data_0;
+  delete [] ref_data_1;
+  delete [] act_data_0;
+  delete [] act_data_1;
 
-  // Create transpose computational graph
-  BenchmarkCreator<float, 2, 2> inst4(size4, perm4, 2.3, 4.2);
-
-  // Execute transpose
-  inst4.reset_data();
-  begin_time = chrono::high_resolution_clock::now();
-  inst4.exec();
-  time_diff = chrono::high_resolution_clock::now() - begin_time;
-  ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
-  cout << "4-dim Elapsed time: " << ms << "ms." << endl;
-
-  // 5-dim
-  // Prepare data
-  vector<TensorIdx> size5{ 64, 64, 64, 64, 64};
-  vector<TensorDim> perm5{ 4, 3, 2, 1, 0 };
-
-  // Create transpose computational graph
-  BenchmarkCreator<float, 2, 2> inst5(size5, perm5, 2.3, 4.2);
-
-  // Execute transpose
-  inst5.reset_data();
-  begin_time = chrono::high_resolution_clock::now();
-  inst5.exec();
-  time_diff = chrono::high_resolution_clock::now() - begin_time;
-  ms = chrono::duration_cast<chrono::milliseconds>(time_diff).count();
-  cout << "5-dim Elapsed time: " << ms << "ms." << endl;
-
-  cout << "Transpose done!" << endl;
   return 0;
 }
