@@ -56,10 +56,10 @@ public:
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);
 
-  INLINE FloatType &operator[](const TensorIdx *indices);
-  INLINE const FloatType &operator[](const TensorIdx *indices) const;
+  INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
+  INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
   INLINE FloatType &operator[](TensorIdx **indices);
-  INLINE const FloatType &operator[](TensorIdx **indices) const;
+  INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
   template <typename... Ranges>
   TensorWrapper<FloatType, ORDER, LAYOUT> slice(TRI range, Ranges... rest);
@@ -74,7 +74,7 @@ public:
 
   constexpr static TensorOrder TENSOR_ORDER = ORDER;
 
-private:
+protected:
   // Internal function member
   INLINE void init_offset_();
   INLINE void init_offset_(const std::array<TensorIdx, ORDER> &order_offset);
@@ -93,7 +93,9 @@ private:
 };
 
 
-// Import implementation
+/*
+ * Import implementation
+ */
 #include "tensor.tcc"
 
 }

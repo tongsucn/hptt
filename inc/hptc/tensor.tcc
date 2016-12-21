@@ -89,7 +89,7 @@ template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
 INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx *indices) {
+    const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = 0; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
@@ -101,7 +101,7 @@ template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
 INLINE const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx *indices) const {
+    const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = 0; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
@@ -125,7 +125,7 @@ template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
 INLINE const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    TensorIdx **indices) const {
+    const TensorIdx **indices) const {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = 0; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
@@ -154,7 +154,8 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT> TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
+TensorWrapper<FloatType, ORDER, LAYOUT>
+TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
     const TRI *ranges) {
 }
 
@@ -259,15 +260,6 @@ INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
   curr_offset += next_idx * this->strides_[curr_order];
 
   return this->get_element_(curr_order + 1, curr_offset, idx...);
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
-    TensorOrder curr_order, TensorIdx curr_offset) {
-  return *(this->raw_data_ + curr_offset);
 }
 
 #endif // HPTC_TENSOR_TCC_
