@@ -15,6 +15,7 @@
 
 #include "sTranspose_210_384x2320x64.h"
 #include "sTranspose_102_384x2320x64.h"
+#include "sTranspose_10_890880x64.h"
 
 
 #define MEASURE_MAX 10
@@ -71,27 +72,31 @@ int main(int argc, char *argv[]) {
   constexpr TensorIdx dim_0 = SIZE_0, dim_1 = SIZE_1, dim_2 = SIZE_2;
   constexpr TensorIdx len = dim_0 * dim_1 * dim_2;
   array<TensorIdx, 3> size_3 = { dim_0, dim_1, dim_2 };
-  array<TensorOrder, 3> perm_3[2] = { { 2, 1, 0 }, { 1, 0, 2 } };
+  array<TensorOrder, 3> perm_3[3] = { { 2, 1, 0 }, { 1, 0, 2 }, { 2, 0, 1 } };
 
   // Allocate memory and fill in contents
   float *input_data = new float [len];
   float *output_data_0 = new float [len];
   float *output_data_1 = new float [len];
+  float *output_data_2 = new float [len];
 
   reset_data(input_data, len);
   reset_data(output_data_0, len);
   reset_data(output_data_1, len);
+  reset_data(output_data_2, len);
 
   // Create reference
   float *ref_data_0 = new float [len];
   float *ref_data_1 = new float [len];
+  float *ref_data_2 = new float [len];
 
   cout << "Calculating reference time..." << endl;
-  chrono::milliseconds ref_duration[2] = { {1000}, {1000} };
+  chrono::milliseconds ref_duration[3] = { {1000}, {1000}, {1000} };
   for (TensorIdx idx = 0; idx < MEASURE_MAX; ++idx) {
     // Reset data
     copy(output_data_0, output_data_0 + len, ref_data_0);
     copy(output_data_1, output_data_1 + len, ref_data_1);
+    copy(output_data_2, output_data_2 + len, ref_data_2);
 
     auto start = chrono::high_resolution_clock::now();
     sTranspose_210_384x2320x64<SIZE_0, SIZE_1, SIZE_2>(input_data, ref_data_0,
@@ -108,10 +113,20 @@ int main(int argc, char *argv[]) {
     duration = chrono::duration_cast<chrono::milliseconds>(diff);
     if (duration < ref_duration[1])
       ref_duration[1] = duration;
+
+    start = chrono::high_resolution_clock::now();
+    sTranspose_10_890880x64<SIZE_0 * SIZE_1, SIZE_2>(input_data, ref_data_2,
+        alpha, beta, nullptr, nullptr);
+    diff = chrono::high_resolution_clock::now() - start;
+    duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < ref_duration[2])
+      ref_duration[2] = duration;
   }
   cout << "Ref. time: Perm. 2, 1, 0: " << ref_duration[0].count() << "ms."
       << endl;
   cout << "Ref. time: Perm. 1, 0, 2: " << ref_duration[1].count() << "ms."
+      << endl;
+  cout << "Ref. time: Perm. 2, 0, 1: " << ref_duration[2].count() << "ms."
       << endl;
 
 
@@ -119,14 +134,17 @@ int main(int argc, char *argv[]) {
   cout << "Creating actual data..." << endl;
   float *act_data_0 = new float [len];
   float *act_data_1 = new float [len];
+  float *act_data_2 = new float [len];
 
   TensorSize<3> input_size(size_3);
   TensorSize<3> output_size_0({ dim_2, dim_1, dim_0 });
   TensorSize<3> output_size_1({ dim_1, dim_0, dim_2 });
+  TensorSize<3> output_size_2({ dim_2, dim_0, dim_1 });
 
   TensorWrapper<float, 3> input_tensor(input_size, input_data);
   TensorWrapper<float, 3> output_tensor_0(output_size_0, act_data_0);
   TensorWrapper<float, 3> output_tensor_1(output_size_1, act_data_1);
+  TensorWrapper<float, 3> output_tensor_2(output_size_2, act_data_2);
 
   // Create parameters
   cout << "Creating parameter..." << endl;
@@ -134,6 +152,8 @@ int main(int argc, char *argv[]) {
       input_tensor, output_tensor_0, perm_3[0], alpha, beta);
   auto param_1 = make_shared<ParamTrans<float, 3, CoefUsage::USE_BOTH>>(
       input_tensor, output_tensor_1, perm_3[1], alpha, beta);
+  auto param_2 = make_shared<ParamTrans<float, 3, CoefUsage::USE_BOTH>>(
+      input_tensor, output_tensor_2, perm_3[2], alpha, beta);
 
   // Build graph
   cout << "Building graph..." << endl;
@@ -143,25 +163,31 @@ int main(int argc, char *argv[]) {
 
   // Create for loop
   OpForTrans<3, ParamTrans<float, 3, CoefUsage::USE_BOTH>, decltype(macro)>
-      for_loop_0(param_0), for_loop_1(param_1);
+      for_loop_0(param_0), for_loop_1(param_1), for_loop_2(param_2);
   for (TensorIdx idx = 0; idx < 3; ++idx) {
     for_loop_0.set_end(size_3[idx], idx);
     for_loop_1.set_end(size_3[idx], idx);
   }
+  for_loop_2.set_end(size_3[0] * size_3[1], 0);
+  for_loop_2.set_end(1, 1);
+  for_loop_2.set_end(size_3[2], 2);
 
   for_loop_0.set_step(macro.get_cont_len(), 0);
   for_loop_0.set_step(macro.get_ncont_len(), param_0->perm[0]);
   for_loop_1.set_step(macro.get_cont_len(), 0);
   for_loop_1.set_step(macro.get_ncont_len(), param_1->perm[0]);
+  for_loop_2.set_step(macro.get_cont_len(), 0);
+  for_loop_2.set_step(macro.get_ncont_len(), param_2->perm[0]);
 
   // Measure time
   cout << "Calculating actual time..." << endl;
   //cout << "From input wrapper: " << input_tensor[arr] << endl;
-  chrono::milliseconds act_duration[2] = { {1000}, {1000} };
+  chrono::milliseconds act_duration[3] = { {1000}, {1000}, {1000} };
   for (TensorIdx idx = 0; idx < MEASURE_MAX; ++idx) {
     // Reset data
     copy(output_data_0, output_data_0 + len, act_data_0);
     copy(output_data_1, output_data_1 + len, act_data_1);
+    copy(output_data_2, output_data_2 + len, act_data_2);
 
     auto start = chrono::high_resolution_clock::now();
     for_loop_0(macro);
@@ -176,10 +202,19 @@ int main(int argc, char *argv[]) {
     duration = chrono::duration_cast<chrono::milliseconds>(diff);
     if (duration < act_duration[1])
       act_duration[1] = duration;
+
+    start = chrono::high_resolution_clock::now();
+    for_loop_2(macro);
+    diff = chrono::high_resolution_clock::now() - start;
+    duration = chrono::duration_cast<chrono::milliseconds>(diff);
+    if (duration < act_duration[2])
+      act_duration[2] = duration;
   }
   cout << "Actual time: Perm. 2, 1, 0: " << act_duration[0].count() << "ms."
       << endl;
   cout << "Actual time: Perm. 1, 0, 2: " << act_duration[1].count() << "ms."
+      << endl;
+  cout << "Actual time: Perm. 2, 0, 1: " << act_duration[2].count() << "ms."
       << endl;
 
   // Verification
@@ -192,15 +227,22 @@ int main(int argc, char *argv[]) {
     cout << "Perm 1, 0, 2 SUCCEED!" << endl;
   else
     cout << "Perm 1, 0, 2 FAILED!" << endl;
+  if (verify(ref_data_2, act_data_2, len))
+    cout << "Perm 2, 0, 1 SUCCEED!" << endl;
+  else
+    cout << "Perm 2, 0, 1 FAILED!" << endl;
 
   // Release resource
   delete [] input_data;
   delete [] output_data_0;
   delete [] output_data_1;
+  delete [] output_data_2;
   delete [] ref_data_0;
   delete [] ref_data_1;
+  delete [] ref_data_2;
   delete [] act_data_0;
   delete [] act_data_1;
+  delete [] act_data_2;
 
   return 0;
 }
