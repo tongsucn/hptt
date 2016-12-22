@@ -169,8 +169,8 @@ int main(int argc, char *argv[]) {
     for_loop_1.set_end(size_3[idx], idx);
   }
   for_loop_2.set_end(size_3[0] * size_3[1], 0);
-  for_loop_2.set_end(1, 1);
-  for_loop_2.set_end(size_3[2], 2);
+  for_loop_2.set_end(size_3[2], 1);
+  for_loop_2.set_end(0, 2);
 
   for_loop_0.set_step(macro.get_cont_len(), 0);
   for_loop_0.set_step(macro.get_ncont_len(), param_0->perm[0]);

@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <algorithm>
 
+#include <iostream>
+
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 

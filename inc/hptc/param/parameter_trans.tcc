@@ -10,7 +10,8 @@ template <typename FloatType,
           MemLayout LAYOUT>
 TensorMergedWrapper<FloatType, ORDER, LAYOUT>::TensorMergedWrapper(
     const TensorWrapper<FloatType, ORDER, LAYOUT> &wrapper)
-    : TensorWrapper<FloatType, ORDER, LAYOUT>(wrapper) {
+    : TensorWrapper<FloatType, ORDER, LAYOUT>(wrapper),
+      merged_order_(ORDER) {
 }
 
 
@@ -22,6 +23,8 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
   if (ORDER <= 2)
     return;
 
+  this->merged_order_ = merge_map.size();
+
   if (MemLayout::COL_MAJOR == LAYOUT) {
     TensorIdx size_acc = 1, outer_size_acc = 1;
 
@@ -31,17 +34,12 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
         // Update sizes
         this->size_[curr_idx] = size_acc * this->size_[idx];
         this->outer_size_[curr_idx] = outer_size_acc * this->outer_size_[idx];
-
-        // Update offsets
         this->offsets_[curr_idx] = this->offsets_[idx];
-
-        // Update strides
-        this->offsets_[curr_idx] = 0 == curr_idx ? 1
-            : this->offsets_[curr_idx - 1] * outer_size_acc;
+        this->strides_[curr_idx] = 0 == curr_idx ? 1
+            : this->strides_[curr_idx - 1] * outer_size_acc;
 
         // Reset accumulators
         size_acc = 1, outer_size_acc = 1;
-
         ++curr_idx;
       }
       else {
@@ -51,7 +49,7 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     }
   }
   else {
-    const TensorOrder curr_start = merge_map.size() - 1;
+    const TensorOrder curr_start = this->merged_order_ - 1;
     TensorIdx size_acc = 1, outer_size_acc = 1;
 
     // Merge
@@ -60,17 +58,12 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
         // Update sizes
         this->size_[curr_idx] = size_acc * this->size_[idx];
         this->outer_size_[curr_idx] = outer_size_acc * this->outer_size_[idx];
-
-        // Update offsets
         this->offsets_[curr_idx] = this->offsets_[idx];
-
-        // Update strides
-        this->offsets_[curr_idx] = curr_start == curr_idx ? 1
-            : this->offsets_[curr_idx - 1] * outer_size_acc;
+        this->strides_[curr_idx] = curr_start == curr_idx ? 1
+            : this->strides_[curr_idx - 1] * outer_size_acc;
 
         // Reset accumulators
         size_acc = 1, outer_size_acc = 1;
-
         --curr_idx;
       }
       else {
@@ -79,6 +72,8 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
       }
     }
   }
+
+  std::cout << "Merged order: " << this->merged_order_ << std::endl;
 }
 
 
@@ -148,6 +143,9 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
       output_tensor(output_tensor),
       alpha(alpha), beta(beta),
       input_stride(1), output_stride(1) {
+  // Initialize perm
+  std::copy(perm.begin(), perm.end(), this->perm);
+
   // Initialize access stride according to memory layout
   if (MemLayout::COL_MAJOR == LAYOUT) {
     for (TensorIdx idx = 0; idx < perm[0]; ++idx)
@@ -196,7 +194,7 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
       }
     }
     input_perm_map[perm[ORDER - 1]] = 0;
-    input_perm_map[ORDER - 1] = 0;
+    output_perm_map[ORDER - 1] = 0;
   }
   else {
     // If row major, then merge begins from right
