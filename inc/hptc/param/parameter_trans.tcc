@@ -19,6 +19,66 @@ template <typename FloatType,
           MemLayout LAYOUT>
 void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     const std::unordered_map<TensorOrder, TensorOrder> &merge_map) {
+  if (ORDER <= 2)
+    return;
+
+  if (MemLayout::COL_MAJOR == LAYOUT) {
+    TensorIdx size_acc = 1, outer_size_acc = 1;
+
+    // Merge
+    for (TensorOrder idx = 0, curr_idx = 0; idx < ORDER - 1; ++idx) {
+      if (1 == merge_map.count(idx)) {
+        // Update sizes
+        this->size_[curr_idx] = size_acc * this->size_[idx];
+        this->outer_size_[curr_idx] = outer_size_acc * this->outer_size_[idx];
+
+        // Update offsets
+        this->offsets_[curr_idx] = this->offsets_[idx];
+
+        // Update strides
+        this->offsets_[curr_idx] = 0 == curr_idx ? 1
+            : this->offsets_[curr_idx - 1] * outer_size_acc;
+
+        // Reset accumulators
+        size_acc = 1, outer_size_acc = 1;
+
+        ++curr_idx;
+      }
+      else {
+        size_acc *= this->size_[idx];
+        outer_size_acc *= this->outer_size_[idx];
+      }
+    }
+  }
+  else {
+    const TensorOrder curr_start = merge_map.size() - 1;
+    TensorIdx size_acc = 1, outer_size_acc = 1;
+
+    // Merge
+    for (TensorOrder idx = ORDER - 1, curr_idx = curr_start; idx > 0; --idx) {
+      if (1 == merge_map.count(idx)) {
+        // Update sizes
+        this->size_[curr_idx] = size_acc * this->size_[idx];
+        this->outer_size_[curr_idx] = outer_size_acc * this->outer_size_[idx];
+
+        // Update offsets
+        this->offsets_[curr_idx] = this->offsets_[idx];
+
+        // Update strides
+        this->offsets_[curr_idx] = curr_start == curr_idx ? 1
+            : this->offsets_[curr_idx - 1] * outer_size_acc;
+
+        // Reset accumulators
+        size_acc = 1, outer_size_acc = 1;
+
+        --curr_idx;
+      }
+      else {
+        size_acc *= this->size_[idx];
+        outer_size_acc *= this->outer_size_[idx];
+      }
+    }
+  }
 }
 
 
