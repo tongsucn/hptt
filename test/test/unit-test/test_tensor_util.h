@@ -2,117 +2,73 @@
 #ifndef TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_
 #define TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_
 
+#include <array>
+
 #include <gtest/gtest.h>
 
 #include <hptc/tensor.h>
 #include <hptc/types.h>
 
+using namespace std;
 using namespace hptc;
 
-class TestTensorUtil : public ::testing::Test {
-protected:
-  TestTensorUtil()
-    : RANGE_ZERO(0),
-      RANGE_NONZERO(10),
-      range(0, 10),
-      size_obj_default(),
-      size_obj_dim_zero(this->RANGE_ZERO),
-      size_obj_dim_nonzero(this->RANGE_NONZERO),
-      size_obj_lst_zero({}),
-      size_obj_lst_nonzero({ 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 }) {
-  }
 
-  const TensorIdx RANGE_ZERO;
-  const TensorIdx RANGE_NONZERO;
-  TRI range;
+TEST(TestTensorUtil, TestTensorRangeIdxCreation) {
+  // Prepare
+  constexpr TensorIdx LOWER_BOUND = 0, UPPER_BOUND = 10;
+  TRI range(LOWER_BOUND, UPPER_BOUND);
 
-  TensorSize size_obj_default;
-  TensorSize size_obj_dim_zero;
-  TensorSize size_obj_dim_nonzero;
-  TensorSize size_obj_lst_zero;
-  TensorSize size_obj_lst_nonzero;
-};
-
-
-TEST_F(TestTensorUtil, TestTensorRangeIdxCreation) {
-  EXPECT_EQ(this->RANGE_ZERO, range.left_idx)
-      << "Left index value does not match.";
-  EXPECT_EQ(this->RANGE_NONZERO, range.right_idx)
+  // Test
+  EXPECT_EQ(LOWER_BOUND, range.left_idx) << "Left index value does not match.";
+  EXPECT_EQ(UPPER_BOUND, range.right_idx)
       << "Right index value does not match.";
 }
 
 
-TEST_F(TestTensorUtil, TestTensorSizeCreation) {
-  // Default construction
-  EXPECT_EQ(this->RANGE_ZERO, this->size_obj_default.get_dim())
-      << "Default constructor does not create a zero-dim size object.";
+TEST(TestTensorUtil, TestTensorSizeCreation) {
+  // Prepare
+  constexpr TensorOrder ORDER = 4;
+  constexpr TensorOrder sizes[4] = { 12, 23, 34, 45 };
 
-  // Construction from number of dimension
-  EXPECT_EQ(this->RANGE_ZERO, this->size_obj_dim_zero.get_dim())
-      << "Cannot create a " << this->RANGE_ZERO << "-dim size object by with-"
-      << "dim constructor.";
-  EXPECT_EQ(this->RANGE_NONZERO, this->size_obj_dim_nonzero.get_dim())
-      << "Cannot create a " << this->RANGE_NONZERO << "-dim size object by "
-      << "with-dim constructor.";
+  // Test
+  // Construction from default constructor
+  TensorSize<ORDER> size_obj_default;
+  for (TensorIdx idx = 0; idx < ORDER; ++idx)
+    ASSERT_EQ(0, size_obj_default[idx])
+        << "Default constructed size object does not provide zero size at dim-"
+        << idx;
+
+  // Construction from std::array
+  array<TensorOrder, ORDER> arr{ sizes[0], sizes[1], sizes[2], sizes[3] };
+  TensorSize<ORDER> size_obj_arr(arr);
+  for (TensorIdx idx = 0; idx < ORDER; ++idx)
+    ASSERT_EQ(arr[idx], size_obj_arr[idx])
+        << "std::array constructed size object does not match at dim-" << idx;
 
   // Construction from initializer list
-  EXPECT_EQ(this->RANGE_ZERO, this->size_obj_lst_zero.get_dim())
-      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object from "
-      << "initializer_list.";
-  EXPECT_EQ(this->RANGE_NONZERO, this->size_obj_lst_nonzero.get_dim())
-      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
-      << "object from initializer_list.";
-
-  // Copy construction
-  TensorSize size_obj_copy_zero(this->size_obj_lst_zero);
-  EXPECT_EQ(this->RANGE_ZERO, size_obj_copy_zero.get_dim())
-      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
-      << "from copy.";
-
-  TensorSize size_obj_copy_nonzero(this->size_obj_lst_nonzero);
-  EXPECT_EQ(this->RANGE_NONZERO, size_obj_copy_nonzero.get_dim())
-      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
-      << "object from copy.";
-  EXPECT_EQ(1, size_obj_copy_nonzero[this->RANGE_NONZERO - 1])
-      << "Cannot access edge element after copy construction, target index: "
-      << this->RANGE_NONZERO - 1;
-
-  // Copy assignment
-  size_obj_copy_nonzero = this->size_obj_lst_zero;
-  EXPECT_EQ(this->RANGE_ZERO, size_obj_copy_nonzero.get_dim())
-      << "Cannot create a " << this->RANGE_ZERO << "-dim null size object "
-      << "from copy assignment.";
-
-  size_obj_copy_zero = this->size_obj_lst_nonzero;
-  EXPECT_EQ(this->RANGE_NONZERO, size_obj_copy_zero.get_dim())
-      << "Cannot create a " << this->RANGE_NONZERO << "-dim non-null size "
-      << "object from copy assignment.";
-  EXPECT_EQ(1, size_obj_copy_zero[this->RANGE_NONZERO - 1])
-      << "Cannot access edge element after copy assignment, target index: "
-      << this->RANGE_NONZERO - 1;
+  TensorSize<ORDER> size_obj_list{ sizes[0], sizes[1], sizes[2], sizes[3] };
+  for (TensorIdx idx = 0; idx < ORDER; ++idx)
+    ASSERT_EQ(sizes[idx], size_obj_list[idx])
+        << "Initializer list constructed size object does not match at dim-"
+        << idx;
 }
 
 
-TEST_F(TestTensorUtil, TestTensorSizeRandomAccess) {
-  // Size object constructed from initializer list
-  for (TensorIdx idx = 0; idx < 10; ++idx) {
-    EXPECT_EQ(10 - idx, this->size_obj_lst_nonzero[idx])
-        << "Returned size value does not equal to expectation, target index: "
-        << idx;
-  }
+TEST(TestTensorUtil, TestTensorSizeCompare) {
+  // Prepare
+  constexpr TensorOrder ORDER = 4;
+  constexpr array<TensorOrder, ORDER> sizes{ 12, 23, 34, 45 };
+  TensorSize<ORDER> size_obj_0(sizes), size_obj_1(sizes);
 
-  // Size object comparison
-  EXPECT_TRUE(this->size_obj_lst_zero == this->size_obj_lst_zero)
-      << "Comparison between the same 0-dim size object creates wrong result.";
-  EXPECT_FALSE(this->size_obj_lst_nonzero == this->size_obj_lst_zero)
-      << "Comparison between 0-dim and " << this->RANGE_NONZERO << "-dim size "
-      << "object creates wrong result.";
-  EXPECT_TRUE(this->size_obj_lst_nonzero == this->size_obj_lst_nonzero)
-      << "Comparison between the same " << this->RANGE_NONZERO << "-dim size "
-      << "object creates wrong result.";
-  EXPECT_FALSE(this->size_obj_dim_nonzero == this->size_obj_lst_nonzero)
-      << "Comparison between different " << this->RANGE_NONZERO << "-dim size "
-      << "object creates wrong result.";
+  // Test
+  for (TensorIdx idx = 0; idx < ORDER; ++idx) {
+    EXPECT_TRUE(size_obj_0 == size_obj_1)
+        << "Comparison does not provide expected result at dim-" << idx;
+    ++size_obj_0[idx];
+    EXPECT_FALSE(size_obj_0 == size_obj_1)
+        << "Comparison does not provide expected result at dim-" << idx;
+    --size_obj_0[idx];
+  }
 }
 
 #endif // TEST_UNIT_TEST_TEST_TENSOR_UTIL_H_

@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   constexpr float alpha = 2.3f, beta = 4.2f;
   constexpr TensorIdx dim_0 = SIZE_0, dim_1 = SIZE_1, dim_2 = SIZE_2;
   constexpr TensorIdx len = dim_0 * dim_1 * dim_2;
-  array<TensorIdx, 3> size_3 = { dim_0, dim_1, dim_2 };
+  array<TensorOrder, 3> size_3 = { dim_0, dim_1, dim_2 };
   array<TensorOrder, 3> perm_3[3] = { { 2, 1, 0 }, { 1, 0, 2 }, { 2, 0, 1 } };
 
   // Allocate memory and fill in contents
