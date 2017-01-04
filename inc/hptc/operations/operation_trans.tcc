@@ -15,6 +15,9 @@ OpForTransData<ORDER, ParamType>::OpForTransData(
   std::fill(this->loop_step_, this->loop_step_ + ORDER, 1);
 
   // Initialize loop indices
+  for (TensorOrder idx = 0; idx < ORDER - param->merged_order; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
+
   for (TensorOrder idx = ORDER - param->merged_order; idx < ORDER; ++idx)
     this->loop_perm_idx_[idx]
         = &this->loop_idx_[param->perm[idx] + ORDER - param->merged_order];

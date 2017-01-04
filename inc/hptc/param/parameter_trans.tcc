@@ -24,10 +24,10 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     return;
 
   this->merged_order_ = static_cast<TensorOrder>(merge_set.size());
+  const TensorIdx start_idx = ORDER - this->merged_order_;
 
   if (MemLayout::COL_MAJOR == LAYOUT) {
     // Merge size, outer size and offsets
-    const TensorIdx start_idx = ORDER - this->merged_order_;
     for (TensorIdx idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
       if (1 == merge_set.count(idx)) {
         --curr_idx;
@@ -41,35 +41,20 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
       }
     }
 
-    // Fill the unused part
-    for (TensorIdx idx = 0; idx < start_idx; ++idx) {
-      this->size_[idx] = 1;
-      this->outer_size_[idx] = 1;
-    }
-    std::fill(this->offsets_, this->offsets_ + start_idx, 0);
-    std::fill(this->strides_, this->strides_ + start_idx, 0);
-
     // Merge strides
     this->strides_[start_idx] = 1;
     for (TensorIdx idx = start_idx; idx < ORDER - 1; ++idx)
       this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
   }
   else {
-    const TensorOrder curr_start = this->merged_order_ - 1;
+    // Merge size, outer size and offsets
     TensorIdx size_acc = 1, outer_size_acc = 1;
-
-    // Merge
-    for (TensorOrder idx = ORDER - 1, curr_idx = curr_start; idx > 0; --idx) {
+    for (TensorIdx idx = ORDER - 1, curr_idx = ORDER - 1; idx >= 0; --idx) {
       if (1 == merge_set.count(idx)) {
-        // Update sizes
-        this->size_[curr_idx] = size_acc * this->size_[idx];
-        this->outer_size_[curr_idx] = outer_size_acc * this->outer_size_[idx];
+        this->size_[curr_idx] = this->size_[idx] * size_acc;
+        this->outer_size_[curr_idx] = this->outer_size_[idx] * outer_size_acc;
         this->offsets_[curr_idx] = this->offsets_[idx];
-        this->strides_[curr_idx] = curr_start == curr_idx ? 1
-            : this->strides_[curr_idx - 1] * outer_size_acc;
-
-        // Reset accumulators
-        size_acc = 1, outer_size_acc = 1;
+        size_acc = outer_size_acc = 1;
         --curr_idx;
       }
       else {
@@ -77,7 +62,20 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
         outer_size_acc *= this->outer_size_[idx];
       }
     }
+
+    // Merge strides
+    this->strides_[ORDER - 1] = 1;
+    for (TensorIdx idx = ORDER - 1; idx > start_idx; --idx)
+      this->strides_[idx - 1] = this->outer_size_[idx] * this->strides_[idx];
   }
+
+  // Fill the unused part
+  for (TensorIdx idx = 0; idx < start_idx; ++idx) {
+    this->size_[idx] = 1;
+    this->outer_size_[idx] = 1;
+  }
+  std::fill(this->offsets_, this->offsets_ + start_idx, 0);
+  std::fill(this->strides_, this->strides_ + start_idx, 0);
 }
 
 
@@ -204,7 +202,7 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
   }
   else {
     // If row major, then merging will begin from right
-    for (TensorIdx idx = static_cast<TensorIdx>(ORDER - 2); idx >= 0; --idx) {
+    for (TensorIdx idx = ORDER - 2; idx >= 0; --idx) {
       if (perm[idx] + 1 != perm[idx + 1] or
           input_size[perm[idx + 1]] != input_outer_size[perm[idx + 1]] or
           output_size[idx + 1] != output_outer_size[idx + 1]) {

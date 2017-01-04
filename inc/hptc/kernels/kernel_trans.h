@@ -20,6 +20,18 @@ template <typename FloatType,
 using KernelTransHalf
     = KernelTransAvx<FloatType, USAGE, KernelType::KERNEL_HALF>;
 
+
+template <typename FloatType,
+          CoefUsage USAGE>
+struct KernelTransScalar {
+};
+
+
+/*
+ * Import implementation
+ */
+#include "kernel_trans.tcc"
+
 }
 
 #endif // HPTC_KERNELS_KERNEL_TRANS_H_
