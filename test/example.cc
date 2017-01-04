@@ -51,7 +51,7 @@ bool verify(const float *input_data, const float *output_data, TensorIdx len) {
       double rel_err = diff / max_abs;
       if (rel_err > 4e-5) {
         cout << "ERROR at abs. index: " << idx << ", ref: " << input_data[idx]
-            << ", fact: " << output_data[idx] << endl;
+            << ", actual: " << output_data[idx] << endl;
         return false;
       }
     }
@@ -168,16 +168,16 @@ int main(int argc, char *argv[]) {
     for_loop_0.set_end(size_3[idx], idx);
     for_loop_1.set_end(size_3[idx], idx);
   }
-  for_loop_2.set_end(size_3[0] * size_3[1], 0);
-  for_loop_2.set_end(size_3[2], 1);
-  for_loop_2.set_end(0, 2);
+  for_loop_2.set_end(1, 0);
+  for_loop_2.set_end(size_3[0] * size_3[1], 1);
+  for_loop_2.set_end(size_3[2], 2);
 
   for_loop_0.set_step(macro.get_cont_len(), 0);
   for_loop_0.set_step(macro.get_ncont_len(), param_0->perm[0]);
   for_loop_1.set_step(macro.get_cont_len(), 0);
   for_loop_1.set_step(macro.get_ncont_len(), param_1->perm[0]);
-  for_loop_2.set_step(macro.get_cont_len(), 0);
-  for_loop_2.set_step(macro.get_ncont_len(), param_2->perm[0]);
+  for_loop_2.set_step(macro.get_cont_len(), 1);
+  for_loop_2.set_step(macro.get_ncont_len(), 2);
 
   // Measure time
   cout << "Calculating actual time..." << endl;

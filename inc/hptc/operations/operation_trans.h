@@ -29,6 +29,7 @@ protected:
   TensorIdx loop_begin_[ORDER], loop_end_[ORDER], loop_step_[ORDER];
 };
 
+
 template <TensorOrder ORDER,
           typename ParamType,
           typename MacroType>

@@ -4,9 +4,8 @@
 
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
-
-#include <iostream>
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
@@ -30,7 +29,7 @@ public:
   TensorMergedWrapper() = delete;
   TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, LAYOUT> &wrapper);
 
-  void merge_idx(const std::unordered_map<TensorOrder, TensorOrder> &merge_map);
+  void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
@@ -57,9 +56,9 @@ public:
   TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
   DeducedFloatType<FloatType> alpha, beta;
 
-  TensorOrder order;
   TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
+  TensorOrder merged_order;
 
 private:
   void merge_idx_(const std::array<TensorOrder, ORDER> &perm);
