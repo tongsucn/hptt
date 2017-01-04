@@ -28,16 +28,16 @@ template <TensorOrder ORDER>
 class TensorSize {
 public:
   TensorSize();
-  TensorSize(const std::array<TensorIdx, ORDER> &sizes);
-  TensorSize(std::initializer_list<TensorIdx> sizes);
+  TensorSize(const std::array<TensorOrder, ORDER> &sizes);
+  TensorSize(std::initializer_list<TensorOrder> sizes);
 
   bool operator==(const TensorSize<ORDER> &size_obj) const;
 
-  INLINE TensorIdx &operator[](TensorOrder order);
-  INLINE const TensorIdx &operator[](TensorOrder order) const;
+  INLINE TensorOrder &operator[](TensorOrder order);
+  INLINE const TensorOrder &operator[](TensorOrder order) const;
 
 private:
-  TensorIdx size_[ORDER];
+  TensorOrder size_[ORDER];
 };
 
 
@@ -46,7 +46,7 @@ template <typename FloatType,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
-  TensorWrapper() = default;
+  TensorWrapper();
 
   TensorWrapper(const TensorSize<ORDER> &size_obj, FloatType *raw_data);
   TensorWrapper(const TensorSize<ORDER> &size_obj,
@@ -67,10 +67,13 @@ public:
       const std::array<TRI, ORDER> &ranges);
   TensorWrapper<FloatType, ORDER, LAYOUT> slice(const TRI *ranges);
 
+  INLINE TensorSize<ORDER> &get_size();
   INLINE const TensorSize<ORDER> &get_size() const;
+  INLINE TensorSize<ORDER> &get_outer_size();
   INLINE const TensorSize<ORDER> &get_outer_size() const;
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
+  INLINE void set_data(FloatType *new_data);
 
   constexpr static TensorOrder TENSOR_ORDER = ORDER;
 

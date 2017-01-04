@@ -12,13 +12,13 @@ TensorSize<ORDER>::TensorSize() {
 
 
 template <TensorOrder ORDER>
-TensorSize<ORDER>::TensorSize(const std::array<TensorIdx, ORDER> &sizes) {
+TensorSize<ORDER>::TensorSize(const std::array<TensorOrder, ORDER> &sizes) {
   std::copy(sizes.begin(), sizes.end(), size_);
 }
 
 
 template <TensorOrder ORDER>
-TensorSize<ORDER>::TensorSize(std::initializer_list<TensorIdx> sizes) {
+TensorSize<ORDER>::TensorSize(std::initializer_list<TensorOrder> sizes) {
   std::copy(sizes.begin(), sizes.end(), size_);
 }
 
@@ -32,13 +32,13 @@ bool TensorSize<ORDER>::operator==(const TensorSize &size_obj) const {
 
 
 template <TensorOrder ORDER>
-INLINE TensorIdx &TensorSize<ORDER>::operator[](TensorOrder order_idx) {
+INLINE TensorOrder &TensorSize<ORDER>::operator[](TensorOrder order_idx) {
   return this->size_[order_idx];
 }
 
 
 template <TensorOrder ORDER>
-INLINE const TensorIdx &TensorSize<ORDER>::operator[](
+INLINE const TensorOrder &TensorSize<ORDER>::operator[](
     TensorOrder order_idx) const {
   return this->size_[order_idx];
 }
@@ -47,6 +47,17 @@ INLINE const TensorIdx &TensorSize<ORDER>::operator[](
 /*
  * Implementation for class TensorWrapper
  */
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper()
+    : size_(),
+      outer_size_(),
+      raw_data_(nullptr) {
+  this->init_offset_();
+}
+
+
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
@@ -163,9 +174,26 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
+INLINE TensorSize<ORDER> &TensorWrapper<FloatType, ORDER, LAYOUT>::get_size() {
+  return this->size_;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
 INLINE const TensorSize<ORDER> &
 TensorWrapper<FloatType, ORDER, LAYOUT>::get_size() const {
   return this->size_;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE TensorSize<ORDER> &
+TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() {
+  return this->outer_size_;
 }
 
 
@@ -192,6 +220,15 @@ template <typename FloatType,
 INLINE const FloatType *
 TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() const {
   return this->raw_data_;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE void
+TensorWrapper<FloatType, ORDER, LAYOUT>::set_data(FloatType *new_data) {
+  this->raw_data_ = new_data;
 }
 
 
