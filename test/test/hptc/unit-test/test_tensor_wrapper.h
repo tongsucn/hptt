@@ -1,6 +1,6 @@
 #pragma once
-#ifndef TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
-#define TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
+#ifndef HPTC_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
+#define HPTC_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
 
 #include <array>
 
@@ -400,4 +400,4 @@ TYPED_TEST(TestTensorWrapper, TestTensorWrapperSlicing) {
   ;
 }
 
-#endif // TEST_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
+#endif // HPTC_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
