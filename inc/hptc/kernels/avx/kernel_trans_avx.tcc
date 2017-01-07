@@ -2,18 +2,6 @@
 #ifndef HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_TCC_
 #define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_TCC_
 
-template <>
-INLINE DeducedRegType<float> reg_coef<float>(float coef) {
-  return _mm256_set1_ps(coef);
-}
-
-
-template <>
-INLINE DeducedRegType<double> reg_coef<double>(double coef) {
-  return _mm256_set1_pd(coef);
-}
-
-
 template <typename FloatType,
           KernelType TYPE>
 INLINE GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
@@ -24,6 +12,20 @@ INLINE GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
     return KernelType::KERNEL_FULL == TYPE ? 4 : 2;
   else
     return KernelType::KERNEL_FULL == TYPE ? 2 : 1;
+}
+
+
+template <typename FloatType,
+          KernelType TYPE>
+INLINE __m256 KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
+    return _mm256_set1_ps(coef);
+}
+
+
+template <typename FloatType,
+          KernelType TYPE>
+INLINE __m256d KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+    return _mm256_set1_pd(coef);
 }
 
 

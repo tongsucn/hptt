@@ -6,12 +6,13 @@ template <typename FloatType,
           typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-MacroTransData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::MacroTransData(
+MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>
+::MacroTransVecData(
     KernelFunc kernel, DeducedFloatType<FloatType> alpha,
     DeducedFloatType<FloatType> beta)
     : kernel_(kernel),
-      reg_alpha_(reg_coef(alpha)),
-      reg_beta_(reg_coef(beta)),
+      reg_alpha_(kernel.reg_coef(alpha)),
+      reg_beta_(kernel.reg_coef(beta)),
       reg_num_(kernel.get_reg_num()) {
 }
 
@@ -21,7 +22,7 @@ template <typename FloatType,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
 INLINE GenNumType
-MacroTransData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() {
+MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() {
   return CONT_LEN * this->reg_num_;
 }
 
@@ -31,19 +32,19 @@ template <typename FloatType,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
 INLINE GenNumType
-MacroTransData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() {
+MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() {
   return NCONT_LEN * this->reg_num_;
 }
 
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 1, 1>
-    : public MacroTransData<FloatType, KernelFunc, 1, 1> {
+class MacroTransVec<FloatType, KernelFunc, 1, 1>
+    : public MacroTransVecData<FloatType, KernelFunc, 1, 1> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 1, 1>(kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 1, 1>(kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -57,12 +58,12 @@ public:
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 1, 2>
-    : public MacroTransData<FloatType, KernelFunc, 1, 2> {
+class MacroTransVec<FloatType, KernelFunc, 1, 2>
+    : public MacroTransVecData<FloatType, KernelFunc, 1, 2> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 1, 2>(kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 1, 2>(kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -79,12 +80,12 @@ public:
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 2, 1>
-    : public MacroTransData<FloatType, KernelFunc, 2, 1> {
+class MacroTransVec<FloatType, KernelFunc, 2, 1>
+    : public MacroTransVecData<FloatType, KernelFunc, 2, 1> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 2, 1>(kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 2, 1>(kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -101,12 +102,12 @@ public:
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 2, 2>
-    : public MacroTransData<FloatType, KernelFunc, 2, 2> {
+class MacroTransVec<FloatType, KernelFunc, 2, 2>
+    : public MacroTransVecData<FloatType, KernelFunc, 2, 2> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 2, 2>(kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 2, 2>(kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -132,12 +133,12 @@ public:
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 3, 3>
-    : public MacroTransData<FloatType, KernelFunc, 3, 3> {
+class MacroTransVec<FloatType, KernelFunc, 3, 3>
+    : public MacroTransVecData<FloatType, KernelFunc, 3, 3> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 3, 3> (kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 3, 3> (kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -186,12 +187,12 @@ public:
 
 template <typename FloatType,
           typename KernelFunc>
-class MacroTrans<FloatType, KernelFunc, 4, 4>
-    : public MacroTransData<FloatType, KernelFunc, 4, 4> {
+class MacroTransVec<FloatType, KernelFunc, 4, 4>
+    : public MacroTransVecData<FloatType, KernelFunc, 4, 4> {
 public:
-  MacroTrans(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransData<FloatType, KernelFunc, 4, 4>(kernel, alpha, beta) {
+      : MacroTransVecData<FloatType, KernelFunc, 4, 4>(kernel, alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -263,6 +264,74 @@ public:
         input_data + 3 * this->reg_num_ + 3 * this->reg_num_ * input_stride,
         output_data + 3 * this->reg_num_ + 3 * this->reg_num_ * output_stride,
         input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+  }
+};
+
+
+template <typename FloatType>
+class MacroTransScalar<FloatType, CoefUsage::USE_NONE>
+    : public MacroTransScalarData<FloatType, CoefUsage::USE_NONE> {
+public:
+  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransScalarData<FloatType, CoefUsage::USE_NONE>(alpha, beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    *output_data = *input_data;
+  }
+};
+
+
+template <typename FloatType>
+class MacroTransScalar<FloatType, CoefUsage::USE_ALPHA>
+    : public MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA> {
+public:
+  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA>(alpha, beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    *output_data = alpha * (*input_data);
+  }
+};
+
+
+template <typename FloatType>
+class MacroTransScalar<FloatType, CoefUsage::USE_BETA>
+    : public MacroTransScalarData<FloatType, CoefUsage::USE_BETA> {
+public:
+  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransScalarData<FloatType, CoefUsage::USE_BETA>(alpha, beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    *output_data = *input_data + beta * (*output_data);
+  }
+};
+
+
+template <typename FloatType>
+class MacroTransScalar<FloatType, CoefUsage::USE_BOTH>
+    : public MacroTransScalarData<FloatType, CoefUsage::USE_BOTH> {
+public:
+  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransScalarData<FloatType, CoefUsage::USE_BOTH>(alpha, beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    *output_data = alpha * (*input_data) + beta * (*output_data);
   }
 };
 

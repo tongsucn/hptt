@@ -2,9 +2,6 @@
 #ifndef HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
-#include <memory>
-#include <type_traits>
-
 #include <hptc/types.h>
 #include <hptc/param/parameter_trans.h>
 #include <hptc/kernels/kernel_trans.h>
@@ -16,9 +13,9 @@ template <typename FloatType,
           typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-class MacroTransData {
+class MacroTransVecData {
 public:
-  MacroTransData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVecData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
 
   INLINE GenNumType get_cont_len();
@@ -35,8 +32,27 @@ template <typename FloatType,
           typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-class MacroTrans
-    : public MacroTransData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN> {
+class MacroTransVec
+    : public MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN> {
+};
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+class MacroTransScalarData {
+public:
+  MacroTransScalarData(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta);
+
+protected:
+  DeducedFloatType<FloatType> alpha, beta;
+};
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+class MacroTransScalar
+    : public MacroTransScalarData<FloatType, USAGE> {
 };
 
 

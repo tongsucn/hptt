@@ -8,6 +8,7 @@
 
 #include <hptc/types.h>
 #include <hptc/param/parameter_trans.h>
+#include <hptc/kernels/kernel_trans_base.h>
 
 
 namespace hptc {
@@ -16,40 +17,27 @@ namespace hptc {
  * Register type deducing utilities
  */
 template <typename FloatType>
-struct RegDeducer {
+struct RegDeducerAvx {
 };
 
 template <>
-struct RegDeducer<float> {
+struct RegDeducerAvx<float> {
   using type = __m256;
 };
 
 template <>
-struct RegDeducer<double> {
+struct RegDeducerAvx<double> {
   using type = __m256d;
 };
 
 template <>
-struct RegDeducer<FloatComplex> {
+struct RegDeducerAvx<FloatComplex> {
   using type = __m256;
 };
 
 template <>
-struct RegDeducer<DoubleComplex> {
+struct RegDeducerAvx<DoubleComplex> {
   using type = __m256d;
-};
-
-template <typename FloatType>
-using DeducedRegType = typename RegDeducer<FloatType>::type;
-
-
-template <typename DeducedFloat>
-INLINE DeducedRegType<DeducedFloat> reg_coef(DeducedFloat coef);
-
-
-enum class KernelType : bool {
-  KERNEL_FULL = true,
-  KERNEL_HALF = false
 };
 
 
@@ -57,6 +45,8 @@ template <typename FloatType,
           KernelType TYPE>
 struct KernelTransAvxBase {
   INLINE GenNumType get_reg_num();
+  INLINE __m256 reg_coef(float coef);
+  INLINE __m256d reg_coef(double coef);
 };
 
 
