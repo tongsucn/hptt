@@ -50,7 +50,7 @@ protected:
     }
   }
 
-  ~TestTensorWrapper() {
+  virtual ~TestTensorWrapper() {
     delete [] raw_data;
   }
 

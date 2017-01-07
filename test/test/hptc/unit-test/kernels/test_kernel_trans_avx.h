@@ -2,8 +2,8 @@
 #ifndef HPTC_UNIT_TEST_KERNELS_TEST_KERNEL_TRANS_AVX_H_
 #define HPTC_UNIT_TEST_KERNELS_TEST_KERNEL_TRANS_AVX_H_
 
-#include <algorithm>
 #include <random>
+#include <algorithm>
 #include <type_traits>
 
 #include <gtest/gtest.h>
@@ -11,10 +11,16 @@
 
 #include <hptc/types.h>
 #include <hptc/test_util.h>
+#include <hptc/param/parameter_trans.h>
+#include <hptc/kernels/kernel_trans_base.h>
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
 using namespace std;
 using namespace hptc;
+
+
+template <typename FloatType>
+using DeducedRegType = typename RegDeducerAvx<FloatType>::type;
 
 
 TEST(TestKernelTransAvxUtil, TestRegDeducer) {
@@ -42,9 +48,7 @@ protected:
         data_len(this->data_width * this->data_width),
         org_data(new FloatType [this->data_len]),
         ref_data(new FloatType [this->data_len]),
-        act_data(new FloatType [this->data_len]),
-        reg_alpha(reg_coef<Deduced>(this->alpha)),
-        reg_beta(reg_coef<Deduced>(this->beta)) {
+        act_data(new FloatType [this->data_len]) {
     // Prepare random generator
     random_device rd;
     mt19937 gen(rd());
@@ -59,7 +63,7 @@ protected:
     }
   }
 
-  ~TestKernelTransAvx() {
+  virtual ~TestKernelTransAvx() {
     delete [] this->org_data;
     delete [] this->ref_data;
     delete [] this->act_data;
@@ -74,23 +78,21 @@ protected:
     // Compute reference
     for (TensorOrder idx_0 = 0; idx_0 < width; ++idx_0) {
       for (TensorOrder idx_1 = 0; idx_1 < width; ++idx_1) {
-        TensorOrder org_offset = (idx_0 + offset_org_0) * this->data_width;
-        org_offset += idx_1 + offset_org_1;
-        TensorOrder ref_offset = idx_0 + offset_ref_0;
-        ref_offset += (idx_1 + offset_ref_1) * this->data_width;
+        TensorOrder org_offset = (idx_0 + offset_org_0) * this->data_width
+            + idx_1 + offset_org_1;
+        TensorOrder ref_offset = idx_0 + offset_ref_0
+            + (idx_1 + offset_ref_1) * this->data_width;
 
-        auto org_ptr = reinterpret_cast<Deduced *>(&this->org_data[org_offset]);
-        auto ref_ptr = reinterpret_cast<Deduced *>(&this->ref_data[ref_offset]);
-        for (TensorOrder in_idx = 0; in_idx < this->in_offset; ++in_idx)
-          if (CoefUsage::USE_NONE == USAGE)
-            ref_ptr[in_idx] = org_ptr[in_idx];
-          else if (CoefUsage::USE_ALPHA == USAGE)
-            ref_ptr[in_idx] = this->alpha * org_ptr[in_idx];
-          else if (CoefUsage::USE_BETA == USAGE)
-            ref_ptr[in_idx] = org_ptr[in_idx] + this->beta * ref_ptr[in_idx];
-          else
-            ref_ptr[in_idx] = this->alpha * org_ptr[in_idx]
-                + this->beta * ref_ptr[in_idx];
+        if (CoefUsage::USE_NONE == USAGE)
+          this->ref_data[ref_offset] = this->org_data[org_offset];
+        else if (CoefUsage::USE_ALPHA == USAGE)
+          this->ref_data[ref_offset] = this->alpha * this->org_data[org_offset];
+        else if (CoefUsage::USE_BETA == USAGE)
+          this->ref_data[ref_offset] = this->org_data[org_offset]
+              + this->beta * this->ref_data[ref_offset];
+        else
+          this->ref_data[ref_offset] = this->alpha * this->org_data[org_offset]
+              + this->beta * this->ref_data[ref_offset];
       }
     }
   }
@@ -106,6 +108,8 @@ protected:
     // Prepare
     // Create kernel, compute reference and reset actual data
     KernelTransAvx<FloatType, USAGE, KernelType::KERNEL_FULL> kernel;
+    this->reg_alpha = kernel.reg_coef(this->alpha);
+    this->reg_beta = kernel.reg_coef(this->beta);
     this->calc_ref<USAGE>(offset_org_0, offset_org_1, offset_out_0,
         offset_out_1, this->kernel_width_full);
     this->reset_act();
@@ -125,6 +129,8 @@ protected:
     // Prepare
     // Create kernel, compute reference and reset actual data
     KernelTransAvx<FloatType, USAGE, KernelType::KERNEL_HALF> kernel;
+    this->reg_alpha = kernel.reg_coef(this->alpha);
+    this->reg_beta = kernel.reg_coef(this->beta);
     this->calc_ref<USAGE>(offset_org_0, offset_org_1, offset_out_0,
         offset_out_1, this->kernel_width_half);
     this->reset_act();

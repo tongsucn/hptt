@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
   // Build graph
   cout << "Building graph..." << endl;
   // Select kernels
-  MacroTrans<float, KernelTransFull<float, CoefUsage::USE_BOTH>, 2, 2> macro(
+  MacroTransVec<float, KernelTransFull<float, CoefUsage::USE_BOTH>, 2, 2> macro(
       KernelTransFull<float, CoefUsage::USE_BOTH>(), alpha, beta);
 
   // Create for loop
