@@ -10,20 +10,24 @@
 
 namespace hptc {
 
-template <typename FloatType,
-          CoefUsage USAGE>
-using KernelTransFull
-    = KernelTransAvx<FloatType, USAGE, KernelType::KERNEL_FULL>;
-
-
-template <typename FloatType,
-          CoefUsage USAGE>
-using KernelTransHalf
-    = KernelTransAvx<FloatType, USAGE, KernelType::KERNEL_HALF>;
-
-
 template <typename FloatType>
 using DeducedRegType = typename RegDeducerAvx<FloatType>::type;
+
+
+template <typename FloatType,
+          CoefUsage USAGE,
+          KernelType TYPE>
+using KernelTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+using KernelTransFull = KernelTrans<FloatType, USAGE, KernelType::KERNEL_FULL>;
+
+
+template <typename FloatType,
+          CoefUsage USAGE>
+using KernelTransHalf = KernelTrans<FloatType, USAGE, KernelType::KERNEL_HALF>;
 
 }
 

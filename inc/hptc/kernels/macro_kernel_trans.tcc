@@ -2,6 +2,9 @@
 #ifndef HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
 
+/*
+ * Implementation for class MacroTransVecData
+ */
 template <typename FloatType,
           typename KernelFunc,
           GenNumType CONT_LEN,
@@ -37,6 +40,9 @@ MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() {
 }
 
 
+/*
+ * Implementation for class MacroTransVec
+ */
 template <typename FloatType,
           typename KernelFunc>
 class MacroTransVec<FloatType, KernelFunc, 1, 1>
@@ -268,6 +274,20 @@ public:
 };
 
 
+/*
+ * Implementation for class MacroTransData
+ */
+template <typename FloatType,
+          CoefUsage USAGE>
+MacroTransScalarData<FloatType, USAGE>::MacroTransScalarData(
+    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
+    : alpha(alpha), beta(beta) {
+}
+
+
+/*
+ * Implementation for class MacroTransScalar
+ */
 template <typename FloatType>
 class MacroTransScalar<FloatType, CoefUsage::USE_NONE>
     : public MacroTransScalarData<FloatType, CoefUsage::USE_NONE> {
@@ -277,10 +297,8 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_NONE>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) {
-    *output_data = *input_data;
+  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
+    output_data = input_data;
   }
 };
 
@@ -294,10 +312,8 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) {
-    *output_data = alpha * (*input_data);
+  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
+    output_data = this->alpha * input_data;
   }
 };
 
@@ -311,10 +327,8 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_BETA>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) {
-    *output_data = *input_data + beta * (*output_data);
+  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
+    output_data = input_data + this->beta * output_data;
   }
 };
 
@@ -328,10 +342,8 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_BOTH>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) {
-    *output_data = alpha * (*input_data) + beta * (*output_data);
+  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
+    output_data = this->alpha * input_data + this->beta * output_data;
   }
 };
 

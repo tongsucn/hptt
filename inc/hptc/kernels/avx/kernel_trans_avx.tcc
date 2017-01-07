@@ -2,6 +2,9 @@
 #ifndef HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_TCC_
 #define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_TCC_
 
+/*
+ * Implementation for class KernelTransAvxBase
+ */
 template <typename FloatType,
           KernelType TYPE>
 INLINE GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
@@ -29,6 +32,9 @@ INLINE __m256d KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
 }
 
 
+/*
+ * Implementation for class KernelTransAvx
+ */
 template <CoefUsage USAGE>
 struct KernelTransAvx<float, USAGE, KernelType::KERNEL_FULL> final
     : public KernelTransAvxBase<float, KernelType::KERNEL_FULL> {
