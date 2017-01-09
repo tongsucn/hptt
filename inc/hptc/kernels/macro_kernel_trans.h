@@ -22,8 +22,10 @@ public:
   INLINE GenNumType get_ncont_len();
 
 protected:
+  using RegType = typename KernelFunc::RegType;
+
   KernelFunc kernel_;
-  DeducedRegType<FloatType> reg_alpha_, reg_beta_;
+  RegType reg_alpha_, reg_beta_;
   GenNumType reg_num_;
 };
 

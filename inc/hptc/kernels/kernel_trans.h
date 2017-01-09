@@ -10,10 +10,6 @@
 
 namespace hptc {
 
-template <typename FloatType>
-using DeducedRegType = typename RegDeducerAvx<FloatType>::type;
-
-
 template <typename FloatType,
           CoefUsage USAGE,
           KernelType TYPE>
