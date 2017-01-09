@@ -377,8 +377,7 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull2x2) {
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x1) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       1, 1> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 8> result{ -1, -1, -1, -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 1x1 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "
@@ -404,8 +403,7 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x1) {
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x2) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       1, 2> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 8> result{ -1, -1, -1, -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 1x2 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "
@@ -431,8 +429,7 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x2) {
 TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       2, 1> test_half(*this);
-  //auto result = test_half();
-  array<TensorIdx, 8> result{ -1, -1, -1, -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 2x1 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "
@@ -458,8 +455,7 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
 TYPED_TEST(TestMacroTransVec, TestMacroHalf2x2) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       2, 2> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 8> result{ -1, -1, -1, -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 2x2 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "

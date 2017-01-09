@@ -20,23 +20,6 @@ using namespace hptc;
 
 
 template <typename FloatType>
-using DeducedRegType = typename RegDeducerAvx<FloatType>::type;
-
-
-TEST(TestKernelTransAvxUtil, TestRegDeducer) {
-  // Register type deducer tests
-  ASSERT_TRUE((is_same<__m256, DeducedRegType<float>>::value))
-      << "Reg type deducing error, cannot deduce float to __m256.";
-  ASSERT_TRUE((is_same<__m256d, DeducedRegType<double>>::value))
-      << "Reg type deducing error, cannot deduce double to __m256d.";
-  ASSERT_TRUE((is_same<__m256, DeducedRegType<FloatComplex>>::value))
-      << "Reg type deducing error, cannot deduce FloatComplex to __m256.";
-  ASSERT_TRUE((is_same<__m256d, DeducedRegType<DoubleComplex>>::value))
-      << "Reg type deducing error, cannot deduce DoubleComplex to __m256d.";
-}
-
-
-template <typename FloatType>
 class TestKernelTransAvx : public ::testing::Test {
 protected:
   using Deduced = DeducedFloatType<FloatType>;
@@ -111,9 +94,12 @@ protected:
 
     array<TensorIdx, 5> operator()() {
       // Create kernel, compute reference and reset actual data
+      using KernelType = KernelTransAvx<FloatType, USAGE, TYPE>;
+      using RegType = typename KernelType::RegType;
+
       KernelTransAvx<FloatType, USAGE, TYPE> kernel;
-      outer.reg_alpha = kernel.reg_coef(outer.alpha);
-      outer.reg_beta = kernel.reg_coef(outer.beta);
+      RegType reg_alpha = kernel.reg_coef(outer.alpha);
+      RegType reg_beta = kernel.reg_coef(outer.beta);
       array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
 
       // Execute transpose
@@ -126,8 +112,7 @@ protected:
               outer.reset_act();
               kernel(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_width,
-                  outer.data_width, outer.data_width, outer.reg_alpha,
-                  outer.reg_beta);
+                  outer.data_width, outer.data_width, reg_alpha, reg_beta);
               result[0] = verify<FloatType>(outer.ref_data, outer.act_data,
                   outer.data_len);
               if (-1 != result[0])
@@ -150,7 +135,6 @@ protected:
   GenNumType kernel_width_full, kernel_width_half;
   TensorIdx data_width, data_len;
   FloatType *org_data, *ref_data, *act_data;
-  DeducedRegType<FloatType> reg_alpha, reg_beta;
 };
 
 
@@ -219,8 +203,7 @@ TYPED_TEST(TestKernelTransAvx, TestFullCoefBoth) {
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefNone) {
   typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_NONE,
       KernelType::KERNEL_HALF> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose without"
       << " coefficient does not match at absolute index: " << result[0]
       << ", offsets are: Original: (" << result[1] << ", " << result[2]
@@ -231,8 +214,7 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefNone) {
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefAlpha) {
   typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_ALPHA,
       KernelType::KERNEL_HALF> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with alpha"
       << " does not match at absolute index: " << result[0]
       << ", offsets are: Original: (" << result[1] << ", " << result[2]
@@ -243,8 +225,7 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefAlpha) {
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefBeta) {
   typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BETA,
       KernelType::KERNEL_HALF> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with beta"
       << " does not match at absolute index: " << result[0]
       << ", offsets are: Original: (" << result[1] << ", " << result[2]
@@ -255,8 +236,7 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefBeta) {
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefBoth) {
   typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BOTH,
       KernelType::KERNEL_HALF> test_half(*this);
-  // auto result = test_half();
-  array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
+  auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with both"
       << " coefficients does not match at absolute index: " << result[0]
       << ", offsets are: Original: (" << result[1] << ", " << result[2]
