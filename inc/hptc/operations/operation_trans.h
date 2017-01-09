@@ -13,7 +13,8 @@
 namespace hptc {
 
 template <TensorOrder ORDER,
-          typename ParamType>
+          typename ParamType,
+          typename MacroType>
 class OpForTransData {
 public:
   OpForTransData(std::shared_ptr<ParamType> param);
@@ -23,6 +24,10 @@ public:
   INLINE void set_step(TensorIdx step_val, TensorIdx idx);
 
 protected:
+  template <GenNumType UNROLL_NUM>
+  INLINE void unroller(GenCounter<UNROLL_NUM>, MacroType &macro_kernel);
+  INLINE void unroller(GenCounter<0>, MacroType &macro_kernel);
+
   std::shared_ptr<ParamType> param_;
   TensorIdx loop_idx_[ORDER];
   TensorIdx *loop_perm_idx_[ORDER];
@@ -33,7 +38,15 @@ protected:
 template <TensorOrder ORDER,
           typename ParamType,
           typename MacroType>
-class OpForTrans final : public OpForTransData<ORDER, ParamType> {
+class OpForTrans final : public OpForTransData<ORDER, ParamType, MacroType> {
+public:
+  OpForTrans(std::shared_ptr<ParamType> param)
+      : OpForTransData<ORDER, ParamType, MacroType>(param) {
+  }
+
+  INLINE void operator()(MacroType &macro_kernel) {
+    this->unroller(GenCounter<ORDER>(), macro_kernel);
+  }
 };
 
 

@@ -6,8 +6,9 @@
  * Implementation for class OpForTransData
  */
 template <TensorOrder ORDER,
-          typename ParamType>
-OpForTransData<ORDER, ParamType>::OpForTransData(
+          typename ParamType,
+          typename MacroType>
+OpForTransData<ORDER, ParamType, MacroType>::OpForTransData(
     std::shared_ptr<ParamType> param) : param_(param) {
   // Initialize loop variables
   std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
@@ -25,26 +26,54 @@ OpForTransData<ORDER, ParamType>::OpForTransData(
 
 
 template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_begin(
+          typename ParamType,
+          typename MacroType>
+INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_begin(
     TensorIdx begin_val, TensorIdx idx) {
   this->loop_begin_[idx] = begin_val;
 }
 
 
 template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_end(
+          typename ParamType,
+          typename MacroType>
+INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_end(
     TensorIdx end_val, TensorIdx idx) {
   this->loop_end_[idx] = end_val;
 }
 
 
 template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_step(
+          typename ParamType,
+          typename MacroType>
+INLINE void OpForTransData<ORDER, ParamType, MacroType>::set_step(
     TensorIdx step_val, TensorIdx idx) {
   this->loop_step_[idx] = step_val;
+}
+
+
+template <TensorOrder ORDER,
+          typename ParamType,
+          typename MacroType>
+template <GenNumType UNROLL_NUM>
+INLINE void OpForTransData<ORDER, ParamType, MacroType>::unroller(
+    GenCounter<UNROLL_NUM>, MacroType &macro_kernel) {
+  constexpr TensorOrder for_idx = ORDER - UNROLL_NUM;
+  for (this->loop_idx_[for_idx] = this->loop_begin_[for_idx];
+      this->loop_idx_[for_idx] < this->loop_end_[for_idx];
+      this->loop_idx_[for_idx] += this->loop_step_[for_idx])
+    this->unroller(GenCounter<UNROLL_NUM - 1>(), macro_kernel);
+}
+
+
+template <TensorOrder ORDER,
+          typename ParamType,
+          typename MacroType>
+INLINE void OpForTransData<ORDER, ParamType, MacroType>::unroller(GenCounter<0>,
+    MacroType &macro_kernel) {
+  macro_kernel(&this->param_->input_tensor[this->loop_idx_],
+      &this->param_->output_tensor[this->loop_perm_idx_],
+      this->param_->input_stride, this->param_->output_stride);
 }
 
 
@@ -54,24 +83,26 @@ INLINE void OpForTransData<ORDER, ParamType>::set_step(
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<0, ParamType, MacroType> final
-    : public OpForTransData<0, ParamType> {
+    : public OpForTransData<0, ParamType, MacroType> {
+  OpForTrans() = delete;
 };
 
 
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<1, ParamType, MacroType> final
-    : public OpForTransData<1, ParamType> {
+    : public OpForTransData<1, ParamType, MacroType> {
+  OpForTrans() = delete;
 };
 
 
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<2, ParamType, MacroType> final
-    : public OpForTransData<2, ParamType> {
+    : public OpForTransData<2, ParamType, MacroType> {
 public:
   OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<2, ParamType>(param) {
+      : OpForTransData<2, ParamType, MacroType>(param) {
   }
 
   INLINE void operator()(MacroType &macro_kernel) {
@@ -96,10 +127,10 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<3, ParamType, MacroType> final
-    : public OpForTransData<3, ParamType> {
+    : public OpForTransData<3, ParamType, MacroType> {
 public:
   OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<3, ParamType>(param) {
+      : OpForTransData<3, ParamType, MacroType>(param) {
   }
 
   INLINE void operator()(MacroType &macro_kernel) {
@@ -128,10 +159,10 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<4, ParamType, MacroType> final
-    : public OpForTransData<4, ParamType> {
+    : public OpForTransData<4, ParamType, MacroType> {
 public:
   OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<4, ParamType>(param) {
+      : OpForTransData<4, ParamType, MacroType>(param) {
   }
 
   INLINE void operator()(MacroType &macro_kernel) {
@@ -164,10 +195,10 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<5, ParamType, MacroType> final
-    : public OpForTransData<5, ParamType> {
+    : public OpForTransData<5, ParamType, MacroType> {
 public:
   OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<5, ParamType>(param) {
+      : OpForTransData<5, ParamType, MacroType>(param) {
   }
 
   INLINE void operator()(MacroType &macro_kernel) {
@@ -204,10 +235,10 @@ public:
 template <typename ParamType,
           typename MacroType>
 class OpForTrans<6, ParamType, MacroType> final
-    : public OpForTransData<6, ParamType> {
+    : public OpForTransData<6, ParamType, MacroType> {
 public:
   OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<6, ParamType>(param) {
+      : OpForTransData<6, ParamType, MacroType>(param) {
   }
 
   INLINE void operator()(MacroType &macro_kernel) {

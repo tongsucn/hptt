@@ -7,6 +7,12 @@
 
 namespace hptc {
 
+template <GenNumType GEN_NUM>
+struct GenCounter {
+};
+
+
+
 }
 
 #endif // HPTC_UTIL_H_
