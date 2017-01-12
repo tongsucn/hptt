@@ -12,6 +12,10 @@ struct GenCounter {
 };
 
 
+template <GenNumType ROWS,
+          GenNumType COLS>
+struct DualCounter {
+};
 
 }
 

@@ -36,6 +36,22 @@ template <typename FloatType,
           GenNumType NCONT_LEN>
 class MacroTransVec
     : public MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN> {
+public:
+  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta)
+      : MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>(kernel,
+          alpha, beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    this->kernel_(input_data, output_data, input_stride, output_stride,
+        this->reg_alpha_, this->reg_beta_);
+    this->kernel_(input_data + this->reg_num_ * input_stride,
+        output_data + this->reg_num_,
+        input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+  }
 };
 
 
