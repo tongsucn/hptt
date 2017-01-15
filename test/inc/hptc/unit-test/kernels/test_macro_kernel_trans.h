@@ -189,7 +189,7 @@ protected:
   };
 
 
-  constexpr static GenNumType max_macro = 2;
+  constexpr static GenNumType max_macro = 3;
   constexpr static TensorOrder height_extra = 3;
   constexpr static TensorOrder width_extra = 4;
 
@@ -319,6 +319,32 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull1x2) {
 }
 
 
+TYPED_TEST(TestMacroTransVec, TestMacroFull1x3) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
+      1, 3> test_full(*this);
+  auto result = test_full();
+  ASSERT_EQ(-1, result[0]) << "Result of 1x3 macro full kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 1x3 macro full kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 1x3 macro full kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 1x3 macro full kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
 TYPED_TEST(TestMacroTransVec, TestMacroFull2x1) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
       2, 1> test_full(*this);
@@ -345,35 +371,110 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull2x1) {
 }
 
 
-TYPED_TEST(TestMacroTransVec, TestMacroFull2x2) {
+TYPED_TEST(TestMacroTransVec, TestMacroFull2x3) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      2, 2> test_full(*this);
+      2, 3> test_full(*this);
   auto result = test_full();
-  ASSERT_EQ(-1, result[0]) << "Result of 2x2 macro full kernel transpose"
+  ASSERT_EQ(-1, result[0]) << "Result of 2x3 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[1]) << "Result of 2x2 macro full kernel transpose"
+  ASSERT_EQ(-1, result[1]) << "Result of 2x3 macro full kernel transpose"
       << " with alpha does not match at absolute index: "
       << result[1] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[2]) << "Result of 2x2 macro full kernel transpose"
+  ASSERT_EQ(-1, result[2]) << "Result of 2x3 macro full kernel transpose"
       << " with beta does not match at absolute index: "
       << result[2] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[3]) << "Result of 2x2 macro full kernel transpose"
+  ASSERT_EQ(-1, result[3]) << "Result of 2x3 macro full kernel transpose"
       << " with both coefficients does not match at absolute index: "
       << result[3] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 }
 
 
-/*
- * Following tests always pass before half kernels are implemented.
- */
+TYPED_TEST(TestMacroTransVec, TestMacroFull3x1) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
+      3, 1> test_full(*this);
+  auto result = test_full();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x1 macro full kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x1 macro full kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x1 macro full kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x1 macro full kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
+TYPED_TEST(TestMacroTransVec, TestMacroFull3x2) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
+      3, 2> test_full(*this);
+  auto result = test_full();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x2 macro full kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x2 macro full kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x2 macro full kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x2 macro full kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
+TYPED_TEST(TestMacroTransVec, TestMacroFull3x3) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
+      3, 3> test_full(*this);
+  auto result = test_full();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x3 macro full kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x3 macro full kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x3 macro full kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x3 macro full kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x1) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       1, 1> test_half(*this);
@@ -426,6 +527,32 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x2) {
 }
 
 
+TYPED_TEST(TestMacroTransVec, TestMacroHalf1x3) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
+      1, 3> test_half(*this);
+  auto result = test_half();
+  ASSERT_EQ(-1, result[0]) << "Result of 1x3 macro half kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 1x3 macro half kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 1x3 macro half kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 1x3 macro half kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
 TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
       2, 1> test_half(*this);
@@ -452,26 +579,104 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
 }
 
 
-TYPED_TEST(TestMacroTransVec, TestMacroHalf2x2) {
+TYPED_TEST(TestMacroTransVec, TestMacroHalf2x3) {
   typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      2, 2> test_half(*this);
+      2, 3> test_half(*this);
   auto result = test_half();
-  ASSERT_EQ(-1, result[0]) << "Result of 2x2 macro half kernel transpose"
+  ASSERT_EQ(-1, result[0]) << "Result of 2x3 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
       << result[0] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[1]) << "Result of 2x2 macro half kernel transpose"
+  ASSERT_EQ(-1, result[1]) << "Result of 2x3 macro half kernel transpose"
       << " with alpha does not match at absolute index: "
       << result[1] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[2]) << "Result of 2x2 macro half kernel transpose"
+  ASSERT_EQ(-1, result[2]) << "Result of 2x3 macro half kernel transpose"
       << " with beta does not match at absolute index: "
       << result[2] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
 
-  ASSERT_EQ(-1, result[3]) << "Result of 2x2 macro half kernel transpose"
+  ASSERT_EQ(-1, result[3]) << "Result of 2x3 macro half kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
+TYPED_TEST(TestMacroTransVec, TestMacroHalf3x1) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
+      3, 1> test_half(*this);
+  auto result = test_half();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x1 macro half kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x1 macro half kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x1 macro half kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x1 macro half kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
+TYPED_TEST(TestMacroTransVec, TestMacroHalf3x2) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
+      3, 2> test_half(*this);
+  auto result = test_half();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x2 macro half kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x2 macro half kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x2 macro half kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x2 macro half kernel transpose"
+      << " with both coefficients does not match at absolute index: "
+      << result[3] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+}
+
+
+TYPED_TEST(TestMacroTransVec, TestMacroHalf3x3) {
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
+      3, 3> test_half(*this);
+  auto result = test_half();
+  ASSERT_EQ(-1, result[0]) << "Result of 3x3 macro half kernel transpose"
+      << " without coefficients does not match at absolute index: "
+      << result[0] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[1]) << "Result of 3x3 macro half kernel transpose"
+      << " with alpha does not match at absolute index: "
+      << result[1] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[2]) << "Result of 3x3 macro half kernel transpose"
+      << " with beta does not match at absolute index: "
+      << result[2] << ", offsets are: Original: (" << result[4] << ", "
+      << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
+
+  ASSERT_EQ(-1, result[3]) << "Result of 3x3 macro half kernel transpose"
       << " with both coefficients does not match at absolute index: "
       << result[3] << ", offsets are: Original: (" << result[4] << ", "
       << result[5] << "), Actual: (" << result[6] << ", " << result[7] << ").";
