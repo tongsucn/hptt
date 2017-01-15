@@ -40,13 +40,9 @@ template <TensorOrder ORDER,
           typename MacroType>
 class OpForTrans final : public OpForTransData<ORDER, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<ORDER, ParamType, MacroType>(param) {
-  }
+  OpForTrans(std::shared_ptr<ParamType> param);
 
-  INLINE void operator()(MacroType &macro_kernel) {
-    this->unroller(GenCounter<ORDER>(), macro_kernel);
-  }
+  INLINE void operator()(MacroType &macro_kernel);
 };
 
 

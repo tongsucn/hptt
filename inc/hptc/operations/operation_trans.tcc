@@ -232,48 +232,21 @@ public:
 };
 
 
-template <typename ParamType,
+template <TensorOrder ORDER,
+          typename ParamType,
           typename MacroType>
-class OpForTrans<6, ParamType, MacroType> final
-    : public OpForTransData<6, ParamType, MacroType> {
-public:
-  OpForTrans(std::shared_ptr<ParamType> param)
-      : OpForTransData<6, ParamType, MacroType>(param) {
-  }
+OpForTrans<ORDER, ParamType, MacroType>::OpForTrans(
+    std::shared_ptr<ParamType> param)
+    : OpForTransData<6, ParamType, MacroType>(param) {
+}
 
-  INLINE void operator()(MacroType &macro_kernel) {
-    auto &input_tensor = this->param_->input_tensor;
-    auto &output_tensor = this->param_->output_tensor;
-
-    for (this->loop_idx_[0] = this->loop_begin_[0];
-        this->loop_idx_[0] < this->loop_end_[0];
-        this->loop_idx_[0] += this->loop_step_[0]) {
-      for (this->loop_idx_[1] = this->loop_begin_[1];
-          this->loop_idx_[1] < this->loop_end_[1];
-          this->loop_idx_[1] += this->loop_step_[1]) {
-        for (this->loop_idx_[2] = this->loop_begin_[2];
-            this->loop_idx_[2] < this->loop_end_[2];
-            this->loop_idx_[2] += this->loop_step_[2]) {
-          for (this->loop_idx_[3] = this->loop_begin_[3];
-              this->loop_idx_[3] < this->loop_end_[3];
-              this->loop_idx_[3] += this->loop_step_[3]) {
-            for (this->loop_idx_[4] = this->loop_begin_[4];
-                this->loop_idx_[4] < this->loop_end_[4];
-                this->loop_idx_[4] += this->loop_step_[4]) {
-              for (this->loop_idx_[5] = this->loop_begin_[5];
-                  this->loop_idx_[5] < this->loop_end_[5];
-                  this->loop_idx_[5] += this->loop_step_[5]) {
-                macro_kernel(&input_tensor[this->loop_idx_],
-                    &output_tensor[this->loop_perm_idx_],
-                    this->param_->input_stride, this->param_->output_stride);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-};
+template <TensorOrder ORDER,
+          typename ParamType,
+          typename MacroType>
+INLINE void OpForTrans<ORDER, ParamType, MacroType>::operator()(
+    MacroType &macro_kernel) {
+  this->unroller(GenCounter<ORDER>(), macro_kernel);
+}
 
 
 #endif // HPTC_OPERATIONS_OPERATION_TRANS_TCC_
