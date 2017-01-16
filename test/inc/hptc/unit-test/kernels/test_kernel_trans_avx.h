@@ -113,8 +113,8 @@ protected:
               kernel(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_width,
                   outer.data_width, outer.data_width, reg_alpha, reg_beta);
-              result[0] = verify<FloatType>(outer.ref_data, outer.act_data,
-                  outer.data_len);
+              result[0] = DataWrapper<FloatType>::verify(outer.ref_data,
+                  outer.act_data, outer.data_len);
               if (-1 != result[0])
                 return result;
             }

@@ -109,6 +109,8 @@ protected:
             GenNumType WIDTH>
   class CaseGenerator {
   public:
+    using Data = DataWrapper<FloatType>;
+
     CaseGenerator(TestMacroTransVec<FloatType> &outer)
         : outer(outer) {
     }
@@ -143,7 +145,8 @@ protected:
               macro_none(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
                   outer.data_width, outer.data_height);
-              res[0] = verify(outer.ref_data, outer.act_data, outer.data_len);
+              res[0] = Data::verify(outer.ref_data, outer.act_data,
+                  outer.data_len);
               if (-1 != res[0])
                 fail = true;
 
@@ -153,7 +156,8 @@ protected:
               macro_alpha(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
                   outer.data_width, outer.data_height);
-              res[1] = verify(outer.ref_data, outer.act_data, outer.data_len);
+              res[1] = Data::verify(outer.ref_data, outer.act_data,
+                  outer.data_len);
               if (-1 != res[1])
                 fail = true;
 
@@ -163,7 +167,8 @@ protected:
               macro_beta(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
                   outer.data_width, outer.data_height);
-              res[2] = verify(outer.ref_data, outer.act_data, outer.data_len);
+              res[2] = Data::verify(outer.ref_data, outer.act_data,
+                  outer.data_len);
               if (-1 != res[2])
                 fail = true;
 
@@ -173,7 +178,8 @@ protected:
               macro_both(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
                   outer.data_width, outer.data_height);
-              res[3] = verify(outer.ref_data, outer.act_data, outer.data_len);
+              res[3] = Data::verify(outer.ref_data, outer.act_data,
+                  outer.data_len);
               if (-1 != res[3])
                 fail = true;
 
@@ -205,6 +211,7 @@ class TestMacroTransScalar
     : public TestMacroTransBase<FloatType>, public ::testing::Test {
 protected:
   using Deduced = DeducedFloatType<FloatType>;
+  using Data = DataWrapper<FloatType>;
 
   virtual void SetUp() {
     // Initialize origin data from random number
@@ -250,7 +257,7 @@ protected:
       macro(outer.org_data, outer.act_data);
 
       // Verify
-      return verify<FloatType>(&outer.ref_data, &outer.act_data, 1);
+      return Data::verify(&outer.ref_data, &outer.act_data, 1);
     }
 
   private:
