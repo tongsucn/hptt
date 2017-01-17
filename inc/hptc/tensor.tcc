@@ -251,7 +251,7 @@ INLINE void TensorWrapper<FloatType, ORDER, LAYOUT>::init_offset_() {
   }
   else {
     this->strides_[ORDER - 1] = 1;
-    for (TensorOrder order_idx = ORDER - 1; order_idx > 0; --order_idx)
+    for (TensorIdx order_idx = ORDER - 1; order_idx > 0; --order_idx)
       this->strides_[order_idx - 1]
           = this->outer_size_[order_idx] * this->strides_[order_idx];
   }
@@ -278,7 +278,7 @@ INLINE void TensorWrapper<FloatType, ORDER, LAYOUT>::init_offset_(
   }
   else {
     this->strides_[ORDER - 1] = 1;
-    for (TensorOrder order_idx = ORDER - 1; order_idx > 0; --order_idx)
+    for (TensorIdx order_idx = ORDER - 1; order_idx > 0; --order_idx)
       this->strides_[order_idx - 1]
           = this->outer_size_[order_idx] * this->strides_[order_idx];
   }
