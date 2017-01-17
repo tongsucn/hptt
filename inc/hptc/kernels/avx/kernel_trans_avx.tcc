@@ -9,6 +9,10 @@ template <>
 struct KernelTransAvxBase<float, KernelType::KERNEL_FULL> {
   using RegType = __m256;
 
+  INLINE GenNumType get_kernel_width() {
+    return 8;
+  }
+
   INLINE GenNumType get_reg_num() {
     return 8;
   }
@@ -22,6 +26,10 @@ struct KernelTransAvxBase<float, KernelType::KERNEL_FULL> {
 template <>
 struct KernelTransAvxBase<double, KernelType::KERNEL_FULL> {
   using RegType = __m256d;
+
+  INLINE GenNumType get_kernel_width() {
+    return 4;
+  }
 
   INLINE GenNumType get_reg_num() {
     return 4;
@@ -37,6 +45,10 @@ template <>
 struct KernelTransAvxBase<FloatComplex, KernelType::KERNEL_FULL> {
   using RegType = __m256;
 
+  INLINE GenNumType get_kernel_width() {
+    return 4;
+  }
+
   INLINE GenNumType get_reg_num() {
     return 4;
   }
@@ -50,6 +62,10 @@ struct KernelTransAvxBase<FloatComplex, KernelType::KERNEL_FULL> {
 template <>
 struct KernelTransAvxBase<DoubleComplex, KernelType::KERNEL_FULL> {
   using RegType = __m256d;
+
+  INLINE GenNumType get_kernel_width() {
+    return 2;
+  }
 
   INLINE GenNumType get_reg_num() {
     return 2;
@@ -65,6 +81,10 @@ template <>
 struct KernelTransAvxBase<float, KernelType::KERNEL_HALF> {
   using RegType = __m128;
 
+  INLINE GenNumType get_kernel_width() {
+    return 4;
+  }
+
   INLINE GenNumType get_reg_num() {
     return 4;
   }
@@ -78,6 +98,10 @@ struct KernelTransAvxBase<float, KernelType::KERNEL_HALF> {
 template <>
 struct KernelTransAvxBase<double, KernelType::KERNEL_HALF> {
   using RegType = __m128d;
+
+  INLINE GenNumType get_kernel_width() {
+    return 2;
+  }
 
   INLINE GenNumType get_reg_num() {
     return 2;
@@ -93,6 +117,10 @@ template <>
 struct KernelTransAvxBase<FloatComplex, KernelType::KERNEL_HALF> {
   using RegType = __m128;
 
+  INLINE GenNumType get_kernel_width() {
+    return 2;
+  }
+
   INLINE GenNumType get_reg_num() {
     return 2;
   }
@@ -106,6 +134,10 @@ struct KernelTransAvxBase<FloatComplex, KernelType::KERNEL_HALF> {
 template <>
 struct KernelTransAvxBase<DoubleComplex, KernelType::KERNEL_HALF> {
   using RegType = double;
+
+  INLINE GenNumType get_kernel_width() {
+    return 1;
+  }
 
   INLINE GenNumType get_reg_num() {
     return 1;

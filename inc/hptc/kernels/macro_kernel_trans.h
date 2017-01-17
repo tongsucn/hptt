@@ -11,16 +11,11 @@
 namespace hptc {
 
 template <typename FloatType,
-          typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          typename KernelFunc>
 class MacroTransVecData {
 public:
   MacroTransVecData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
-
-  INLINE GenNumType get_cont_len();
-  INLINE GenNumType get_ncont_len();
 
 protected:
   using RegType = typename KernelFunc::RegType;
@@ -50,7 +45,7 @@ protected:
 
   KernelFunc kernel_;
   RegType reg_alpha_, reg_beta_;
-  GenNumType reg_num_;
+  GenNumType kn_wd_;    // Kernel width, number of elements in one register
 };
 
 
@@ -58,11 +53,13 @@ template <typename FloatType,
           typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-class MacroTransVec
-    : public MacroTransVecData<FloatType, KernelFunc, CONT_LEN, NCONT_LEN> {
+class MacroTransVec : public MacroTransVecData<FloatType, KernelFunc> {
 public:
   MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
+
+  INLINE GenNumType get_cont_len();
+  INLINE GenNumType get_ncont_len();
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,

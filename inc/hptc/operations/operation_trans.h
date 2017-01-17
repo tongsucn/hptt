@@ -17,7 +17,7 @@ template <TensorOrder ORDER,
           typename MacroType>
 class OpForTransData {
 public:
-  OpForTransData(std::shared_ptr<ParamType> param);
+  OpForTransData(std::shared_ptr<ParamType> &param);
 
   INLINE void set_begin(TensorIdx begin_val, TensorIdx idx);
   INLINE void set_end(TensorIdx end_val, TensorIdx idx);
@@ -40,7 +40,7 @@ template <TensorOrder ORDER,
           typename MacroType>
 class OpForTrans final : public OpForTransData<ORDER, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param);
+  OpForTrans(std::shared_ptr<ParamType> &param);
 
   INLINE void operator()(MacroType &macro_kernel);
 };

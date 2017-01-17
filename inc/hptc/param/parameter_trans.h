@@ -46,7 +46,6 @@ template <typename FloatType,
           CoefUsage USAGE,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 struct ParamTrans {
-public:
   ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
       const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
       const std::array<TensorOrder, ORDER> &perm,

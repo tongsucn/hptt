@@ -9,7 +9,7 @@ template <TensorOrder ORDER,
           typename ParamType,
           typename MacroType>
 OpForTransData<ORDER, ParamType, MacroType>::OpForTransData(
-    std::shared_ptr<ParamType> param) : param_(param) {
+    std::shared_ptr<ParamType> &param) : param_(param) {
   // Initialize loop variables
   std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
   std::copy(this->loop_idx_, this->loop_idx_ + ORDER, this->loop_begin_);
@@ -101,7 +101,7 @@ template <typename ParamType,
 class OpForTrans<2, ParamType, MacroType> final
     : public OpForTransData<2, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param)
+  OpForTrans(std::shared_ptr<ParamType> &param)
       : OpForTransData<2, ParamType, MacroType>(param) {
   }
 
@@ -129,7 +129,7 @@ template <typename ParamType,
 class OpForTrans<3, ParamType, MacroType> final
     : public OpForTransData<3, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param)
+  OpForTrans(std::shared_ptr<ParamType> &param)
       : OpForTransData<3, ParamType, MacroType>(param) {
   }
 
@@ -161,7 +161,7 @@ template <typename ParamType,
 class OpForTrans<4, ParamType, MacroType> final
     : public OpForTransData<4, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param)
+  OpForTrans(std::shared_ptr<ParamType> &param)
       : OpForTransData<4, ParamType, MacroType>(param) {
   }
 
@@ -197,7 +197,7 @@ template <typename ParamType,
 class OpForTrans<5, ParamType, MacroType> final
     : public OpForTransData<5, ParamType, MacroType> {
 public:
-  OpForTrans(std::shared_ptr<ParamType> param)
+  OpForTrans(std::shared_ptr<ParamType> &param)
       : OpForTransData<5, ParamType, MacroType>(param) {
   }
 
@@ -236,9 +236,10 @@ template <TensorOrder ORDER,
           typename ParamType,
           typename MacroType>
 OpForTrans<ORDER, ParamType, MacroType>::OpForTrans(
-    std::shared_ptr<ParamType> param)
-    : OpForTransData<6, ParamType, MacroType>(param) {
+    std::shared_ptr<ParamType> &param)
+    : OpForTransData<ORDER, ParamType, MacroType>(param) {
 }
+
 
 template <TensorOrder ORDER,
           typename ParamType,
