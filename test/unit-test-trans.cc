@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
 
-// Tests on utilities
-#include <hptc/unit-test/test_infra.h>
-
-// Tests on tensor wrapper
-#include <hptc/unit-test/test_tensor_util.h>
-#include <hptc/unit-test/test_tensor_wrapper.h>
-
-// Tests on micro kernels and macro kernels
+// Tests on transpose micro kernels and macro kernels
 #include <hptc/unit-test/kernels/test_kernel_trans_avx.h>
 #include <hptc/unit-test/kernels/test_macro_kernel_trans.h>
+
+// Tests on transpose parameter
+// #include <hptc/unit-test/param/test_parameter_trans.h>
+
+// Tests on transpose operations
+// #incdlue <hptc/unit-test/operations/test_operation_trans.h>
+
 
 int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
