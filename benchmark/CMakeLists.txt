@@ -2,9 +2,9 @@
 # Directory setting
 # ----------------------------------------------------------------------------
 include_directories(inc)
+include_directories(../test/inc)
 
 # ----------------------------------------------------------------------------
-# Test executable target setting
+# Add benchmark source files
 # ----------------------------------------------------------------------------
-add_executable(unit-test unit-test.cc)
-target_link_libraries(unit-test hptc ${GTEST_LIBRARIES} pthread)
+add_subdirectory(trans)

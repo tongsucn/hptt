@@ -52,8 +52,19 @@ include_directories(inc)
 # Add source directory
 add_subdirectory(src)
 
+# ----------------------------------------------------------------------------
+# Tests and benchmarks
+# ----------------------------------------------------------------------------
 if (BUILD_TEST AND GTEST_FOUND)
   add_subdirectory(test)
+endif ()
+
+if (BUILD_BENCHMARK)
+  if (NOT BUILD_TEST)
+    add_subdirectory(test)
+  endif ()
+
+  add_subdirectory(benchmark)
 endif ()
 
 #if (BUILD_DOC)
