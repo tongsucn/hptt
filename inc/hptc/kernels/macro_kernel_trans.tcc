@@ -149,8 +149,10 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_NONE>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
-    output_data = input_data;
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
+      const TensorIdx output_stride = 0) {
+    *output_data = *input_data;
   }
 };
 
@@ -164,8 +166,10 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
-    output_data = this->alpha * input_data;
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
+      const TensorIdx output_stride = 0) {
+    *output_data = this->alpha * (*input_data);
   }
 };
 
@@ -179,8 +183,10 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_BETA>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
-    output_data = input_data + this->beta * output_data;
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
+      const TensorIdx output_stride = 0) {
+    *output_data = *input_data + this->beta * (*output_data);
   }
 };
 
@@ -194,8 +200,10 @@ public:
       : MacroTransScalarData<FloatType, CoefUsage::USE_BOTH>(alpha, beta) {
   }
 
-  INLINE void operator()(const FloatType &input_data, FloatType &output_data) {
-    output_data = this->alpha * input_data + this->beta * output_data;
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
+      const TensorIdx output_stride = 0) {
+    *output_data = this->alpha * (*input_data) + this->beta * (*output_data);
   }
 };
 
