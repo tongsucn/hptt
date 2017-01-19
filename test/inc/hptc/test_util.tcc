@@ -3,17 +3,27 @@
 #define TEST_TEST_UTIL_TCC_
 
 template <typename FloatType>
-template <GenNumType ORDER>
-DataWrapper<FloatType>::DataWrapper(const std::array<TensorIdx, ORDER> &size)
-    : gen(std::random_device()),
+DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size)
+    : rd(),
+      gen(this->rd()),
       dist(this->ele_lower, this->ele_upper),
-      data_len(std::accumulate(size.begin(), size.end(), 1,
-          std::multiplies<TensorIdx>())),
+      size(size),
+      data_len(std::accumulate(this->size.begin(), this->size.end(), 1,
+          std::multiplies<TensorOrder>())),
       org_in_data(new FloatType [this->data_len]),
       org_out_data(new FloatType [this->data_len]),
       ref_data(new FloatType [this->data_len]),
       act_data(new FloatType [this->data_len]) {
   this->init();
+}
+
+
+template <typename FloatType>
+DataWrapper<FloatType>::~DataWrapper() {
+  delete [] this->org_in_data;
+  delete [] this->org_out_data;
+  delete [] this->ref_data;
+  delete [] this->act_data;
 }
 
 
@@ -73,8 +83,46 @@ TensorIdx DataWrapper<FloatType>::verify(
 
 
 template <typename FloatType>
-TensorIdx verify() {
+TensorIdx DataWrapper<FloatType>::verify() {
   return this->verify(this->ref_data, this->act_data, this->data_len);
+}
+
+
+TimerWrapper::TimerWrapper(GenNumType times)
+    : times(times) {
+}
+
+
+template <typename Callable,
+          typename... Args>
+INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
+  if (0 == this->times)
+    return 0.0;
+
+  auto start = std::chrono::high_resolution_clock::now();
+  target(std::forward<Args>(args)...);
+  auto diff = std::chrono::high_resolution_clock::now() - start;
+  auto result = std::chrono::duration_cast<Duration>(diff);
+
+  for (GenNumType idx = 1; idx < this->times; ++idx) {
+    start = std::chrono::high_resolution_clock::now();
+    target(std::forward<Args>(args)...);
+    diff = std::chrono::high_resolution_clock::now() - start;
+    auto duration = std::chrono::duration_cast<Duration>(diff);
+    if (duration < result)
+      result = duration;
+  }
+
+  return result.count();
+}
+
+
+RefTransConfig::RefTransConfig(TensorOrder order, TensorOrder thread_num,
+    const std::vector<TensorOrder> &perm, const std::vector<TensorOrder> &size)
+    : order(order),
+      thread_num(thread_num),
+      perm(perm),
+      size(size) {
 }
 
 #endif // TEST_TEST_UTIL_TCC_

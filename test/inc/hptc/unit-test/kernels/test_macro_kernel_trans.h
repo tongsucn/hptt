@@ -254,7 +254,7 @@ protected:
       outer.reset_act();
 
       // Execute transpose
-      macro(outer.org_data, outer.act_data);
+      macro(&outer.org_data, &outer.act_data);
 
       // Verify
       return Data::verify(&outer.ref_data, &outer.act_data, 1);
