@@ -3,6 +3,7 @@
 #define HPTC_TENSOR_H_
 
 #include <array>
+#include <vector>
 #include <algorithm>
 #include <initializer_list>
 
@@ -29,6 +30,7 @@ class TensorSize {
 public:
   TensorSize();
   TensorSize(const std::array<TensorOrder, ORDER> &sizes);
+  TensorSize(const std::vector<TensorOrder> &sizes);
   TensorSize(std::initializer_list<TensorOrder> sizes);
 
   bool operator==(const TensorSize<ORDER> &size_obj) const;

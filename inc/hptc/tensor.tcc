@@ -18,6 +18,12 @@ TensorSize<ORDER>::TensorSize(const std::array<TensorOrder, ORDER> &sizes) {
 
 
 template <TensorOrder ORDER>
+TensorSize<ORDER>::TensorSize(const std::vector<TensorOrder> &sizes) {
+  std::copy(sizes.begin(), sizes.end(), size_);
+}
+
+
+template <TensorOrder ORDER>
 TensorSize<ORDER>::TensorSize(std::initializer_list<TensorOrder> sizes) {
   std::copy(sizes.begin(), sizes.end(), size_);
 }
