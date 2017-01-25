@@ -29,12 +29,13 @@ public:
   TensorMergedWrapper() = delete;
   TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, LAYOUT> &wrapper);
 
-  void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
-
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
   INLINE FloatType &operator[](TensorIdx **indices);
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
+
+  INLINE TensorOrder get_merged_order();
+  void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
 
 private:
   TensorOrder merged_order_;
@@ -52,6 +53,8 @@ struct ParamTrans {
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
 
   constexpr static CoefUsage COEF_USAGE = USAGE;
+
+  TensorWrapper<FloatType, ORDER, LAYOUT> org_input_tensor, org_output_tensor;
   TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
   DeducedFloatType<FloatType> alpha, beta;
 

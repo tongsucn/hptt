@@ -18,6 +18,65 @@ TensorMergedWrapper<FloatType, ORDER, LAYOUT>::TensorMergedWrapper(
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
+INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+    const TensorIdx * RESTRICT indices) {
+  TensorIdx abs_offset = 0;
+  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
+  return this->raw_data_[abs_offset];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE const FloatType &
+TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+    const TensorIdx * RESTRICT indices) const {
+  TensorIdx abs_offset = 0;
+  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
+  return this->raw_data_[abs_offset];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+    TensorIdx **indices) {
+  TensorIdx abs_offset = 0;
+  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
+  return this->raw_data_[abs_offset];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE const FloatType &
+TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+    const TensorIdx **indices) const {
+  TensorIdx abs_offset = 0;
+  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
+  return this->raw_data_[abs_offset];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE TensorOrder TensorMergedWrapper<FloatType, ORDER, LAYOUT>::
+get_merged_order() {
+  return this->merged_order_;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
 void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     const std::unordered_set<TensorOrder> &merge_set) {
   if (ORDER <= 2)
@@ -79,56 +138,6 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
 }
 
 
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx * RESTRICT indices) {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE const FloatType &
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx * RESTRICT indices) const {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    TensorIdx **indices) {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE const FloatType &
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx **indices) const {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
 /*
  * Implementation for class ParamTrans
  */
@@ -141,7 +150,9 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
     const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
     const std::array<TensorOrder, ORDER> &perm,
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : input_tensor(input_tensor),
+    : org_input_tensor(input_tensor),
+      org_output_tensor(output_tensor),
+      input_tensor(input_tensor),
       output_tensor(output_tensor),
       alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
