@@ -5,6 +5,16 @@
 /*
  * Implementation for class TensorSize
  */
+class TensorSize<0> {
+  TensorSize() = delete;
+};
+
+
+class TensorSize<1> {
+  TensorSize() = delete;
+}
+
+
 template <TensorOrder ORDER>
 TensorSize<ORDER>::TensorSize() {
   std::fill(this->size_, this->size_ + ORDER, 0);
@@ -303,6 +313,15 @@ INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
   curr_offset += next_idx * this->strides_[curr_order];
 
   return this->get_element_(curr_order + 1, curr_offset, idx...);
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
+    TensorOrder curr_order, TensorIdx curr_offset) {
+  return curr_offset;
 }
 
 #endif // HPTC_TENSOR_TCC_
