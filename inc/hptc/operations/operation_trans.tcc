@@ -78,7 +78,7 @@ template <TensorOrder ORDER,
           typename ParamType>
 template <typename MacroType>
 INLINE void OpForTrans<ORDER, ParamType>::operator()(MacroType &macro_kernel) {
-  this->unroller(GenCounter<ORDER>(), macro_kernel);
+  this->unroller_(GenCounter<ORDER>(), macro_kernel);
 }
 
 
@@ -86,20 +86,20 @@ template <TensorOrder ORDER,
           typename ParamType>
 template <typename MacroType,
           GenNumType UNROLL_NUM>
-INLINE void OpForTrans<ORDER, ParamType>::unroller(GenCounter<UNROLL_NUM>,
+INLINE void OpForTrans<ORDER, ParamType>::unroller_(GenCounter<UNROLL_NUM>,
     MacroType &macro_kernel) {
   constexpr TensorOrder for_idx = ORDER - UNROLL_NUM;
   for (this->loop_idx_[for_idx] = this->loop_begin_[for_idx];
       this->loop_idx_[for_idx] < this->loop_end_[for_idx];
       this->loop_idx_[for_idx] += this->loop_step_[for_idx])
-    this->unroller(GenCounter<UNROLL_NUM - 1>(), macro_kernel);
+    this->unroller_(GenCounter<UNROLL_NUM - 1>(), macro_kernel);
 }
 
 
 template <TensorOrder ORDER,
           typename ParamType>
 template <typename MacroType>
-INLINE void OpForTrans<ORDER, ParamType>::unroller(GenCounter<0>,
+INLINE void OpForTrans<ORDER, ParamType>::unroller_(GenCounter<0>,
     MacroType &macro_kernel) {
   macro_kernel(&this->param_->input_tensor[this->loop_idx_],
       &this->param_->output_tensor[this->loop_perm_idx_],

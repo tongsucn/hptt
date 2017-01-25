@@ -44,10 +44,9 @@ public:
 private:
   template <typename MacroType,
             GenNumType UNROLL_NUM>
-  INLINE void unroller(GenCounter<UNROLL_NUM>, MacroType &macro_kernel);
+  INLINE void unroller_(GenCounter<UNROLL_NUM>, MacroType &macro_kernel);
   template <typename MacroType>
-  INLINE void unroller(GenCounter<0>, MacroType &macro_kernel);
-
+  INLINE void unroller_(GenCounter<0>, MacroType &macro_kernel);
 };
 
 
