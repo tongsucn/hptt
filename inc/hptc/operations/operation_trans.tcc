@@ -3,92 +3,185 @@
 #define HPTC_OPERATIONS_OPERATION_TRANS_TCC_
 
 /*
- * Implementation for class OpForTransData
- */
-template <TensorOrder ORDER,
-          typename ParamType>
-OpForTransData<ORDER, ParamType>::OpForTransData(
-    std::shared_ptr<ParamType> &param) : param_(param) {
-  // Initialize loop variables
-  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
-  std::copy(this->loop_idx_, this->loop_idx_ + ORDER, this->loop_begin_);
-  std::fill(this->loop_step_, this->loop_step_ + ORDER, 1);
-
-  // Initialize loop indices
-  for (TensorOrder idx = 0; idx < ORDER - param->merged_order; ++idx)
-    this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
-
-  for (TensorOrder idx = ORDER - param->merged_order; idx < ORDER; ++idx)
-    this->loop_perm_idx_[idx]
-        = &this->loop_idx_[param->perm[idx] + ORDER - param->merged_order];
-}
-
-
-template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_begin(
-    TensorIdx begin_val, TensorIdx idx) {
-  this->loop_begin_[idx] = begin_val;
-}
-
-
-template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_end(
-    TensorIdx end_val, TensorIdx idx) {
-  this->loop_end_[idx] = end_val;
-}
-
-
-template <TensorOrder ORDER,
-          typename ParamType>
-INLINE void OpForTransData<ORDER, ParamType>::set_step(
-    TensorIdx step_val, TensorIdx idx) {
-  this->loop_step_[idx] = step_val;
-}
-
-
-/*
  * Specialization for class OpForTrans
  */
 template <typename ParamType>
-class OpForTrans<0, ParamType> final
-    : public OpForTransData<0, ParamType> {
+class OpForTrans<ParamType, 0> {
   OpForTrans() = delete;
 };
 
 
 template <typename ParamType>
-class OpForTrans<1, ParamType> final
-    : public OpForTransData<1, ParamType> {
+class OpForTrans<ParamType, 1> {
   OpForTrans() = delete;
 };
 
 
-template <TensorOrder ORDER,
-          typename ParamType>
-OpForTrans<ORDER, ParamType>::OpForTrans(
-    std::shared_ptr<ParamType> &param)
-    : OpForTransData<ORDER, ParamType>(param),
-      next(nullptr) {
+/*
+ * Implementation for class OpForTrans
+ */
+template <typename ParamType,
+          TensorOrder ORDER>
+OpForTrans<ParamType, ORDER>::OpForTrans()
+    : next(nullptr),
+      param_(nullptr) {
+  for (TensorOrder idx = 0; idx < ORDER; ++idx) {
+    this->loop_idx_[idx] = this->loop_begin_[idx] = this->loop_end_[idx]
+        = this->loop_step_[idx] = 0;
+    this->loop_perm_idx_[idx] = nullptr;
+    this->loop_order_[idx] = idx;
+  }
 }
 
 
-template <TensorOrder ORDER,
-          typename ParamType>
+template <typename ParamType,
+          TensorOrder ORDER>
+OpForTrans<ParamType, ORDER>::OpForTrans(const OpForTrans &loop_data)
+    : next(nullptr),
+      param_(loop_data.param_) {
+  std::copy(loop_data.loop_idx_, loop_data.loop_idx_ + ORDER, this->loop_idx_);
+  this->init_perm_idx_();
+
+  std::copy(loop_data.loop_begin_, loop_data.loop_begin_ + ORDER,
+      this->loop_begin_);
+  std::copy(loop_data.loop_end_, loop_data.loop_end_ + ORDER, this->loop_end_);
+  std::copy(loop_data.loop_step_, loop_data.loop_step_ + ORDER,
+      this->loop_step_);
+  std::copy(loop_data.loop_order_, loop_data.loop_order_ + ORDER,
+      this->loop_order_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+OpForTrans &OpForTrans<ParamType, ORDER>::operator=(
+    const OpForTrans &loop_data) {
+  // Do not copy next pointer
+  this->param_ = loop_data.param_;
+  std::copy(loop_data.loop_idx_, loop_data.loop_idx_ + ORDER, this->loop_idx_);
+  this->init_perm_idx_();
+
+  std::copy(loop_data.loop_begin_, loop_data.loop_begin_ + ORDER,
+      this->loop_begin_);
+  std::copy(loop_data.loop_end_, loop_data.loop_end_ + ORDER, this->loop_end_);
+  std::copy(loop_data.loop_step_, loop_data.loop_step_ + ORDER,
+      this->loop_step_);
+  std::copy(loop_data.loop_order_, loop_data.loop_order_ + ORDER,
+      this->loop_order_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+template <typename Vec>
+void OpForTrans<ParamType, ORDER>::init(
+    const std::shared_ptr<ParamType> &param) {
+  this->param_ = param;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+template <typename Vec>
+void OpForTrans<ParamType, ORDER>::init(const std::shared_ptr<ParamType> &param,
+    const Vec &begin, const Vec &end, const Vec &step, const Vec &order) {
+  // Initialize parameter
+  this->param_ = param;
+
+  // Initialize loop indices
+  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
+  this->init_perm_idx_();
+
+  std::copy(begin.begin(), begin.end(), this->loop_begin_);
+  std::copy(end.begin(), end.end(), this->loop_end_);
+  std::copy(step.begin(), step.end(), this->loop_step_);
+  std::copy(order.begin(), order.end(), this->loop_order_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::reset() {
+  std::copy(this->loop_begin_, this->loop_begin_ + ORDER, this->loop_idx_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
 template <typename MacroType>
-INLINE void OpForTrans<ORDER, ParamType>::operator()(MacroType &macro_kernel) {
+INLINE void OpForTrans<ParamType, ORDER>::operator()(MacroType &macro_kernel) {
   this->unroller_(GenCounter<ORDER>(), macro_kernel);
 }
 
 
-template <TensorOrder ORDER,
-          typename ParamType>
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_begin(TensorIdx begin_val,
+    TensorIdx idx) {
+  this->loop_begin_[idx] = begin_val;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_end(TensorIdx end_val,
+    TensorIdx idx) {
+  this->loop_end_[idx] = end_val;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_step(TensorIdx step_val,
+    TensorIdx idx) {
+  this->loop_step_[idx] = step_val;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+template <typename Vec>
+INLINE void OpForTrans<ParamType, ORDER>::set_order(const Vec &order) {
+  std::copy(order.begin(), order.end(), this->loop_order_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_disable() {
+  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 1);
+  std::fill(this->loop_end_, this->loop_end_ + ORDER, 0);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_pass(TensorOrder order) {
+  std::fill(this->loop_idx_, this->loop_idx_ + order, 0);
+  std::fill(this->loop_end_, this->loop_end_ + order, 1);
+  std::fill(this->loop_step_, this->loop_step_ + order, 1);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::init_perm_idx_() {
+  for (TensorOrder idx = 0; idx < ORDER - this->param_->merged_order; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
+
+  for (TensorOrder idx = ORDER - this->param_->merged_order; idx < ORDER; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
+        - this->param_->merged_order];
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
 template <typename MacroType,
           GenNumType UNROLL_NUM>
-INLINE void OpForTrans<ORDER, ParamType>::unroller_(GenCounter<UNROLL_NUM>,
+INLINE void OpForTrans<ParamType, ORDER>::unroller_(GenCounter<UNROLL_NUM>,
     MacroType &macro_kernel) {
-  constexpr TensorOrder for_idx = ORDER - UNROLL_NUM;
+  auto for_idx = this->loop_order_[ORDER - UNROLL_NUM];
   for (this->loop_idx_[for_idx] = this->loop_begin_[for_idx];
       this->loop_idx_[for_idx] < this->loop_end_[for_idx];
       this->loop_idx_[for_idx] += this->loop_step_[for_idx])
@@ -96,10 +189,10 @@ INLINE void OpForTrans<ORDER, ParamType>::unroller_(GenCounter<UNROLL_NUM>,
 }
 
 
-template <TensorOrder ORDER,
-          typename ParamType>
+template <typename ParamType,
+          TensorOrder ORDER>
 template <typename MacroType>
-INLINE void OpForTrans<ORDER, ParamType>::unroller_(GenCounter<0>,
+INLINE void OpForTrans<ParamType, ORDER>::unroller_(GenCounter<0>,
     MacroType &macro_kernel) {
   macro_kernel(&this->param_->input_tensor[this->loop_idx_],
       &this->param_->output_tensor[this->loop_perm_idx_],
