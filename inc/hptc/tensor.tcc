@@ -225,6 +225,14 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() const {
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
+INLINE TensorOrder get_leading() const {
+  return this->size_[MemLayout::COL_MAJOR == LAYOUT ? 0 : ORDER - 1];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
 INLINE FloatType *TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() {
   return this->raw_data_;
 }
