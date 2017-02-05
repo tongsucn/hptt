@@ -9,17 +9,11 @@
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
+#include <hptc/config/config_trans.h>
+#include <hptc/kernels/macro_kernel_trans.h>
 
 
 namespace hptc {
-
-enum class CoefUsage : GenNumType {
-  USE_NONE  = 0x0,
-  USE_ALPHA = 0x1,
-  USE_BETA  = 0x2,
-  USE_BOTH  = 0x3
-};
-
 
 template <typename FloatType,
           TensorOrder ORDER,
@@ -35,6 +29,7 @@ public:
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
   INLINE TensorOrder get_merged_order();
+  INLINE void get_leading();
   void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
 
 private:
@@ -44,7 +39,7 @@ private:
 
 template <typename FloatType,
           TensorOrder ORDER,
-          CoefUsage USAGE,
+          CoefUsageTrans USAGE,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 struct ParamTrans {
   ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
@@ -52,7 +47,9 @@ struct ParamTrans {
       const std::array<TensorOrder, ORDER> &perm,
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
 
-  constexpr static CoefUsage COEF_USAGE = USAGE;
+  INLINE TensorIdx perm_type();
+
+  constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   TensorWrapper<FloatType, ORDER, LAYOUT> org_input_tensor, org_output_tensor;
   TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
@@ -61,6 +58,16 @@ struct ParamTrans {
   TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
   TensorOrder merged_order;
+
+  // Kernels
+  MacroTransVecFullBig<FloatType, USAGE>        kn_fb;
+  MacroTransVecFullVertical<FloatType, USAGE>   kn_fv;
+  MacroTransVecFullHorizontal<FloatType, USAGE> kn_fh;
+  MacroTransVecFullSmall<FloatType, USAGE>      kn_fs;
+  MacroTransVecHalfVertical<FloatType, USAGE>   kn_hv;
+  MacroTransVecHalfHorizontal<FloatType, USAGE> kn_hh;
+  MacroTransVecHalfSmall<FloatType, USAGE>      kn_hs;
+  MacroTransScalar<FloatType, USAGE>            kn_sc;
 
 private:
   void merge_idx_(const std::array<TensorOrder, ORDER> &perm);

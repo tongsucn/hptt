@@ -77,6 +77,16 @@ get_merged_order() {
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
+INLINE TensorOrder get_leading() const {
+  constexpr GenNumType idx
+      = ORDER - (MemLayout::COL_MAJOR == LAYOUT ? this->merged_order_ : 1);
+  return this->size_[idx];
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
 void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     const std::unordered_set<TensorOrder> &merge_set) {
   if (ORDER <= 2)
@@ -143,7 +153,7 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
  */
 template <typename FloatType,
           TensorOrder ORDER,
-          CoefUsage USAGE,
+          CoefUsageTrans USAGE,
           MemLayout LAYOUT>
 ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
     const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
@@ -181,7 +191,27 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
 
 template <typename FloatType,
           TensorOrder ORDER,
-          CoefUsage USAGE,
+          CoefUsageTrans USAGE,
+          MemLayout LAYOUT>
+INLINE ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::TensorIdx perm_type() {
+  if (MemLayout::COL_MAJOR == LAYOUT) {
+    if (0 == this->perm[ORDER - this->merged_order_])
+      return -1;
+    else
+      return 1;
+  }
+  else {
+    if (ORDER - 1 == this->perm[ORDER - 1])
+      return -1;
+    else
+      return 1;
+  }
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          CoefUsageTrans USAGE,
           MemLayout LAYOUT>
 void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
     const std::array<TensorOrder, ORDER> &perm) {
@@ -198,8 +228,8 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
     // If column major, then merging will begin from left
     // Create permutation set
     for (TensorOrder idx = 1; idx < ORDER; ++idx) {
-      // If current dim ID does not equal to previous dim ID plus one, or the
-      // previous dim size does not equal to the outer size, then push
+      // If current order ID does not equal to previous order ID plus one, or
+      // the previous order size does not equal to the outer size, then push
       // previous ID into set.
       if (perm[idx] != perm[idx - 1] + 1 or
           input_size[perm[idx - 1]] != input_outer_size[perm[idx - 1]] or
@@ -236,8 +266,8 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
   std::copy(input_perm_set.begin(), input_perm_set.end(), sorted_perm_arr);
   std::sort(sorted_perm_arr, sorted_perm_arr + this->merged_order);
 
-  // Create an unordered map to store the mapping from original dim ID to
-  // updated dim ID.
+  // Create an unordered map to store the mapping from original order ID to
+  // updated order ID.
   std::unordered_map<TensorOrder, TensorOrder> perm_map;
   for (TensorIdx idx = 0; idx < this->merged_order; ++idx)
     perm_map[sorted_perm_arr[idx]] = idx;
