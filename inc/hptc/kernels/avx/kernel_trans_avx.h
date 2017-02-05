@@ -6,21 +6,20 @@
 #include <immintrin.h>
 
 #include <hptc/types.h>
-#include <hptc/param/parameter_trans.h>
-#include <hptc/kernels/kernel_trans_base.h>
+#include <hptc/config/config_trans.h>
 
 
 namespace hptc {
 
 template <typename FloatType,
-          KernelType TYPE>
+          KernelTypeTrans TYPE>
 struct KernelTransAvxBase {
 };
 
 
 template <typename FloatType,
-          CoefUsage USAGE,
-          KernelType TYPE = KernelType::KERNEL_FULL>
+          CoefUsageTrans USAGE,
+          KernelTypeTrans TYPE = KernelTypeTrans::KERNEL_FULL>
 struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
 };
 

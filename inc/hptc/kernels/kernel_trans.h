@@ -3,7 +3,7 @@
 #define HPTC_KERNELS_KERNEL_TRANS_H_
 
 #include <hptc/types.h>
-#include <hptc/param/parameter_trans.h>
+#include <hptc/config/config_trans.h>
 #include <hptc/kernels/kernel_trans_base.h>
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
@@ -11,19 +11,21 @@
 namespace hptc {
 
 template <typename FloatType,
-          CoefUsage USAGE,
-          KernelType TYPE>
+          CoefUsageTrans USAGE,
+          KernelTypeTrans TYPE>
 using KernelTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
 
 
 template <typename FloatType,
-          CoefUsage USAGE>
-using KernelTransFull = KernelTrans<FloatType, USAGE, KernelType::KERNEL_FULL>;
+          CoefUsageTrans USAGE>
+using KernelTransFull = KernelTrans<FloatType, USAGE,
+    KernelTypeTrans::KERNEL_FULL>;
 
 
 template <typename FloatType,
-          CoefUsage USAGE>
-using KernelTransHalf = KernelTrans<FloatType, USAGE, KernelType::KERNEL_HALF>;
+          CoefUsageTrans USAGE>
+using KernelTransHalf = KernelTrans<FloatType, USAGE,
+    KernelTypeTrans::KERNEL_HALF>;
 
 }
 

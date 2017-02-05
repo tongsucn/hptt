@@ -4,7 +4,7 @@
 
 #include <hptc/util.h>
 #include <hptc/types.h>
-#include <hptc/param/parameter_trans.h>
+#include <hptc/config_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 
 
@@ -14,7 +14,7 @@ template <typename FloatType,
           typename KernelFunc>
 class MacroTransVecData {
 public:
-  MacroTransVecData(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVecData(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
 
 protected:
@@ -55,7 +55,7 @@ template <typename FloatType,
           GenNumType NCONT_LEN>
 class MacroTransVec : public MacroTransVecData<FloatType, KernelFunc> {
 public:
-  MacroTransVec(KernelFunc kernel, DeducedFloatType<FloatType> alpha,
+  MacroTransVec(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
 
   INLINE GenNumType get_cont_len();
@@ -68,7 +68,7 @@ public:
 
 
 template <typename FloatType,
-          CoefUsage USAGE>
+          CoefUsageTrans USAGE>
 class MacroTransScalarData {
 public:
   MacroTransScalarData(DeducedFloatType<FloatType> alpha,
@@ -80,10 +80,64 @@ protected:
 
 
 template <typename FloatType,
-          CoefUsage USAGE>
+          CoefUsageTrans USAGE>
 class MacroTransScalar
     : public MacroTransScalarData<FloatType, USAGE> {
 };
+
+
+/*
+ * Alias and instantiation of vectorized macro kernels
+ */
+template <typename FloatType,
+          CoefUsageTrans USAGE,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+using MacroTransVecFull = MacroTransVec<FloatType,
+      KernelTranFull<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+using MacroTransVecHalf = MacroTransVec<FloatType,
+      KernelTranHalf<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecFullBig = MacroTransVecFull<FloatType, USAGE, 4, 4>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecFullVertical = MacroTransVecFull<FloatType, USAGE, 1, 4>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecFullHorizontal = MacroTransVecFull<FloatType, USAGE, 4, 1>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecFullSmall = MacroTransVecFull<FloatType, USAGE, 1, 1>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecHalfVertical = MacroTransVecHalf<FloatType, USAGE, 1, 2>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecHalfHorizontal = MacroTransVecHalf<FloatType, USAGE, 2, 1>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransVecHalfSmall = MacroTransVecHalf<FloatType, USAGE, 1, 1>;
 
 
 /*

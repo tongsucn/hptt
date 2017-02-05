@@ -7,12 +7,12 @@
  */
 template <typename FloatType,
           typename KernelFunc>
-MacroTransVecData<FloatType, KernelFunc>::MacroTransVecData(KernelFunc kernel,
+MacroTransVecData<FloatType, KernelFunc>::MacroTransVecData(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : kernel_(kernel),
-      reg_alpha_(kernel.reg_coef(alpha)),
-      reg_beta_(kernel.reg_coef(beta)),
-      kn_wd_(kernel.get_kernel_width()) {
+    : kernel_(),
+      reg_alpha_(this->kernel_.reg_coef(alpha)),
+      reg_beta_(this->kernel_.reg_coef(beta)),
+      kn_wd_(this->kernel_.get_kernel_width()) {
 }
 
 
@@ -86,10 +86,8 @@ template <typename FloatType,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
 MacroTransVec<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::MacroTransVec(
-    KernelFunc kernel, DeducedFloatType<FloatType> alpha,
-    DeducedFloatType<FloatType> beta)
-    : MacroTransVecData<FloatType, KernelFunc>(kernel,
-        alpha, beta) {
+    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
+    : MacroTransVecData<FloatType, KernelFunc>(alpha, beta) {
 }
 
 
@@ -130,7 +128,7 @@ operator()(const FloatType * RESTRICT input_data,
  * Implementation for class MacroTransScalarData
  */
 template <typename FloatType,
-          CoefUsage USAGE>
+          CoefUsageTrans USAGE>
 MacroTransScalarData<FloatType, USAGE>::MacroTransScalarData(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
     : alpha(alpha), beta(beta) {
@@ -141,12 +139,12 @@ MacroTransScalarData<FloatType, USAGE>::MacroTransScalarData(
  * Implementation for class MacroTransScalar
  */
 template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsage::USE_NONE>
-    : public MacroTransScalarData<FloatType, CoefUsage::USE_NONE> {
+class MacroTransScalar<FloatType, CoefUsageTrans::USE_NONE>
+    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_NONE> {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsage::USE_NONE>(alpha, beta) {
+      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_NONE>(alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -158,12 +156,12 @@ public:
 
 
 template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsage::USE_ALPHA>
-    : public MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA> {
+class MacroTransScalar<FloatType, CoefUsageTrans::USE_ALPHA>
+    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_ALPHA> {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsage::USE_ALPHA>(alpha, beta) {
+      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_ALPHA>(alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -175,12 +173,12 @@ public:
 
 
 template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsage::USE_BETA>
-    : public MacroTransScalarData<FloatType, CoefUsage::USE_BETA> {
+class MacroTransScalar<FloatType, CoefUsageTrans::USE_BETA>
+    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_BETA> {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsage::USE_BETA>(alpha, beta) {
+      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_BETA>(alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
@@ -192,12 +190,12 @@ public:
 
 
 template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsage::USE_BOTH>
-    : public MacroTransScalarData<FloatType, CoefUsage::USE_BOTH> {
+class MacroTransScalar<FloatType, CoefUsageTrans::USE_BOTH>
+    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_BOTH> {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsage::USE_BOTH>(alpha, beta) {
+      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_BOTH>(alpha, beta) {
   }
 
   INLINE void operator()(const FloatType * RESTRICT input_data,
