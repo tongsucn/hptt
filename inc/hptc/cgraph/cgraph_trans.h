@@ -5,6 +5,10 @@
 #include <vector>
 #include <memory>
 #include <thread>
+#include <numeric>
+#include <functional>
+
+#include <iostream>
 
 #include <hptc/types.h>
 #include <hptc/operations/operation_trans.h>
@@ -17,32 +21,35 @@ template <typename ParamType,
 class CGraphTrans {
 public:
   CGraphTrans(const std::shared_ptr<ParamType> &param,
-      GenNumType threads = 0);
+      const std::vector<TensorOrder> &loop_order,
+      const std::vector<GenNumType> &para_strategy);
 
   /*CGraphTrans(const CGraphTrans &graph);
   CGraphTrans<ParamType, ORDER> &operator=(const CGraphTrans &graph);*/
 
   ~CGraphTrans();
 
-  TensorIdx set_loop_order(const std::vector<TensorOrder> &order);
-  TensorIdx set_parallel(const std::vector<GenNumType> &strategy,
-      const GenNumType threads = 0);
+  INLINE void operator()();
 
-  INLINE TensorIdx exec();
-
-private:
+protected:
   using For_ = OpForTrans<ParamType, ORDER>;
+
+  void init_operations_();
+  void release_operations_();
 
   void init_vectorize_();
   bool init_kernel_(For_ *oper, GenNumType cont_len, GenNumType ncont_len,
       TensorOrder &cont_rest, TensorOrder &ncont_rest, TensorIdx &cont_begin,
       TensorIdx &ncont_begin);
-  void init_parallelize_();
-  INLINE void thread_task_(TensorOrder idx);
-  void release_operations_();
+  void init_loop_order_(const std::vector<TensorOrder> &order);
+  void init_parallel_(const std::vector<TensorOrder> &loop_order,
+      const std::vector<GenNumType> &para_strategy);
+
+  INLINE void task_(TensorOrder idx);
 
   std::shared_ptr<ParamType> param_;
-  GenNumType threads_;
+  GenNumType para_strategy_, threads_;
+  std::thread *thread_pool_;
   For_ *operations_;
 };
 
