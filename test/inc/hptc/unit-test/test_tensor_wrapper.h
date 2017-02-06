@@ -3,14 +3,20 @@
 #define HPTC_UNIT_TEST_TEST_TENSOR_WRAPPER_H_
 
 #include <array>
+#include <vector>
+#include <algorithm>
 
 #include <gtest/gtest.h>
 
-#include <hptc/tensor.h>
 #include <hptc/types.h>
+#include <hptc/tensor.h>
+
+#include <hptc/test_util.h>
 
 using namespace std;
 using namespace hptc;
+
+#define TEST_ORDER 4
 
 
 template <typename FloatType>
@@ -19,60 +25,105 @@ protected:
   using Deduced = DeducedFloatType<FloatType>;
 
   TestTensorWrapper()
-      : raw_data_len(256000),
-        raw_data(new FloatType [256000]),
-        size_order_1{ 3 },
-        outer_size_order_1{ 9 },
-        size_order_2{ 2, 15 },
-        outer_size_order_2{ 7, 23 },
-        size_order_4{ 20, 1, 32, 2 },
-        outer_size_order_4{ 38, 1, 64, 54 },
-        offsets_order_1{ 4 },
-        offsets_order_2{ 3, 0 },
-        offsets_order_4{ 8, 0, 31, 50 },
-        tensor_col_order_1(this->size_order_1, this->raw_data),
-        tensor_row_order_1(this->size_order_1, this->raw_data),
-        tensor_col_order_4(this->size_order_4, this->raw_data),
-        tensor_row_order_4(this->size_order_4, this->raw_data),
-        sub_tensor_col_order_1(this->size_order_1, this->outer_size_order_1,
-            this->offsets_order_1, this->raw_data),
-        sub_tensor_row_order_1(this->size_order_1, this->outer_size_order_1,
-            this->offsets_order_1, this->raw_data),
-        sub_tensor_col_order_4(this->size_order_4, this->outer_size_order_4,
-            this->offsets_order_4, this->raw_data),
-        sub_tensor_row_order_4(this->size_order_4, this->outer_size_order_4,
-            this->offsets_order_4, this->raw_data) {
-    // Initialize raw data
-    for (TensorIdx idx = 0; idx < this->raw_data_len; ++idx) {
-      auto init_ptr = reinterpret_cast<Deduced *>(this->raw_data);
-      for (TensorIdx inner_idx = 0; inner_idx < this->inner_offset; ++inner_idx)
-        init_ptr[inner_idx] = static_cast<Deduced>(idx);
+      : size({ 21, 17, 8, 29 }),
+        outer_size({ 23, 17, 12, 34 }),
+        size_obj(this->size),
+        outer_size_obj(this->outer_size),
+        offsets({ 1, 0, 4, 2 }) {
+  }
+
+  template <MemLayout LAYOUT>
+  class TestCreation : public TensorWrapper<FloatType, TEST_ORDER, LAYOUT> {
+  public:
+    TestCreation() = default;
+
+    TestCreation(const TensorSize<TEST_ORDER> &size_obj, FloatType *raw_data)
+        : TensorWrapper<FloatType, TEST_ORDER, LAYOUT>(size_obj, raw_data) {
     }
-  }
 
-  virtual ~TestTensorWrapper() {
-    delete [] raw_data;
-  }
+    TestCreation(const TensorSize<TEST_ORDER> &size_obj,
+        const TensorSize<TEST_ORDER> &outer_size_obj,
+        const array<TensorIdx, TEST_ORDER> &order_offset, FloatType *raw_data)
+        : TensorWrapper<FloatType, TEST_ORDER, LAYOUT>(size_obj, outer_size_obj,
+              order_offset, raw_data) {
+    }
 
-  TensorIdx raw_data_len;
-  FloatType *raw_data;
+
+    bool check_strides(const array<TensorIdx, TEST_ORDER> &ref_strides) {
+      for (TensorIdx idx = 0; idx < TEST_ORDER; ++idx)
+        if (ref_strides[idx] != this->strides_[idx])
+          return false;
+      return true;
+    }
+  };
+
+  template <MemLayout LAYOUT>
+  class TestIndexing {
+  public:
+    TestIndexing(const vector<TensorOrder> &size)
+        : data(size) {
+      for (TensorIdx idx = 0; idx < data.data_len; ++idx) {
+        auto ptr = reinterpret_cast<Deduced *>(data.act_data);
+        for (TensorOrder in_idx = 0; in_idx < inner_offset; ++in_idx)
+          ptr[in_idx] = static_cast<Deduced>(idx);
+      }
+    }
+
+    TensorIdx exec_test(const TensorSize<TEST_ORDER> &size_obj,
+        const TensorSize<TEST_ORDER> &outer_size_obj) {
+      array<TensorIdx, TEST_ORDER> inner_strides, outer_strides;
+      if (MemLayout::COL_MAJOR == LAYOUT) {
+        inner_strides[0] = outer_strides[0] = 1;
+        for (TensorIdx idx = 1; idx < TEST_ORDER; ++idx) {
+          inner_strides[idx] = inner_strides[idx - 1] * size_obj[idx - 1];
+          outer_strides[idx] = outer_strides[idx - 1] * outer_size_obj[idx - 1];
+        }
+      }
+      else {
+        inner_strides[TEST_ORDER - 1] = outer_strides[TEST_ORDER - 1] = 1;
+        for (TensorIdx idx = TEST_ORDER - 2; idx >= 0; --idx) {
+          inner_strides[idx] = inner_strides[idx + 1] * size_obj[idx + 1];
+          outer_strides[idx] = outer_strides[idx + 1] * outer_size_obj[idx + 1];
+        }
+      }
+
+      array<TensorIdx, TEST_ORDER> local_offsets;
+      if (size_obj == outer_size_obj)
+        fill(local_offsets.begin(), local_offsets.end(), 0);
+      else
+        copy(offsets.begin(), offsets.end(), local_offsets.begin());
+
+      TensorWrapper<FloatType, TEST_ORDER, LAYOUT> tensor(size_obj,
+          outer_size_obj, local_offsets, this->data.act_data);
+
+      auto &tensor_size = tensor.get_size();
+
+      for (TensorIdx idx_0 = 0; idx_0 < tensor_size[0]; ++idx_0) {
+        TensorIdx offset = idx_0;
+        for (TensorIdx idx_1 = 0; idx_1 < tensor_size[1]; ++idx_1) {
+          offset += idx_1 * inner_strides[1];
+          for (TensorIdx idx_2 = 0; idx_2 < tensor_size[2]; ++idx_2) {
+            offset += idx_2 * inner_strides[2];
+            for (TensorIdx idx_3 = 0; idx_3 < tensor_size[3]; ++idx_3) {
+              offset += idx_3 * inner_strides[3];
+              auto in_ptr = reinterpret_cast<Deduced *>(
+                  &tensor(idx_0, idx_1, idx_2, idx_3));
+              for (TensorOrder in_idx = 0; in_idx < this->inner_offset; ++in_idx)
+                in_ptr[in_idx] = static_cast<Deduced>(offset);
+            }
+          }
+        }
+      }
+    }
+
+  private:
+    DataWrapper<FloatType> data;
+  };
+
   static const TensorOrder inner_offset = sizeof(FloatType) / sizeof(Deduced);
-
-  TensorSize<1> size_order_1, outer_size_order_1;
-  TensorSize<2> size_order_2, outer_size_order_2;
-  TensorSize<4> size_order_4, outer_size_order_4;
-  array<TensorIdx, 1> offsets_order_1;
-  array<TensorIdx, 2> offsets_order_2;
-  array<TensorIdx, 4> offsets_order_4;
-
-  TensorWrapper<FloatType, 1, MemLayout::COL_MAJOR> tensor_col_order_1;
-  TensorWrapper<FloatType, 1, MemLayout::ROW_MAJOR> tensor_row_order_1;
-  TensorWrapper<FloatType, 4, MemLayout::COL_MAJOR> tensor_col_order_4;
-  TensorWrapper<FloatType, 4, MemLayout::ROW_MAJOR> tensor_row_order_4;
-  TensorWrapper<FloatType, 1, MemLayout::COL_MAJOR> sub_tensor_col_order_1;
-  TensorWrapper<FloatType, 1, MemLayout::ROW_MAJOR> sub_tensor_row_order_1;
-  TensorWrapper<FloatType, 4, MemLayout::COL_MAJOR> sub_tensor_col_order_4;
-  TensorWrapper<FloatType, 4, MemLayout::ROW_MAJOR> sub_tensor_row_order_4;
+  vector<TensorOrder> size, outer_size;
+  TensorSize<TEST_ORDER> size_obj, outer_size_obj;
+  vector<TensorOrder> offsets;
 };
 
 
@@ -80,323 +131,113 @@ using TestFloats = ::testing::Types<float, double, FloatComplex, DoubleComplex>;
 TYPED_TEST_CASE(TestTensorWrapper, TestFloats);
 
 
-TYPED_TEST(TestTensorWrapper, TestTensorWrapperCreation) {
-  // Prepare
-  TensorSize<1> zero_size_order_1{ 0 };
-  TensorSize<2> zero_size_order_2{ 0, 0 };
-  TensorSize<4> zero_size_order_4{ 0, 0, 0, 0 };
+TYPED_TEST(TestTensorWrapper, CreationColMajor) {
+  using CaseGenerator = typename TestTensorWrapper<TypeParam>::
+      TestCreation<MemLayout::COL_MAJOR>;
 
-  // Construction from default constructor
-  TensorWrapper<TypeParam, 1, MemLayout::COL_MAJOR> def_tensor_col_order_1;
-  ASSERT_EQ(zero_size_order_1, def_tensor_col_order_1.get_size())
-      << "Default constructed 1-ord col-major tensor wrapper has nonzero size.";
-  def_tensor_col_order_1.get_size() = this->size_order_1;
-  ASSERT_EQ(this->size_order_1, def_tensor_col_order_1.get_size())
-      << "Default constructed 1-ord col-major tensor wrapper cannot set size"
-      << " correctly.";
+  array<TensorIdx, TEST_ORDER> inner_strides, outer_strides;
+  inner_strides[0] = outer_strides[0] = 1;
+  for (TensorIdx idx = 1; idx < TEST_ORDER; ++idx) {
+    inner_strides[idx] = inner_strides[idx - 1] * this->size_obj[idx - 1];
+    outer_strides[idx] = outer_strides[idx - 1] * this->outer_size_obj[idx - 1];
+  }
 
-  ASSERT_EQ(zero_size_order_1, def_tensor_col_order_1.get_outer_size())
-      << "Default constructed 1-ord col-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_col_order_1.get_outer_size() = this->outer_size_order_1;
-  ASSERT_EQ(this->outer_size_order_1, def_tensor_col_order_1.get_outer_size())
-      << "Default constructed 1-ord col-major tensor wrapper cannot set outer"
-      << " size correctly.";
+  // Construction from one size object
+  CaseGenerator no_outer(this->size_obj, nullptr);
+  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using column major layout and no outer size constructor. Expected "
+      << "value: " << inner_strides[0] << ", " << inner_strides[1] << ", "
+      << inner_strides[2] << ", " << inner_strides[3];
 
-  ASSERT_EQ(nullptr, def_tensor_col_order_1.get_data())
-      << "Default constructed 1-ord col-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_col_order_1.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_col_order_1.get_data())
-      << "Default constructed 1-ord col-major tensor wrapper cannot set data"
-      << " correctly.";
+  // Construction from two different size objects
+  CaseGenerator with_outer(this->size_obj, this->outer_size, this->offsets,
+      nullptr);
+  ASSERT_TRUE(with_outer->check_strides(outer_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using column major layout and with outer size constructor. Expected "
+      << "value: " << outer_strides[0] << ", " << outer_strides[1] << ", "
+      << outer_strides[2] << ", " << outer_strides[3];
 
-
-  TensorWrapper<TypeParam, 1, MemLayout::ROW_MAJOR> def_tensor_row_order_1;
-  ASSERT_EQ(zero_size_order_1, def_tensor_row_order_1.get_size())
-      << "Default constructed 1-ord row-major tensor wrapper has nonzero size.";
-  def_tensor_row_order_1.get_size() = this->size_order_1;
-  ASSERT_EQ(this->size_order_1, def_tensor_row_order_1.get_size())
-      << "Default constructed 1-ord row-major tensor wrapper cannot set size"
-      << " correctly.";
-
-  ASSERT_EQ(zero_size_order_1, def_tensor_row_order_1.get_outer_size())
-      << "Default constructed 1-ord row-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_row_order_1.get_outer_size() = this->outer_size_order_1;
-  ASSERT_EQ(this->outer_size_order_1, def_tensor_row_order_1.get_outer_size())
-      << "Default constructed 1-ord row-major tensor wrapper cannot set outer"
-      << " size correctly.";
-
-  ASSERT_EQ(nullptr, def_tensor_row_order_1.get_data())
-      << "Default constructed 1-ord row-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_row_order_1.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_row_order_1.get_data())
-      << "Default constructed 1-ord row-major tensor wrapper cannot set data"
-      << " correctly.";
-
-
-  TensorWrapper<TypeParam, 2, MemLayout::COL_MAJOR> def_tensor_col_order_2;
-  ASSERT_EQ(zero_size_order_2, def_tensor_col_order_2.get_size())
-      << "Default constructed 2-ord col-major tensor wrapper has nonzero size.";
-  def_tensor_col_order_2.get_size() = this->size_order_2;
-  ASSERT_EQ(this->size_order_2, def_tensor_col_order_2.get_size())
-      << "Default constructed 2-ord col-major tensor wrapper cannot set size"
-      << " correctly.";
-
-  ASSERT_EQ(zero_size_order_2, def_tensor_col_order_2.get_outer_size())
-      << "Default constructed 2-ord col-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_col_order_2.get_outer_size() = this->outer_size_order_2;
-  ASSERT_EQ(this->outer_size_order_2, def_tensor_col_order_2.get_outer_size())
-      << "Default constructed 2-ord col-major tensor wrapper cannot set outer"
-      << " size correctly.";
-
-  ASSERT_EQ(nullptr, def_tensor_col_order_2.get_data())
-      << "Default constructed 2-ord col-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_col_order_2.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_col_order_2.get_data())
-      << "Default constructed 2-ord col-major tensor wrapper cannot set data"
-      << " correctly.";
-
-
-  TensorWrapper<TypeParam, 2, MemLayout::ROW_MAJOR> def_tensor_row_order_2;
-  ASSERT_EQ(zero_size_order_2, def_tensor_row_order_2.get_size())
-      << "Default constructed 2-ord row-major tensor wrapper has nonzero size.";
-  def_tensor_row_order_2.get_size() = this->size_order_2;
-  ASSERT_EQ(this->size_order_2, def_tensor_row_order_2.get_size())
-      << "Default constructed 2-ord row-major tensor wrapper cannot set size"
-      << " correctly.";
-
-  ASSERT_EQ(zero_size_order_2, def_tensor_row_order_2.get_outer_size())
-      << "Default constructed 2-ord row-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_row_order_2.get_outer_size() = this->outer_size_order_2;
-  ASSERT_EQ(this->outer_size_order_2, def_tensor_row_order_2.get_outer_size())
-      << "Default constructed 2-ord row-major tensor wrapper cannot set outer"
-      << " size correctly.";
-
-  ASSERT_EQ(nullptr, def_tensor_row_order_2.get_data())
-      << "Default constructed 2-ord row-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_row_order_2.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_row_order_2.get_data())
-      << "Default constructed 2-ord row-major tensor wrapper cannot set data"
-      << " correctly.";
-
-
-  TensorWrapper<TypeParam, 4, MemLayout::COL_MAJOR> def_tensor_col_order_4;
-  ASSERT_EQ(zero_size_order_4, def_tensor_col_order_4.get_size())
-      << "Default constructed 4-ord col-major tensor wrapper has nonzero size.";
-  def_tensor_col_order_4.get_size() = this->size_order_4;
-  ASSERT_EQ(this->size_order_4, def_tensor_col_order_4.get_size())
-      << "Default constructed 4-ord col-major tensor wrapper cannot set size"
-      << " correctly.";
-
-  ASSERT_EQ(zero_size_order_4, def_tensor_col_order_4.get_outer_size())
-      << "Default constructed 4-ord col-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_col_order_4.get_outer_size() = this->outer_size_order_4;
-  ASSERT_EQ(this->outer_size_order_4, def_tensor_col_order_4.get_outer_size())
-      << "Default constructed 4-ord col-major tensor wrapper cannot set outer"
-      << " size correctly.";
-
-  ASSERT_EQ(nullptr, def_tensor_col_order_4.get_data())
-      << "Default constructed 4-ord col-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_col_order_4.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_col_order_4.get_data())
-      << "Default constructed 4-ord col-major tensor wrapper cannot set data"
-      << " correctly.";
-
-
-  TensorWrapper<TypeParam, 4, MemLayout::ROW_MAJOR> def_tensor_row_order_4;
-  ASSERT_EQ(zero_size_order_4, def_tensor_row_order_4.get_size())
-      << "Default constructed 4-ord row-major tensor wrapper has nonzero size.";
-  def_tensor_row_order_4.get_size() = this->size_order_4;
-  ASSERT_EQ(this->size_order_4, def_tensor_row_order_4.get_size())
-      << "Default constructed 4-ord row-major tensor wrapper cannot set size"
-      << " correctly.";
-
-  ASSERT_EQ(zero_size_order_4, def_tensor_row_order_4.get_outer_size())
-      << "Default constructed 4-ord row-major tensor wrapper has nonzero outer"
-      << " size.";
-  def_tensor_row_order_4.get_outer_size() = this->outer_size_order_4;
-  ASSERT_EQ(this->outer_size_order_4, def_tensor_row_order_4.get_outer_size())
-      << "Default constructed 4-ord row-major tensor wrapper cannot set outer"
-      << " size correctly.";
-
-  ASSERT_EQ(nullptr, def_tensor_row_order_4.get_data())
-      << "Default constructed 4-ord row-major tensor wrapper is initialized"
-      << " with non-null pointer.";
-  def_tensor_row_order_4.set_data(this->raw_data);
-  ASSERT_EQ(this->raw_data, def_tensor_row_order_4.get_data())
-      << "Default constructed 4-ord row-major tensor wrapper cannot set data"
-      << " correctly.";
-
-
-  // Construction from user-defined constructor 1
-  ASSERT_EQ(this->size_order_1, this->tensor_col_order_1.get_size())
-      << "First constructor 1-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_1, this->tensor_col_order_1.get_outer_size())
-      << "First constructor 1-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->tensor_col_order_1.get_data())
-      << "First constructor 1-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_1, this->tensor_row_order_1.get_size())
-      << "First constructor 1-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_1, this->tensor_row_order_1.get_outer_size())
-      << "First constructor 1-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->tensor_row_order_1.get_data())
-      << "First constructor 1-ord row-major tensor wrapper does not have"
-      << " correct data.";
-
-  TensorWrapper<TypeParam, 2, MemLayout::COL_MAJOR> tensor_col_order_2(
-      this->size_order_2, this->raw_data);
-  ASSERT_EQ(this->size_order_2, tensor_col_order_2.get_size())
-      << "First constructor 2-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_2, tensor_col_order_2.get_outer_size())
-      << "First constructor 2-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, tensor_col_order_2.get_data())
-      << "First constructor 2-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  TensorWrapper<TypeParam, 2, MemLayout::ROW_MAJOR> tensor_row_order_2(
-      this->size_order_2, this->raw_data);
-  ASSERT_EQ(this->size_order_2, tensor_row_order_2.get_size())
-      << "First constructor 2-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_2, tensor_row_order_2.get_outer_size())
-      << "First constructor 2-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, tensor_row_order_2.get_data())
-      << "First constructor 2-ord row-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_4, this->tensor_col_order_4.get_size())
-      << "First constructor 4-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_4, this->tensor_col_order_4.get_outer_size())
-      << "First constructor 4-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->tensor_col_order_4.get_data())
-      << "First constructor 4-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_4, this->tensor_row_order_4.get_size())
-      << "First constructor 4-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->size_order_4, this->tensor_row_order_4.get_outer_size())
-      << "First constructor 4-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->tensor_row_order_4.get_data())
-      << "First constructor 4-ord row-major tensor wrapper does not have"
-      << " correct data.";
-
-
-  // Construction from user-defined constructor 2
-  ASSERT_EQ(this->size_order_1, this->sub_tensor_col_order_1.get_size())
-      << "Second constructor 1-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_1,
-      this->sub_tensor_col_order_1.get_outer_size())
-      << "Second constructor 1-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->sub_tensor_col_order_1.get_data())
-      << "Second constructor 1-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_1, this->sub_tensor_row_order_1.get_size())
-      << "Second constructor 1-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_1,
-      this->sub_tensor_row_order_1.get_outer_size())
-      << "Second constructor 1-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->sub_tensor_row_order_1.get_data())
-      << "Second constructor 1-ord row-major tensor wrapper does not have"
-      << " correct data.";
-
-  TensorWrapper<TypeParam, 2, MemLayout::COL_MAJOR> sub_tensor_col_order_2(
-      this->size_order_2, this->outer_size_order_2, this->offsets_order_2,
-      this->raw_data);
-  ASSERT_EQ(this->size_order_2, sub_tensor_col_order_2.get_size())
-      << "Second constructor 2-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_2, sub_tensor_col_order_2.get_outer_size())
-      << "Second constructor 2-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, sub_tensor_col_order_2.get_data())
-      << "Second constructor 2-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  TensorWrapper<TypeParam, 2, MemLayout::ROW_MAJOR> sub_tensor_row_order_2(
-      this->size_order_2, this->outer_size_order_2, this->offsets_order_2,
-      this->raw_data);
-  ASSERT_EQ(this->size_order_2, sub_tensor_row_order_2.get_size())
-      << "Second constructor 2-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_2, sub_tensor_row_order_2.get_outer_size())
-      << "Second constructor 2-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, sub_tensor_row_order_2.get_data())
-      << "Second constructor 2-ord row-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_4, this->sub_tensor_col_order_4.get_size())
-      << "Second constructor 4-ord col-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_4,
-      this->sub_tensor_col_order_4.get_outer_size())
-      << "Second constructor 4-ord col-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->sub_tensor_col_order_4.get_data())
-      << "Second constructor 4-ord col-major tensor wrapper does not have"
-      << " correct data.";
-
-  ASSERT_EQ(this->size_order_4, this->sub_tensor_row_order_4.get_size())
-      << "Second constructor 4-ord row-major tensor wrapper does not have"
-      << " expected size.";
-  ASSERT_EQ(this->outer_size_order_4,
-      this->sub_tensor_row_order_4.get_outer_size())
-      << "Second constructor 4-ord row-major tensor wrapper does not have"
-      << " expected outer size.";
-  ASSERT_EQ(this->raw_data, this->sub_tensor_row_order_4.get_data())
-      << "Second constructor 4-ord row-major tensor wrapper does not have"
-      << " correct data.";
+  // Construction from two same size objects
+  CaseGenerator same_outer(this->size_obj, this->size_obj, this->offsets,
+      nullptr);
+  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using column major layout and with outer size constructor, the outer "
+      << "size object is the same with the size object. Expected value: "
+      << inner_strides[0] << ", " << inner_strides[1] << ", "
+      << inner_strides[2] << ", " << inner_strides[3];
 }
 
 
-TYPED_TEST(TestTensorWrapper, TestTensorWrapperIndexing) {
-  // Col-major 1-order tensor wrapper indexing
+TYPED_TEST(TestTensorWrapper, CreationRowMajor) {
+  using CaseGenerator = typename TestTensorWrapper<TypeParam>::
+      TestCreation<MemLayout::ROW_MAJOR>;
 
-  // Row-major 1-order tensor wrapper indexing
+  array<TensorIdx, TEST_ORDER> inner_strides, outer_strides;
+  inner_strides[3] = outer_strides[3] = 1;
+  for (TensorIdx idx = 2; idx >= 0; --idx) {
+    inner_strides[idx] = inner_strides[idx + 1] * this->size_obj[idx + 1];
+    outer_strides[idx] = outer_strides[idx + 1] * this->outer_size_obj[idx + 1];
+  }
 
-  // Col-major 4-order tensor wrapper indexing
+  // Construction from one size object
+  CaseGenerator no_outer(this->size_obj, nullptr);
+  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using row major layout and no outer size constructor. Expected "
+      << "value: " << inner_strides[0] << ", " << inner_strides[1] << ", "
+      << inner_strides[2] << ", " << inner_strides[3];
 
-  // Row-major 4-order tensor wrapper indexing
+  // Construction from two different size objects
+  CaseGenerator with_outer(this->size_obj, this->outer_size, this->offsets,
+      nullptr);
+  ASSERT_TRUE(with_outer->check_strides(outer_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using row major layout and with outer size constructor. Expected "
+      << "value: " << outer_strides[0] << ", " << outer_strides[1] << ", "
+      << outer_strides[2] << ", " << outer_strides[3];
 
-  // Col-major 1-order sub-tensor wrapper indexing
-
-  // Row-major 1-order sub-tensor wrapper indexing
-
-  // Col-major 4-order sub-tensor wrapper indexing
-
-  // Row-major 4-order sub-tensor wrapper indexing
-
+  // Construction from two same size objects
+  CaseGenerator same_outer(this->size_obj, this->size_obj, this->offsets,
+      nullptr);
+  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+      << "Tensor wrapper's indexing strides initialization is not correct when "
+      << "using row major layout and with outer size constructor, the outer "
+      << "size object is the same with the size object. Expected value: "
+      << inner_strides[0] << ", " << inner_strides[1] << ", "
+      << inner_strides[2] << ", " << inner_strides[3];
 }
 
 
-TYPED_TEST(TestTensorWrapper, TestTensorWrapperSlicing) {
+TYPED_TEST(TestTensorWrapper, IndexingColMajor) {
+  using Deduced = DeducedFloatType<TypeParam>;
+
+  DataWrapper<TypeParam> data(this->size);
+  array<TensorIdx, TEST_ORDER> inner_strides;
+  inner_strides[0] = 1;
+  for (TensorIdx idx = 1; idx < TEST_ORDER; ++idx)
+    inner_strides[idx] = inner_strides[idx - 1] * this->size_obj[idx - 1];
+
+  TensorWrapper<TypeParam, TEST_ORDER, MemLayout::COL_MAJOR> tensor(this->size_obj,
+      data.act_data);
+}
+
+
+TYPED_TEST(TestTensorWrapper, IndexingRowMajor) {
+}
+
+
+TYPED_TEST(TestTensorWrapper, SubIndexingColMajor) {
+}
+
+
+TYPED_TEST(TestTensorWrapper, SubIndexingRowMajor) {
+}
+
+
+TYPED_TEST(TestTensorWrapper, Slicing) {
   ;
 }
 
