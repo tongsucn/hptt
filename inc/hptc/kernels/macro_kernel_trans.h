@@ -4,7 +4,7 @@
 
 #include <hptc/util.h>
 #include <hptc/types.h>
-#include <hptc/config_trans.h>
+#include <hptc/config/config_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 
 
@@ -94,7 +94,7 @@ template <typename FloatType,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
 using MacroTransVecFull = MacroTransVec<FloatType,
-      KernelTranFull<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+      KernelTransFull<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
 
 
 template <typename FloatType,
@@ -102,7 +102,7 @@ template <typename FloatType,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
 using MacroTransVecHalf = MacroTransVec<FloatType,
-      KernelTranHalf<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+      KernelTransHalf<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
 
 
 template <typename FloatType,

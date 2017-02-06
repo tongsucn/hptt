@@ -12,7 +12,7 @@ class TensorSize<0> {
 
 class TensorSize<1> {
   TensorSize() = delete;
-}
+};
 
 
 template <TensorOrder ORDER>
@@ -225,7 +225,7 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() const {
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE TensorOrder get_leading() const {
+INLINE TensorOrder get_leading() {
   return this->size_[MemLayout::COL_MAJOR == LAYOUT ? 0 : ORDER - 1];
 }
 

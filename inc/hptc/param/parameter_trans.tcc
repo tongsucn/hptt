@@ -68,16 +68,8 @@ TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE TensorOrder TensorMergedWrapper<FloatType, ORDER, LAYOUT>::
-get_merged_order() {
-  return this->merged_order_;
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE TensorOrder get_leading() const {
+INLINE TensorOrder
+TensorMergedWrapper<FloatType, ORDER, LAYOUT>::get_leading() {
   constexpr GenNumType idx
       = ORDER - (MemLayout::COL_MAJOR == LAYOUT ? this->merged_order_ : 1);
   return this->size_[idx];
@@ -193,7 +185,7 @@ template <typename FloatType,
           TensorOrder ORDER,
           CoefUsageTrans USAGE,
           MemLayout LAYOUT>
-INLINE ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::TensorIdx perm_type() {
+INLINE TensorIdx ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::perm_type() {
   if (MemLayout::COL_MAJOR == LAYOUT) {
     if (0 == this->perm[ORDER - this->merged_order_])
       return -1;

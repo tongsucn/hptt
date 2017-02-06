@@ -4,7 +4,6 @@
 
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
-#include <hptc/kernels/kernel_trans_base.h>
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
 

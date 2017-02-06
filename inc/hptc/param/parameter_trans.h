@@ -28,8 +28,7 @@ public:
   INLINE FloatType &operator[](TensorIdx **indices);
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
-  INLINE TensorOrder get_merged_order();
-  INLINE void get_leading();
+  INLINE TensorOrder get_leading();
   void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
 
 private:

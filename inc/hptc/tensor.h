@@ -73,7 +73,7 @@ public:
   INLINE const TensorSize<ORDER> &get_size() const;
   INLINE TensorSize<ORDER> &get_outer_size();
   INLINE const TensorSize<ORDER> &get_outer_size() const;
-  INLINE TensorOrder get_leading() const;
+  INLINE TensorOrder get_leading();
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
   INLINE void set_data(FloatType *new_data);
