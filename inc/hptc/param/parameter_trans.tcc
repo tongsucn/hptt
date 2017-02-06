@@ -70,8 +70,7 @@ template <typename FloatType,
           MemLayout LAYOUT>
 INLINE TensorOrder
 TensorMergedWrapper<FloatType, ORDER, LAYOUT>::get_leading() {
-  constexpr GenNumType idx
-      = ORDER - (MemLayout::COL_MAJOR == LAYOUT ? this->merged_order_ : 1);
+  auto idx = ORDER - (MemLayout::COL_MAJOR == LAYOUT ? this->merged_order_ : 1);
   return this->size_[idx];
 }
 
@@ -158,7 +157,10 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
       output_tensor(output_tensor),
       alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
-      merged_order(ORDER) {
+      merged_order(ORDER),
+      kn_fb(alpha, beta), kn_fv(alpha, beta), kn_fh(alpha, beta),
+      kn_fs(alpha, beta), kn_hv(alpha, beta), kn_hh(alpha, beta),
+      kn_hs(alpha, beta), kn_sc(alpha, beta) {
   // Initialize perm
   std::copy(perm.begin(), perm.end(), this->perm);
 
@@ -187,7 +189,7 @@ template <typename FloatType,
           MemLayout LAYOUT>
 INLINE TensorIdx ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::perm_type() {
   if (MemLayout::COL_MAJOR == LAYOUT) {
-    if (0 == this->perm[ORDER - this->merged_order_])
+    if (0 == this->perm[ORDER - this->merged_order])
       return -1;
     else
       return 1;
