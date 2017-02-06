@@ -19,17 +19,12 @@ template <typename ParamType,
 class OpForTrans {
 public:
   OpForTrans();
+  OpForTrans(const std::shared_ptr<ParamType> &param);
 
   OpForTrans(const OpForTrans &loop_data);
-  OpForTrans &operator=(const OpForTrans &loop_data);
+  OpForTrans<ParamType, ORDER> &operator=(const OpForTrans &loop_data);
 
-  template <typename Vec>
   INLINE void init(const std::shared_ptr<ParamType> &param);
-  template <typename Vec>
-  void init(const std::shared_ptr<ParamType> &param, const Vec &begin,
-      const Vec &end, const Vec &step);
-
-  INLINE void reset();
 
   template <typename MacroType>
   INLINE void operator()(MacroType &macro_kernel);
@@ -37,15 +32,18 @@ public:
   INLINE void set_begin(TensorIdx begin_val, TensorIdx idx);
   INLINE void set_end(TensorIdx end_val, TensorIdx idx);
   INLINE void set_step(TensorIdx step_val, TensorIdx idx);
-  template <typename Vec>
+
   INLINE void set_order(const std::vector<TensorOrder> &order);
-  INLINE void set_disable();
   INLINE void set_pass(TensorOrder order);
+
+  INLINE const TensorIdx *get_order() const;
 
   OpForTrans<ParamType, ORDER> *next;
 
 private:
-  INLINE void init_perm_idx_();
+  void init_disable_();
+  void init_perm_idx_();
+
   template <typename MacroType,
             GenNumType UNROLL_NUM>
   INLINE void unroller_(GenCounter<UNROLL_NUM>, MacroType &macro_kernel);

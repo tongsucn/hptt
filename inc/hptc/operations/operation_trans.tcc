@@ -25,12 +25,18 @@ template <typename ParamType,
 OpForTrans<ParamType, ORDER>::OpForTrans()
     : next(nullptr),
       param_(nullptr) {
-  for (TensorOrder idx = 0; idx < ORDER; ++idx) {
-    this->loop_idx_[idx] = this->loop_begin_[idx] = this->loop_end_[idx]
-        = this->loop_step_[idx] = 0;
-    this->loop_perm_idx_[idx] = nullptr;
-    this->loop_order_[idx] = idx;
-  }
+  this->init_disable_();
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+OpForTrans<ParamType, ORDER>::OpForTrans(
+    const std::shared_ptr<ParamType> &param)
+    : next(nullptr),
+      param_(param) {
+  this->init_disable_();
+  this->init_perm_idx_();
 }
 
 
@@ -54,7 +60,7 @@ OpForTrans<ParamType, ORDER>::OpForTrans(const OpForTrans &loop_data)
 
 template <typename ParamType,
           TensorOrder ORDER>
-OpForTrans &OpForTrans<ParamType, ORDER>::operator=(
+OpForTrans<ParamType, ORDER> &OpForTrans<ParamType, ORDER>::operator=(
     const OpForTrans &loop_data) {
   // Do not copy next pointer
   this->param_ = loop_data.param_;
@@ -73,36 +79,10 @@ OpForTrans &OpForTrans<ParamType, ORDER>::operator=(
 
 template <typename ParamType,
           TensorOrder ORDER>
-template <typename Vec>
 void OpForTrans<ParamType, ORDER>::init(
     const std::shared_ptr<ParamType> &param) {
   this->param_ = param;
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-template <typename Vec>
-void OpForTrans<ParamType, ORDER>::init(const std::shared_ptr<ParamType> &param,
-    const Vec &begin, const Vec &end, const Vec &step, const Vec &order) {
-  // Initialize parameter
-  this->param_ = param;
-
-  // Initialize loop indices
-  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
   this->init_perm_idx_();
-
-  std::copy(begin.begin(), begin.end(), this->loop_begin_);
-  std::copy(end.begin(), end.end(), this->loop_end_);
-  std::copy(step.begin(), step.end(), this->loop_step_);
-  std::copy(order.begin(), order.end(), this->loop_order_);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::reset() {
-  std::copy(this->loop_begin_, this->loop_begin_ + ORDER, this->loop_idx_);
 }
 
 
@@ -140,17 +120,9 @@ INLINE void OpForTrans<ParamType, ORDER>::set_step(TensorIdx step_val,
 
 template <typename ParamType,
           TensorOrder ORDER>
-template <typename Vec>
-INLINE void OpForTrans<ParamType, ORDER>::set_order(const Vec &order) {
+INLINE void OpForTrans<ParamType, ORDER>::set_order(
+    const std::vector<TensorOrder> &order) {
   std::copy(order.begin(), order.end(), this->loop_order_);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::set_disable() {
-  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 1);
-  std::fill(this->loop_end_, this->loop_end_ + ORDER, 0);
 }
 
 
@@ -160,6 +132,27 @@ INLINE void OpForTrans<ParamType, ORDER>::set_pass(TensorOrder order) {
   std::fill(this->loop_idx_, this->loop_idx_ + order, 0);
   std::fill(this->loop_end_, this->loop_end_ + order, 1);
   std::fill(this->loop_step_, this->loop_step_ + order, 1);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE const TensorIdx *OpForTrans<ParamType, ORDER>::get_order() const {
+  return this->loop_order_;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void OpForTrans<ParamType, ORDER>::init_disable_() {
+  std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
+  std::fill(this->loop_perm_idx_, this->loop_perm_idx_ + ORDER, nullptr);
+  std::fill(this->loop_begin_, this->loop_begin_ + ORDER, 0);
+  std::fill(this->loop_end_, this->loop_end_ + ORDER, 0);
+  std::fill(this->loop_step_, this->loop_step_ + ORDER, 0);
+
+  for (TensorOrder idx = 0; idx < ORDER; ++idx)
+    this->loop_order_[idx] = idx;
 }
 
 
