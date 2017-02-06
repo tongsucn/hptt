@@ -11,8 +11,8 @@
 
 #include <hptc/types.h>
 #include <hptc/test_util.h>
-#include <hptc/param/parameter_trans.h>
-#include <hptc/kernels/kernel_trans_base.h>
+#include <hptc/config/config_trans.h>
+#include <hptc/kernels/kernel_trans.h>
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
 using namespace std;
@@ -52,7 +52,7 @@ protected:
     delete [] this->act_data;
   }
 
-  template <CoefUsage USAGE>
+  template <CoefUsageTrans USAGE>
   void calc_ref(TensorIdx offset_org_0, TensorIdx offset_org_1,
       TensorIdx offset_ref_0, TensorIdx offset_ref_1, GenNumType width) {
     // Reset reference data
@@ -66,11 +66,11 @@ protected:
         TensorIdx ref_offset = idx_0 + offset_ref_0
             + (idx_1 + offset_ref_1) * this->data_width;
 
-        if (CoefUsage::USE_NONE == USAGE)
+        if (CoefUsageTrans::USE_NONE == USAGE)
           this->ref_data[ref_offset] = this->org_data[org_offset];
-        else if (CoefUsage::USE_ALPHA == USAGE)
+        else if (CoefUsageTrans::USE_ALPHA == USAGE)
           this->ref_data[ref_offset] = this->alpha * this->org_data[org_offset];
-        else if (CoefUsage::USE_BETA == USAGE)
+        else if (CoefUsageTrans::USE_BETA == USAGE)
           this->ref_data[ref_offset] = this->org_data[org_offset]
               + this->beta * this->ref_data[ref_offset];
         else
@@ -84,8 +84,8 @@ protected:
     copy(this->org_data, this->org_data + this->data_len, this->act_data);
   }
 
-  template <CoefUsage USAGE,
-            KernelType TYPE>
+  template <CoefUsageTrans USAGE,
+            KernelTypeTrans TYPE>
   class CaseGenerator {
   public:
     CaseGenerator(TestKernelTransAvx<FloatType> &outer)
@@ -94,8 +94,8 @@ protected:
 
     array<TensorIdx, 5> operator()() {
       // Create kernel, compute reference and reset actual data
-      using KernelType = KernelTransAvx<FloatType, USAGE, TYPE>;
-      using RegType = typename KernelType::RegType;
+      using KernelTypeTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
+      using RegType = typename KernelTypeTrans::RegType;
 
       KernelTransAvx<FloatType, USAGE, TYPE> kernel;
       RegType reg_alpha = kernel.reg_coef(outer.alpha);
@@ -145,20 +145,22 @@ TYPED_TEST_CASE(TestKernelTransAvx, TestFloats);
 TYPED_TEST(TestKernelTransAvx, TestUtilities) {
   // Test register number selection
   // Full kernel
-  KernelTransAvx<TypeParam, CoefUsage::USE_BOTH, KernelType::KERNEL_FULL> full;
+  KernelTransAvx<TypeParam, CoefUsageTrans::USE_BOTH,
+      KernelTypeTrans::KERNEL_FULL> full;
   EXPECT_EQ(full.get_reg_num(), this->kernel_width_full)
       << "Register number does not match for full kernel.";
 
   // Half kernel
-  KernelTransAvx<TypeParam, CoefUsage::USE_BOTH, KernelType::KERNEL_HALF> half;
+  KernelTransAvx<TypeParam, CoefUsageTrans::USE_BOTH,
+      KernelTypeTrans::KERNEL_HALF> half;
   EXPECT_EQ(half.get_reg_num(), this->kernel_width_half)
       << "Register number does not match for half kernel.";
 }
 
 
 TYPED_TEST(TestKernelTransAvx, TestFullCoefNone) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_NONE,
-      KernelType::KERNEL_FULL> test_full(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_NONE, KernelTypeTrans::KERNEL_FULL> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of full kernel transpose without"
       << " coefficient does not match at absolute index: " << result[0]
@@ -168,8 +170,8 @@ TYPED_TEST(TestKernelTransAvx, TestFullCoefNone) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestFullCoefAlpha) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_ALPHA,
-      KernelType::KERNEL_FULL> test_full(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_ALPHA, KernelTypeTrans::KERNEL_FULL> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of full kernel transpose with alpha"
       << " does not match at absolute index: " << result[0]
@@ -179,8 +181,8 @@ TYPED_TEST(TestKernelTransAvx, TestFullCoefAlpha) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestFullCoefBeta) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BETA,
-      KernelType::KERNEL_FULL> test_full(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BETA, KernelTypeTrans::KERNEL_FULL> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of full kernel transpose with beta"
       << " does not match at absolute index: " << result[0]
@@ -190,8 +192,8 @@ TYPED_TEST(TestKernelTransAvx, TestFullCoefBeta) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestFullCoefBoth) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BOTH,
-      KernelType::KERNEL_FULL> test_full(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BOTH, KernelTypeTrans::KERNEL_FULL> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of full kernel transpose with both"
       << " coefficients does not match at absolute index: " << result[0]
@@ -201,8 +203,8 @@ TYPED_TEST(TestKernelTransAvx, TestFullCoefBoth) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefNone) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_NONE,
-      KernelType::KERNEL_HALF> test_half(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_NONE, KernelTypeTrans::KERNEL_HALF> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose without"
       << " coefficient does not match at absolute index: " << result[0]
@@ -212,8 +214,8 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefNone) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefAlpha) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_ALPHA,
-      KernelType::KERNEL_HALF> test_half(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_ALPHA, KernelTypeTrans::KERNEL_HALF> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with alpha"
       << " does not match at absolute index: " << result[0]
@@ -223,8 +225,8 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefAlpha) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefBeta) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BETA,
-      KernelType::KERNEL_HALF> test_half(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BETA, KernelTypeTrans::KERNEL_HALF> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with beta"
       << " does not match at absolute index: " << result[0]
@@ -234,8 +236,8 @@ TYPED_TEST(TestKernelTransAvx, TestHalfCoefBeta) {
 
 
 TYPED_TEST(TestKernelTransAvx, TestHalfCoefBoth) {
-  typename TestKernelTransAvx<TypeParam>::CaseGenerator<CoefUsage::USE_BOTH,
-      KernelType::KERNEL_HALF> test_half(*this);
+  typename TestKernelTransAvx<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BOTH, KernelTypeTrans::KERNEL_HALF> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of half kernel transpose with both"
       << " coefficients does not match at absolute index: " << result[0]

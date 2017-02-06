@@ -123,7 +123,7 @@ protected:
   static const TensorOrder inner_offset = sizeof(FloatType) / sizeof(Deduced);
   vector<TensorOrder> size, outer_size;
   TensorSize<TEST_ORDER> size_obj, outer_size_obj;
-  vector<TensorOrder> offsets;
+  array<TensorIdx, TEST_ORDER> offsets;
 };
 
 
@@ -144,7 +144,7 @@ TYPED_TEST(TestTensorWrapper, CreationColMajor) {
 
   // Construction from one size object
   CaseGenerator no_outer(this->size_obj, nullptr);
-  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+  ASSERT_TRUE(no_outer.check_strides(inner_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using column major layout and no outer size constructor. Expected "
       << "value: " << inner_strides[0] << ", " << inner_strides[1] << ", "
@@ -153,7 +153,7 @@ TYPED_TEST(TestTensorWrapper, CreationColMajor) {
   // Construction from two different size objects
   CaseGenerator with_outer(this->size_obj, this->outer_size, this->offsets,
       nullptr);
-  ASSERT_TRUE(with_outer->check_strides(outer_strides))
+  ASSERT_TRUE(with_outer.check_strides(outer_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using column major layout and with outer size constructor. Expected "
       << "value: " << outer_strides[0] << ", " << outer_strides[1] << ", "
@@ -162,7 +162,7 @@ TYPED_TEST(TestTensorWrapper, CreationColMajor) {
   // Construction from two same size objects
   CaseGenerator same_outer(this->size_obj, this->size_obj, this->offsets,
       nullptr);
-  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+  ASSERT_TRUE(no_outer.check_strides(inner_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using column major layout and with outer size constructor, the outer "
       << "size object is the same with the size object. Expected value: "
@@ -184,7 +184,7 @@ TYPED_TEST(TestTensorWrapper, CreationRowMajor) {
 
   // Construction from one size object
   CaseGenerator no_outer(this->size_obj, nullptr);
-  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+  ASSERT_TRUE(no_outer.check_strides(inner_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using row major layout and no outer size constructor. Expected "
       << "value: " << inner_strides[0] << ", " << inner_strides[1] << ", "
@@ -193,7 +193,7 @@ TYPED_TEST(TestTensorWrapper, CreationRowMajor) {
   // Construction from two different size objects
   CaseGenerator with_outer(this->size_obj, this->outer_size, this->offsets,
       nullptr);
-  ASSERT_TRUE(with_outer->check_strides(outer_strides))
+  ASSERT_TRUE(with_outer.check_strides(outer_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using row major layout and with outer size constructor. Expected "
       << "value: " << outer_strides[0] << ", " << outer_strides[1] << ", "
@@ -202,7 +202,7 @@ TYPED_TEST(TestTensorWrapper, CreationRowMajor) {
   // Construction from two same size objects
   CaseGenerator same_outer(this->size_obj, this->size_obj, this->offsets,
       nullptr);
-  ASSERT_TRUE(no_outer->check_strides(inner_strides))
+  ASSERT_TRUE(no_outer.check_strides(inner_strides))
       << "Tensor wrapper's indexing strides initialization is not correct when "
       << "using row major layout and with outer size constructor, the outer "
       << "size object is the same with the size object. Expected value: "

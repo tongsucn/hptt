@@ -10,9 +10,8 @@
 
 #include <hptc/types.h>
 #include <hptc/test_util.h>
-#include <hptc/param/parameter_trans.h>
+#include <hptc/config/config_trans.h>
 #include <hptc/kernels/kernel_trans.h>
-#include <hptc/kernels/kernel_trans_base.h>
 #include <hptc/kernels/macro_kernel_trans.h>
 
 using namespace std;
@@ -71,7 +70,7 @@ protected:
     delete [] this->act_data;
   }
 
-  template <CoefUsage USAGE>
+  template <CoefUsageTrans USAGE>
   void calc_ref(TensorOrder offset_org_0, TensorOrder offset_org_1,
       TensorOrder offset_ref_0, TensorOrder offset_ref_1,
       TensorIdx rows, TensorIdx cols, TensorIdx kernel_width) {
@@ -86,11 +85,11 @@ protected:
         TensorIdx ref_offset = idx_0 + offset_ref_0
             + (idx_1 + offset_ref_1) * this->data_height;
 
-        if (CoefUsage::USE_NONE == USAGE)
+        if (CoefUsageTrans::USE_NONE == USAGE)
           this->ref_data[ref_offset] = this->org_data[org_offset];
-        else if (CoefUsage::USE_ALPHA == USAGE)
+        else if (CoefUsageTrans::USE_ALPHA == USAGE)
           this->ref_data[ref_offset] = this->alpha * this->org_data[org_offset];
-        else if (CoefUsage::USE_BETA == USAGE)
+        else if (CoefUsageTrans::USE_BETA == USAGE)
           this->ref_data[ref_offset] = this->org_data[org_offset]
               + this->beta * this->ref_data[ref_offset];
         else
@@ -104,7 +103,7 @@ protected:
     copy(this->org_data, this->org_data + this->data_len, this->act_data);
   }
 
-  template <KernelType TYPE,
+  template <KernelTypeTrans TYPE,
             GenNumType HEIGHT,
             GenNumType WIDTH>
   class CaseGenerator {
@@ -116,21 +115,21 @@ protected:
     }
 
     array<TensorIdx, 8> operator()() {
-      KernelTrans<FloatType, CoefUsage::USE_NONE, TYPE> kernel_none;
+      KernelTrans<FloatType, CoefUsageTrans::USE_NONE, TYPE> kernel_none;
       MacroTransVec<FloatType, decltype(kernel_none), WIDTH, HEIGHT>
-          macro_none(kernel_none, outer.alpha, outer.beta);
+          macro_none(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsage::USE_ALPHA, TYPE> kernel_alpha;
+      KernelTrans<FloatType, CoefUsageTrans::USE_ALPHA, TYPE> kernel_alpha;
       MacroTransVec<FloatType, decltype(kernel_alpha), WIDTH, HEIGHT>
-          macro_alpha(kernel_alpha, outer.alpha, outer.beta);
+          macro_alpha(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsage::USE_BETA, TYPE> kernel_beta;
+      KernelTrans<FloatType, CoefUsageTrans::USE_BETA, TYPE> kernel_beta;
       MacroTransVec<FloatType, decltype(kernel_beta), WIDTH, HEIGHT>
-          macro_beta(kernel_beta, outer.alpha, outer.beta);
+          macro_beta(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsage::USE_BOTH, TYPE> kernel_both;
+      KernelTrans<FloatType, CoefUsageTrans::USE_BOTH, TYPE> kernel_both;
       MacroTransVec<FloatType, decltype(kernel_both), WIDTH, HEIGHT>
-          macro_both(kernel_both, outer.alpha, outer.beta);
+          macro_both(outer.alpha, outer.beta);
 
       bool fail = false;
       array<TensorIdx, 8> res{ -1, -1, -1, -1, 0, 0, 0, 0 };
@@ -139,8 +138,8 @@ protected:
           for (TensorIdx &act_0 = res[6]; act_0 < outer.height_extra; ++act_0)
             for (TensorIdx &act_1 = res[7]; act_1 < outer.width_extra; ++act_1)
             {
-              outer.calc_ref<CoefUsage::USE_NONE>(org_0, org_1, act_0, act_1,
-                  HEIGHT, WIDTH, kernel_none.get_reg_num());
+              outer.calc_ref<CoefUsageTrans::USE_NONE>(org_0, org_1, act_0,
+                  act_1, HEIGHT, WIDTH, kernel_none.get_reg_num());
               outer.reset_act();
               macro_none(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
@@ -150,8 +149,8 @@ protected:
               if (-1 != res[0])
                 fail = true;
 
-              outer.calc_ref<CoefUsage::USE_ALPHA>(org_0, org_1, act_0, act_1,
-                  HEIGHT, WIDTH, kernel_alpha.get_reg_num());
+              outer.calc_ref<CoefUsageTrans::USE_ALPHA>(org_0, org_1, act_0,
+                  act_1, HEIGHT, WIDTH, kernel_alpha.get_reg_num());
               outer.reset_act();
               macro_alpha(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
@@ -161,8 +160,8 @@ protected:
               if (-1 != res[1])
                 fail = true;
 
-              outer.calc_ref<CoefUsage::USE_BETA>(org_0, org_1, act_0, act_1,
-                  HEIGHT, WIDTH, kernel_beta.get_reg_num());
+              outer.calc_ref<CoefUsageTrans::USE_BETA>(org_0, org_1, act_0,
+                  act_1, HEIGHT, WIDTH, kernel_beta.get_reg_num());
               outer.reset_act();
               macro_beta(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
@@ -172,8 +171,8 @@ protected:
               if (-1 != res[2])
                 fail = true;
 
-              outer.calc_ref<CoefUsage::USE_BOTH>(org_0, org_1, act_0, act_1,
-                  HEIGHT, WIDTH, kernel_both.get_reg_num());
+              outer.calc_ref<CoefUsageTrans::USE_BOTH>(org_0, org_1, act_0,
+                  act_1, HEIGHT, WIDTH, kernel_both.get_reg_num());
               outer.reset_act();
               macro_both(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_height,
@@ -199,7 +198,7 @@ protected:
   constexpr static TensorOrder height_extra = 3;
   constexpr static TensorOrder width_extra = 4;
 
-  KernelTransFull<FloatType, CoefUsage::USE_NONE> kernel;
+  KernelTransFull<FloatType, CoefUsageTrans::USE_NONE> kernel;
 
   TensorIdx macro_width, data_height, data_width, data_len;
   FloatType *org_data, *ref_data, *act_data;
@@ -220,17 +219,17 @@ protected:
       init_ptr[in_idx] = this->random_gen();
   }
 
-  template <CoefUsage USAGE>
+  template <CoefUsageTrans USAGE>
   void calc_ref() {
     // Reset reference data
     this->ref_data = this->org_data;
 
     // Compute reference data
-    if (CoefUsage::USE_NONE == USAGE)
+    if (CoefUsageTrans::USE_NONE == USAGE)
       this->ref_data = this->org_data;
-    else if (CoefUsage::USE_ALPHA == USAGE)
+    else if (CoefUsageTrans::USE_ALPHA == USAGE)
       this->ref_data = this->alpha * this->org_data;
-    else if (CoefUsage::USE_BETA == USAGE)
+    else if (CoefUsageTrans::USE_BETA == USAGE)
       this->ref_data = this->org_data + this->beta * this->ref_data;
     else
       this->ref_data = this->alpha * this->org_data
@@ -241,7 +240,7 @@ protected:
     this->act_data = this->org_data;
   }
 
-  template <CoefUsage USAGE>
+  template <CoefUsageTrans USAGE>
   class CaseGenerator {
   public:
     CaseGenerator(TestMacroTransScalar<FloatType> &outer)
@@ -275,8 +274,8 @@ TYPED_TEST_CASE(TestMacroTransScalar, TestFloats);
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull1x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      1, 1> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 1, 1> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 1x1 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -301,8 +300,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull1x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull1x2) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      1, 2> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 1, 2> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 1x2 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -327,8 +326,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull1x2) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull1x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      1, 3> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 1, 3> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 1x3 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -353,8 +352,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull1x3) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull2x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      2, 1> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 2, 1> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 2x1 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -379,8 +378,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull2x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull2x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      2, 3> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 2, 3> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 2x3 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -405,8 +404,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull2x3) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull3x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      3, 1> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 3, 1> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 3x1 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -431,8 +430,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull3x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull3x2) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      3, 2> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 3, 2> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 3x2 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -457,8 +456,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull3x2) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroFull3x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_FULL,
-      3, 3> test_full(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_FULL, 3, 3> test_full(*this);
   auto result = test_full();
   ASSERT_EQ(-1, result[0]) << "Result of 3x3 macro full kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -483,8 +482,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroFull3x3) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      1, 1> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 1, 1> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 1x1 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -509,8 +508,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x2) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      1, 2> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 1, 2> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 1x2 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -535,8 +534,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x2) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf1x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      1, 3> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 1, 3> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 1x3 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -561,8 +560,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf1x3) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      2, 1> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 2, 1> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 2x1 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -587,8 +586,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf2x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf2x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      2, 3> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 2, 3> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 2x3 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -613,8 +612,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf2x3) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf3x1) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      3, 1> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 3, 1> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 3x1 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -639,8 +638,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf3x1) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf3x2) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      3, 2> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 3, 2> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 3x2 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -665,8 +664,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf3x2) {
 
 
 TYPED_TEST(TestMacroTransVec, TestMacroHalf3x3) {
-  typename TestMacroTransVec<TypeParam>::CaseGenerator<KernelType::KERNEL_HALF,
-      3, 3> test_half(*this);
+  typename TestMacroTransVec<TypeParam>::CaseGenerator<
+      KernelTypeTrans::KERNEL_HALF, 3, 3> test_half(*this);
   auto result = test_half();
   ASSERT_EQ(-1, result[0]) << "Result of 3x3 macro half kernel transpose"
       << " without coefficients does not match at absolute index: "
@@ -691,8 +690,8 @@ TYPED_TEST(TestMacroTransVec, TestMacroHalf3x3) {
 
 
 TYPED_TEST(TestMacroTransScalar, TestCoefNone) {
-  typename TestMacroTransScalar<TypeParam>::CaseGenerator<CoefUsage::USE_NONE>
-      test_none(*this);
+  typename TestMacroTransScalar<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_NONE> test_none(*this);
   TensorIdx result = test_none();
   ASSERT_EQ(-1, result) << "Result of scalar macro without coefficient is"
       << " incorrect: Origin: " << this->org_data << ", Reference: "
@@ -701,8 +700,8 @@ TYPED_TEST(TestMacroTransScalar, TestCoefNone) {
 
 
 TYPED_TEST(TestMacroTransScalar, TestCoefAlpha) {
-  typename TestMacroTransScalar<TypeParam>::CaseGenerator<CoefUsage::USE_ALPHA>
-      test_alpha(*this);
+  typename TestMacroTransScalar<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_ALPHA> test_alpha(*this);
   TensorIdx result = test_alpha();
   ASSERT_EQ(-1, result) << "Result of scalar macro with alpha is incorrect: "
       << "Origin: " << this->org_data << ", Reference: " << this->ref_data
@@ -711,8 +710,8 @@ TYPED_TEST(TestMacroTransScalar, TestCoefAlpha) {
 
 
 TYPED_TEST(TestMacroTransScalar, TestCoefBeta) {
-  typename TestMacroTransScalar<TypeParam>::CaseGenerator<CoefUsage::USE_BETA>
-      test_beta(*this);
+  typename TestMacroTransScalar<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BETA> test_beta(*this);
   TensorIdx result = test_beta();
   ASSERT_EQ(-1, result) << "Result of scalar macro with beta is incorrect: "
       << "Origin: " << this->org_data << ", Reference: " << this->ref_data
@@ -721,8 +720,8 @@ TYPED_TEST(TestMacroTransScalar, TestCoefBeta) {
 
 
 TYPED_TEST(TestMacroTransScalar, TestCoefBoth) {
-  typename TestMacroTransScalar<TypeParam>::CaseGenerator<CoefUsage::USE_BOTH>
-      test_both(*this);
+  typename TestMacroTransScalar<TypeParam>::CaseGenerator<
+      CoefUsageTrans::USE_BOTH> test_both(*this);
   TensorIdx result = test_both();
   ASSERT_EQ(-1, result) << "Result of scalar macro with both coefficient is"
       << " incorrect: Origin: " << this->org_data << ", Reference: "
