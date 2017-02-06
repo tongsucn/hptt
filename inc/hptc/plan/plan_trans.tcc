@@ -1,0 +1,6 @@
+#pragma once
+#ifndef HPTC_PLAN_PLAN_TRANS_TCC_
+#define HPTC_PLAN_PLAN_TRANS_TCC_
+
+
+#endif // HPTC_PLAN_PLAN_TRANS_TCC_
