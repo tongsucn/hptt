@@ -74,6 +74,8 @@ OpForTrans<ParamType, ORDER> &OpForTrans<ParamType, ORDER>::operator=(
       this->loop_step_);
   std::copy(loop_data.loop_order_, loop_data.loop_order_ + ORDER,
       this->loop_order_);
+
+  return *this;
 }
 
 
@@ -96,25 +98,22 @@ INLINE void OpForTrans<ParamType, ORDER>::operator()(MacroType &macro_kernel) {
 
 template <typename ParamType,
           TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::set_begin(TensorIdx begin_val,
-    TensorIdx idx) {
-  this->loop_begin_[idx] = begin_val;
+INLINE TensorIdx &OpForTrans<ParamType, ORDER>::begin(TensorIdx idx) {
+  return this->loop_begin_[idx];
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::set_end(TensorIdx end_val,
-    TensorIdx idx) {
-  this->loop_end_[idx] = end_val;
+INLINE TensorIdx &OpForTrans<ParamType, ORDER>::end(TensorIdx idx) {
+  return this->loop_end_[idx];
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::set_step(TensorIdx step_val,
-    TensorIdx idx) {
-  this->loop_step_[idx] = step_val;
+INLINE TensorIdx &OpForTrans<ParamType, ORDER>::step(TensorIdx idx) {
+  return this->loop_step_[idx];
 }
 
 
@@ -139,6 +138,13 @@ template <typename ParamType,
           TensorOrder ORDER>
 INLINE const TensorIdx *OpForTrans<ParamType, ORDER>::get_order() const {
   return this->loop_order_;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE bool OpForTrans<ParamType, ORDER>::is_disable() {
+  return this->loop_idx_[0] >= this->loop_end_[0];
 }
 
 

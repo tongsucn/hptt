@@ -29,14 +29,15 @@ public:
   template <typename MacroType>
   INLINE void operator()(MacroType &macro_kernel);
 
-  INLINE void set_begin(TensorIdx begin_val, TensorIdx idx);
-  INLINE void set_end(TensorIdx end_val, TensorIdx idx);
-  INLINE void set_step(TensorIdx step_val, TensorIdx idx);
+  INLINE TensorIdx &begin(TensorIdx idx);
+  INLINE TensorIdx &end(TensorIdx idx);
+  INLINE TensorIdx &step(TensorIdx idx);
 
   INLINE void set_order(const std::vector<TensorOrder> &order);
   INLINE void set_pass(TensorOrder order);
 
   INLINE const TensorIdx *get_order() const;
+  INLINE bool is_disable();
 
   OpForTrans<ParamType, ORDER> *next;
 
