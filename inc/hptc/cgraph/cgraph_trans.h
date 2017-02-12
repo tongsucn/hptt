@@ -4,11 +4,9 @@
 
 #include <vector>
 #include <memory>
-#include <thread>
 #include <numeric>
+#include <algorithm>
 #include <functional>
-
-#include <iostream>
 
 #include <hptc/types.h>
 #include <hptc/operations/operation_trans.h>
@@ -22,10 +20,10 @@ class CGraphTrans {
 public:
   CGraphTrans(const std::shared_ptr<ParamType> &param,
       const std::vector<TensorOrder> &loop_order,
-      const std::vector<GenNumType> &para_strategy);
+      const std::vector<GenNumType> &strategy);
 
-  /*CGraphTrans(const CGraphTrans &graph);
-  CGraphTrans<ParamType, ORDER> &operator=(const CGraphTrans &graph);*/
+  CGraphTrans(const CGraphTrans &graph) = delete;
+  CGraphTrans<ParamType, ORDER> &operator=(const CGraphTrans &graph) = delete;
 
   ~CGraphTrans();
 
@@ -41,15 +39,18 @@ protected:
   bool init_kernel_(For_ *oper, GenNumType cont_len, GenNumType ncont_len,
       TensorOrder &cont_rest, TensorOrder &ncont_rest, TensorIdx &cont_begin,
       TensorIdx &ncont_begin);
-  void init_loop_order_(const std::vector<TensorOrder> &order);
-  void init_parallel_(const std::vector<TensorOrder> &loop_order,
-      const std::vector<GenNumType> &para_strategy);
+
+  void init_loop_order_();
+
+  void init_threads_();
+  void init_parallel_();
 
   INLINE void task_(TensorOrder idx);
 
   std::shared_ptr<ParamType> param_;
-  GenNumType para_strategy_, threads_;
-  std::thread *thread_pool_;
+  GenNumType threads_;
+  std::vector<TensorOrder> loop_order_;
+  std::vector<GenNumType> strategy_;
   For_ *operations_;
 };
 
