@@ -28,8 +28,8 @@ find_package(GTest)
 # ----------------------------------------------------------------------------
 # Compiler options
 # ----------------------------------------------------------------------------
-set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14 -xhost")
-set(TENSOR_DEBUG_FLAG "-g")
+set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14 -xhost -qopenmp")
+set(TENSOR_DEBUG_FLAG "-O0 -g")
 set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
 
 if (BUILD_TYPE STREQUAL "DEBUG")
