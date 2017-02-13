@@ -2,37 +2,48 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_H_
 #define HPTC_PLAN_PLAN_TRANS_H_
 
+#include <array>
 #include <vector>
 #include <memory>
+#include <utility>
+#include <numeric>
+#include <algorithm>
+
+#include <omp.h>
 
 #include <hptc/types.h>
+#include <hptc/config/config_trans.h>
+#include <hptc/cgraph/cgraph_trans.h>
+#include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {
 
 enum PlanTypeTrans {
-  PLAN_TRANS_HEUR = 0x0,
+  PLAN_TRANS_AUTO = 0x0,
   PLAN_TRANS_LOOP = 0x1,
   PLAN_TRANS_PARA = 0x2,
-  PLAN_TRANS_PREF = 0x4,
-  PLAN_TRANS_AUTO = 0x7
+  PLAN_TRANS_HEUR = 0x3
 };
 
 
 template <typename ParamType,
-          TensorOrder ORDER,
-          PlanTypeTrans TYPE = PLAN_TRANS_HEUR>
+          TensorOrder ORDER>
 class PlanTrans {
 public:
-  PlanTrans(const std::shared_ptr<ParamTransType> &param);
-  CGraphTrans<ParamType, ORDER> *get_graph();
+  PlanTrans(const std::shared_ptr<ParamType> &param);
 
-  TensorIdx set_loop_order(const std::vector<TensorOrder> &order);
-  TensorIdx set_parallel(const std::vector<TensorOrder> &strategy);
-  TensorIdx set_prefetch(const GenNumType distance);
+  PlanTrans(const PlanTrans &plan) = delete;
+  PlanTrans<ParamType, ORDER> &operator=(const PlanTrans &plan) = delete;
+
+  CGraphTrans<ParamType, ORDER> *get_graph(
+      PlanTypeTrans plan_type = PLAN_TRANS_AUTO);
 
 private:
-  std::shared_ptr<ParamTransType> param;
+  CGraphTrans<ParamType, ORDER> *cgraph_auto_();
+  CGraphTrans<ParamType, ORDER> *cgraph_heur_();
+
+  std::shared_ptr<ParamType> param_;
 };
 
 
