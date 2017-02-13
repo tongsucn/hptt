@@ -120,7 +120,7 @@ INLINE TensorIdx &OpForTrans<ParamType, ORDER>::step(TensorIdx idx) {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void OpForTrans<ParamType, ORDER>::set_order(
-    const std::vector<TensorOrder> &order) {
+    const std::array<TensorOrder, ORDER> &order) {
   std::copy(order.begin(), order.end(), this->loop_order_);
 }
 
@@ -165,10 +165,11 @@ void OpForTrans<ParamType, ORDER>::init_disable_() {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void OpForTrans<ParamType, ORDER>::init_perm_idx_() {
-  for (TensorOrder idx = 0; idx < ORDER - this->param_->merged_order; ++idx)
+  auto end_idx = ORDER - this->param_->merged_order;
+  for (TensorOrder idx = 0; idx < end_idx; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
 
-  for (TensorOrder idx = ORDER - this->param_->merged_order; idx < ORDER; ++idx)
+  for (TensorOrder idx = end_idx; idx < ORDER; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
         - this->param_->merged_order];
 }

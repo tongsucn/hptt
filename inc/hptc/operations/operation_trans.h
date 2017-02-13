@@ -33,7 +33,7 @@ public:
   INLINE TensorIdx &end(TensorIdx idx);
   INLINE TensorIdx &step(TensorIdx idx);
 
-  INLINE void set_order(const std::vector<TensorOrder> &order);
+  INLINE void set_order(const std::array<TensorOrder, ORDER> &order);
   INLINE void set_pass(TensorOrder order);
 
   INLINE const TensorIdx *get_order() const;

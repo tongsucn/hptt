@@ -49,6 +49,7 @@ struct ParamTrans {
   INLINE TensorIdx perm_type();
 
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
+  constexpr static MemLayout MEM_LAYOUT = LAYOUT;
 
   TensorWrapper<FloatType, ORDER, LAYOUT> org_input_tensor, org_output_tensor;
   TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
