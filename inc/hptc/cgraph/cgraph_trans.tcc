@@ -6,7 +6,7 @@ template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER>::CGraphTrans(
     const std::shared_ptr<ParamType> &param,
-    const std::vector<TensorOrder> &loop_order,
+    const std::array<TensorOrder, ORDER> &loop_order,
     const std::vector<GenNumType> &strategy)
     : param_(param),
       loop_order_(loop_order),
@@ -40,8 +40,26 @@ template <typename ParamType,
           TensorOrder ORDER>
 INLINE void CGraphTrans<ParamType, ORDER>::operator()() {
 #pragma omp parallel for
-    for (TensorOrder idx = 0; idx < this->threads_; ++idx)
-      this->task_(idx);
+  for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
+    auto task = this->operations_ + idx;
+    (*task)(this->param_->kn_fb);
+    task = task->next;
+    (*task)(this->param_->kn_fv);
+    task = task->next;
+    (*task)(this->param_->kn_fh);
+    task = task->next;
+    (*task)(this->param_->kn_fs);
+    task = task->next;
+    (*task)(this->param_->kn_hv);
+    task = task->next;
+    (*task)(this->param_->kn_hh);
+    task = task->next;
+    (*task)(this->param_->kn_hs);
+    task = task->next;
+    (*task)(this->param_->kn_sc);
+    task = task->next;
+    (*task)(this->param_->kn_sc);
+  }
 }
 
 
@@ -341,9 +359,9 @@ void CGraphTrans<ParamType, ORDER>::init_parallel_() {
       std::vector<TensorIdx> split_steps(curr_para, steps / curr_para);
 
       // Deal with rest steps
-      auto inc = [] (TensorIdx &num) { ++num; };
       auto rest_steps = steps % curr_para;
-      std::for_each(split_steps.end() - rest_steps, split_steps.end(), inc);
+      std::for_each(split_steps.end() - rest_steps, split_steps.end(),
+          [] (auto &num) { ++num; });
 
       // Create unit spans
       std::vector<TensorIdx> unit_begins(assign_threads),
@@ -383,30 +401,6 @@ void CGraphTrans<ParamType, ORDER>::init_parallel_() {
       oper_ptr[oper_idx] = oper_ptr[oper_idx]->next;
     ++curr_depth;
   }
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void CGraphTrans<ParamType, ORDER>::task_(TensorOrder idx) {
-  auto task = this->operations_ + idx;
-  (*task)(this->param_->kn_fb);
-  task = task->next;
-  (*task)(this->param_->kn_fv);
-  task = task->next;
-  (*task)(this->param_->kn_fh);
-  task = task->next;
-  (*task)(this->param_->kn_fs);
-  task = task->next;
-  (*task)(this->param_->kn_hv);
-  task = task->next;
-  (*task)(this->param_->kn_hh);
-  task = task->next;
-  (*task)(this->param_->kn_hs);
-  task = task->next;
-  (*task)(this->param_->kn_sc);
-  task = task->next;
-  (*task)(this->param_->kn_sc);
 }
 
 #endif // HPTC_CGRAPH_CGRAPH_TRANS_TCC_

@@ -2,6 +2,7 @@
 #ifndef HPTC_CGRAPH_CGRAPH_TRANS_H_
 #define HPTC_CGRAPH_CGRAPH_TRANS_H_
 
+#include <array>
 #include <vector>
 #include <memory>
 #include <numeric>
@@ -9,6 +10,7 @@
 #include <functional>
 
 #include <hptc/types.h>
+#include <hptc/param/parameter_trans.h>
 #include <hptc/operations/operation_trans.h>
 
 
@@ -19,7 +21,7 @@ template <typename ParamType,
 class CGraphTrans {
 public:
   CGraphTrans(const std::shared_ptr<ParamType> &param,
-      const std::vector<TensorOrder> &loop_order,
+      const std::array<TensorOrder, ORDER> &loop_order,
       const std::vector<GenNumType> &strategy);
 
   CGraphTrans(const CGraphTrans &graph) = delete;
@@ -30,6 +32,11 @@ public:
   INLINE void operator()();
 
 protected:
+  // Friend class
+  template <typename ParamType,
+            TensorOrder ORDER>
+  class PlanTrans;
+
   using For_ = OpForTrans<ParamType, ORDER>;
 
   void init_operations_();
@@ -45,11 +52,9 @@ protected:
   void init_threads_();
   void init_parallel_();
 
-  INLINE void task_(TensorOrder idx);
-
   std::shared_ptr<ParamType> param_;
   GenNumType threads_;
-  std::vector<TensorOrder> loop_order_;
+  std::array<TensorOrder, ORDER> loop_order_;
   std::vector<GenNumType> strategy_;
   For_ *operations_;
 };
