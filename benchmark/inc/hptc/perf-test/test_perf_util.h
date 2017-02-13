@@ -11,10 +11,8 @@
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
+#include <hptc/plan/plan_trans.h>
 #include <hptc/param/parameter_trans.h>
-#include <hptc/kernels/kernel_trans.h>
-#include <hptc/kernels/macro_kernel_trans.h>
-#include <hptc/operations/operation_trans.h>
 
 #include <hptc/test_util.h>
 
@@ -27,7 +25,7 @@ namespace hptc {
 
 template <typename FloatType,
           typename RefFuncType,
-          CoefUsage USAGE,
+          CoefUsageTrans USAGE,
           TensorOrder ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case);
 
