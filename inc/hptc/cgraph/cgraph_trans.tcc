@@ -326,19 +326,17 @@ void CGraphTrans<ParamType, ORDER>::init_parallel_() {
     oper_ptr.push_back(this->operations_ + idx);
 
   // Locate begin order for parallelization in case order merge
-  auto begin_idx = ORDER - this->param_->merged_order;
-  auto end_idx = begin_idx + static_cast<GenNumType>(this->strategy_.size());
+  const auto begin_idx
+      = static_cast<TensorIdx>(ORDER - this->param_->merged_order);
+  const auto end_idx
+      = begin_idx + static_cast<TensorIdx>(this->strategy_.size());
 
   // Parallelize
-  TensorOrder curr_depth = 0;
-  while (nullptr != oper_ptr[0]) {
-    // Check if current kernel is enabled
-    if (oper_ptr[0]->is_disable()) {
-      for (GenNumType oper_idx = 0; oper_idx < this->threads_; ++oper_idx)
-        oper_ptr[oper_idx] = oper_ptr[oper_idx]->next;
-      ++curr_depth;
+  for (; nullptr != oper_ptr[0]; std::for_each(oper_ptr.begin(), oper_ptr.end(),
+        [] (auto &ptr) -> void { ptr = ptr->next; })) {
+    // Skip disabled kernel
+    if (oper_ptr[0]->is_disable())
       continue;
-    }
 
     // Copy from vectorized kernel
     for (GenNumType idx = 1; idx < this->threads_; ++idx)
@@ -395,11 +393,6 @@ void CGraphTrans<ParamType, ORDER>::init_parallel_() {
 
       assign_threads /= curr_para;
     }
-
-    // Go to next kernel
-    for (GenNumType oper_idx = 0; oper_idx < this->threads_; ++oper_idx)
-      oper_ptr[oper_idx] = oper_ptr[oper_idx]->next;
-    ++curr_depth;
   }
 }
 
