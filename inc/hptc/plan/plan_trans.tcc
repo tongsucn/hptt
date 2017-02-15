@@ -29,17 +29,21 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::cgraph_auto_() {
   if (0 == threads)
     threads = 1;
 
-  // Set loop order
-  // Create order array
-  std::array<TensorOrder, ORDER> loop_order;
-  for (TensorOrder idx = 0; idx < ORDER; ++idx)
-    loop_order[idx] = idx;
-
   // Locate loop re-order entry (first loop that need to be re-ordered)
-  auto begin_idx = ORDER - this->param_->merged_order;
+  const auto begin_idx
+      = static_cast<TensorIdx>(ORDER - this->param_->merged_order);
+  const auto end_idx = static_cast<TensorIdx>(ORDER - 2);
+
+  // Create and initialize loop description array
+  LoopNode loops[ORDER];
+  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx) {
+    loops[loop_idx].size = this->param_->input_tensor.get_size()[loop_idx];
+    loops[loop_idx].thread_num = 1;
+    loops[loop_idx].org_idx = loop_idx;
+  }
 
   // Assign two leading to the deepest loop level
-  TensorOrder input_ld_idx, output_ld_idx;
+  TensorIdx input_ld_idx, output_ld_idx;
   if (MemLayout::COL_MAJOR == this->param_->MEM_LAYOUT) {
     input_ld_idx = begin_idx;
     output_ld_idx = this->param_->perm[begin_idx] + begin_idx;
@@ -48,20 +52,24 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::cgraph_auto_() {
     input_ld_idx = ORDER - 1;
     output_ld_idx = this->param_->perm[ORDER - 1] + begin_idx;
   }
-  //!< For now, put input leading's index at inner most level
-  loop_order[ORDER - 1] = input_ld_idx;
-  loop_order[ORDER - 2] = output_ld_idx;
 
-  // Process other loops and get their sizes
-  GenNumType other_num = ORDER - begin_idx - 2;
-  std::vector<TensorIdx> sizes(other_num);
-  for (TensorOrder idx = begin_idx, write_idx = begin_idx; idx < ORDER; ++idx)
-    if (idx != input_ld_idx and idx != output_ld_idx) {
-      sizes[write_idx - begin_idx] = this->param_->input_tensor.get_size()[idx];
-      loop_order[write_idx++] = idx;
-    }
+  // Put input leading index at inner most level, and put output leading index
+  // at second inner most level
+  if (ORDER == 2)
+    std::swap(loops[ORDER - 1], loops[ORDER - 2]);
+  else if (ORDER - 2 == output_ld_idx)
+    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+  else if (ORDER - 1 == output_ld_idx) {
+    std::swap(loops[ORDER - 1], loops[ORDER - 2]);
+    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+  }
+  else {
+    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+    std::swap(loops[ORDER - 2], loops[output_ld_idx]);
+  }
 
-  // Depose thread number
+  // Integer factorization of thread number
+  // Pair's first element is a prime factor, the second is its times
   using KV = std::pair<GenNumType, GenNumType>;
   std::vector<KV> fact_map;
   for (GenNumType num = 2, target = threads; target > 1; ++num) {
@@ -74,39 +82,64 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::cgraph_auto_() {
     }
   }
 
-  // Create parallelization strategy
-  // Assign according to factorization
-  std::vector<GenNumType> strategy(other_num, 1);
-  for (GenNumType idx = 0; idx < other_num; ++idx) {
-    for (KV &p : fact_map) {
-      if (p.second > 0 and 0 == sizes[idx] % p.first) {
-        sizes[idx] /= p.first;
-        strategy[idx] *= p.first;
-        --p.second;
+  // Parallelization
+  // Assign prime factors (factorized thread number) to loops
+  for (auto loop_idx = begin_idx; loop_idx < end_idx; ++loop_idx) {
+    for (auto &fact : fact_map) {
+      if (fact.second > 0 and 0 == loops[loop_idx].size % fact.first) {
+        loops[loop_idx].size /= fact.first;
+        loops[loop_idx].thread_num *= fact.first;
+        --fact.second;
       }
     }
   }
 
-  // Assign by force
+  // Sort non-leading loops before parallelize other part, after sorting,
+  // loops with larger sizes will be put at inner level (inner most two levels
+  // are still the leading loops)
+  std::sort(loops + begin_idx, loops + end_idx,
+      [] (const auto &first, const auto &second) -> bool {
+        return first.size < second.size; });
+  // Parallelize with rest threads, begin from inner non-leading loops (larger
+  // loops)
   auto fact_map_size = static_cast<TensorIdx>(fact_map.size());
   for (auto fact_idx = fact_map_size - 1; fact_idx >= 0; --fact_idx) {
-    for (TensorIdx idx = 0; fact_map[fact_idx].second > 0 and idx < other_num;
-        ++idx) {
-      while (fact_map[fact_idx].second > 0
-          and sizes[idx] >= fact_map[fact_idx].first) {
-        strategy[idx] *= fact_map[fact_idx].first;
-        sizes[idx] /= fact_map[fact_idx].first;
+    for (TensorIdx loop_idx = end_idx - 1;
+        fact_map[fact_idx].second > 0 and loop_idx >= begin_idx; --loop_idx) {
+      while (fact_map[fact_idx].second > 0 and
+          loops[loop_idx].size >= fact_map[fact_idx].first) {
+        loops[loop_idx].size /= fact_map[fact_idx].first;
+        loops[loop_idx].thread_num *= fact_map[fact_idx].first;
         --fact_map[fact_idx].second;
       }
     }
   }
 
-  // Truncate single threads
-  TensorIdx trunc_idx = other_num - 1;
+  // Create loop order and parallelization strategy
+  std::array<TensorOrder, ORDER> loop_order;
+  for (GenNumType loop_idx = 0; loop_idx < ORDER; ++loop_idx)
+    loop_order[loop_idx] = loops[loop_idx].org_idx;
+  std::vector<GenNumType> strategy;
+  for (auto loop_idx = begin_idx; loop_idx < end_idx; ++loop_idx)
+    strategy.push_back(loops[loop_idx].thread_num);
+
+  // Truncate single threaded inner loops
+  TensorIdx trunc_idx = static_cast<TensorIdx>(strategy.size()) - 1;
+  trunc_idx = trunc_idx < 0 ? 0 : trunc_idx;
   for (; trunc_idx > 0; --trunc_idx)
     if (strategy[trunc_idx] > 1)
       break;
-  strategy.resize(trunc_idx + 1);
+  strategy.resize(trunc_idx + 1, 1);
+
+  std::cout << "Loop order: ";
+  for (auto i : loop_order)
+    std::cout << i << ", ";
+  std::cout << std::endl;
+
+  std::cout << "Strategy: ";
+  for (auto i : strategy)
+    std::cout << i << ", ";
+  std::cout << std::endl;
 
   return new CGraphTrans<ParamType, ORDER>(this->param_, loop_order, strategy);
 }

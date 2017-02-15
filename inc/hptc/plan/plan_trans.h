@@ -11,6 +11,8 @@
 
 #include <omp.h>
 
+#include <iostream>
+
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/cgraph/cgraph_trans.h>
@@ -40,6 +42,12 @@ public:
       PlanTypeTrans plan_type = PLAN_TRANS_AUTO);
 
 private:
+  struct LoopNode {
+    TensorIdx size;
+    GenNumType thread_num;
+    TensorOrder org_idx;
+  };
+
   CGraphTrans<ParamType, ORDER> *cgraph_auto_();
   CGraphTrans<ParamType, ORDER> *cgraph_heur_();
 
