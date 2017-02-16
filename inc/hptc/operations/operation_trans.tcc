@@ -119,32 +119,19 @@ INLINE TensorIdx &OpForTrans<ParamType, ORDER>::step(TensorIdx idx) {
 
 template <typename ParamType,
           TensorOrder ORDER>
+INLINE void OpForTrans<ParamType, ORDER>::set_loop(
+    const LoopParam<ORDER> &loop) {
+  std::copy(loop.loop_begin, loop.loop_begin + ORDER, this->loop_begin_);
+  std::copy(loop.loop_end, loop.loop_end + ORDER, this->loop_end_);
+  std::copy(loop.loop_step, loop.loop_step + ORDER, this->loop_step_);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
 INLINE void OpForTrans<ParamType, ORDER>::set_order(
-    const std::array<TensorOrder, ORDER> &order) {
+    const LoopOrder<ORDER> &order) {
   std::copy(order.begin(), order.end(), this->loop_order_);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::set_pass(TensorOrder order) {
-  std::fill(this->loop_idx_, this->loop_idx_ + order, 0);
-  std::fill(this->loop_end_, this->loop_end_ + order, 1);
-  std::fill(this->loop_step_, this->loop_step_ + order, 1);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE const TensorIdx *OpForTrans<ParamType, ORDER>::get_order() const {
-  return this->loop_order_;
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE bool OpForTrans<ParamType, ORDER>::is_disable() {
-  return this->loop_idx_[0] >= this->loop_end_[0];
 }
 
 

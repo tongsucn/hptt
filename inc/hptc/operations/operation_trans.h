@@ -3,7 +3,6 @@
 #define HPTC_OPERATIONS_OPERATION_TRANS_H_
 
 #include <array>
-#include <vector>
 #include <memory>
 #include <algorithm>
 
@@ -33,11 +32,8 @@ public:
   INLINE TensorIdx &end(TensorIdx idx);
   INLINE TensorIdx &step(TensorIdx idx);
 
-  INLINE void set_order(const std::array<TensorOrder, ORDER> &order);
-  INLINE void set_pass(TensorOrder order);
-
-  INLINE const TensorIdx *get_order() const;
-  INLINE bool is_disable();
+  INLINE void set_loop(const LoopParam<ORDER> &loop);
+  INLINE void set_order(const LoopOrder<ORDER> &order);
 
   OpForTrans<ParamType, ORDER> *next;
 
