@@ -10,5 +10,5 @@ file(GLOB BENCHMARK_SRC RELATIVE ${BM_TRANS_SRC}
 foreach(BENCHMARK_CC_FILE ${BENCHMARK_SRC})
   string(REPLACE ${BM_TRANS_SRC_SUFFIX} "" BENCHMARK_NAME ${BENCHMARK_CC_FILE})
   add_executable(${BENCHMARK_NAME} ${BM_TRANS_SRC}/${BENCHMARK_CC_FILE})
-  target_link_libraries(${BENCHMARK_NAME} hptc)
+  target_link_libraries(${BENCHMARK_NAME} hptc_static)
 endforeach(BENCHMARK_CC_FILE ${BENCHMARK_SRC})

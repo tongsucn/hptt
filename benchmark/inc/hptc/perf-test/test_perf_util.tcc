@@ -41,18 +41,21 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
 
   // 4. Create plan and generate computational graph
-  PlanTrans<Param, ORDER> plan(param);
+  PlanTrans<Param, ORDER> plan(param, 1);
   auto graph = plan.get_graph();
 
   // Execute computational graph
   double hptc_time = timer(*graph);
+
+  delete graph;
+  graph = nullptr;
 
   // Verify results
   auto verify = data_wrapper.verify();
 
   // Print log
   std::stringstream ss;
-  ss << "|| (" << perm[0];
+  /*ss << "|| (" << perm[0];
   for (TensorOrder idx = 1; idx < ORDER; ++idx)
     ss << ", " << perm[idx];
   ss << ") || (" << param->input_tensor.get_size()[0];
@@ -60,11 +63,11 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
     ss << ", " << param->input_tensor.get_size()[idx];
   ss << ") || " << std::setprecision(3) << ttc_time << "ms || "
       << std::setprecision(3) << hptc_time << "ms || "
+      << (-1 == verify ? "SUCCEED! ||" : "FAILED ||");*/
+  ss << std::setprecision(3) << ttc_time << ","
+      << std::setprecision(3) << hptc_time << ","
       << (-1 == verify ? "SUCCEED! ||" : "FAILED ||");
   std::cout << ss.str() << std::endl;
-
-  delete graph;
-  graph = nullptr;
 }
 
 #endif // HPTC_PERF_TEST_TEST_PERF_UTIL_TCC_

@@ -11,7 +11,7 @@
 #include <hptc/test_util.h>
 
 #include "trans/avx/benchmark_par_beta.h"
-#include "trans/avx/benchmark_par_nobeta.h"
+#include "trans/avx/benchmark_nopar_beta.h"
 
 
 namespace hptc {
