@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <utility>
+#include <cmath>
 #include <algorithm>
 
 #include <hptc/types.h>
@@ -21,23 +22,18 @@ template <typename ParamType,
           TensorOrder ORDER>
 class PlanTrans {
 public:
-  PlanTrans(const std::shared_ptr<ParamType> &param);
+  PlanTrans(const std::shared_ptr<ParamType> &param, GenNumType thread_num = 0);
 
   PlanTrans(const PlanTrans &plan) = delete;
   PlanTrans<ParamType, ORDER> &operator=(const PlanTrans &plan) = delete;
 
   ~PlanTrans() = default;
 
-  CGraphTrans<ParamType, ORDER> *get_graph(
-      PlanTypeTrans plan_type = PLAN_TRANS_AUTO);
+  CGraphTrans<ParamType, ORDER> *get_graph(TensorIdx num = 0);
 
 private:
-  CGraphTrans<ParamType, ORDER> *cgraph_auto_();
-  CGraphTrans<ParamType, ORDER> *cgraph_heur_();
-
   std::shared_ptr<ParamType> param_;
-  PlanTransVectorizer<ParamType, ORDER> vectorizer_;
-  PlanTransParallelizer<ParamType, ORDER> parallelizer_;
+  PlanTransOptimizer<ParamType, ORDER> optimizer_;
 };
 
 

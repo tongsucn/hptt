@@ -19,30 +19,46 @@
 
 namespace hptc {
 
-enum PlanTypeTrans {
-  PLAN_TRANS_AUTO = 0x0,
-  PLAN_TRANS_LOOP = 0x1,
-  PLAN_TRANS_PARA = 0x2,
-  PLAN_TRANS_HEUR = 0x3
-};
-
-
 template <typename ParamType,
           TensorOrder ORDER>
-class PlanTransVectorizer {
+class PlanTransOptimizer {
 public:
-  PlanTransVectorizer(const std::shared_ptr<ParamType> &param);
+  PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
+      GenNumType thread_num = 0);
 
-  INLINE CGraphTransDescriptor<ORDER> operator()();
+  CGraphTransDescriptor<ORDER> get_optimal(TensorIdx heur_loop_num = 0,
+      TensorIdx heur_para_num = 0);
 
 private:
+  struct Loop_ {
+    TensorIdx size;
+    GenNumType thread_num;
+    TensorOrder org_idx;
+  };
+
   void init_();
-  bool init_kernels_(LoopParam<ORDER> &loop, GenNumType cont_len,
+  void init_thread_num_();
+  void init_vec_();
+  bool init_vec_kernels_(LoopParam<ORDER> &loop, GenNumType cont_len,
       GenNumType ncont_len, TensorOrder &cont_rest, TensorOrder &ncont_rest,
       TensorIdx &cont_begin, TensorIdx &ncont_begin);
+  void init_loop_();
+  void init_loop_evaluator_param_();
+  void init_parallel_();
+
+  LoopOrder<ORDER> heur_loop_explorer_(TensorIdx num = 0);
+  double heur_loop_evaluator_(const LoopOrder<ORDER> &target_loop_order);
+  void heur_parallel_explorer_(TensorIdx num = 0);
 
   std::shared_ptr<ParamType> param_;
+  GenNumType threads_;
+  std::vector<GenNumType> strategy_;
   CGraphTransDescriptor<ORDER> descriptor_;
+
+  // Parameters for loop order cost calculation
+  double penalty_begin, penalty_step;
+  double importance_begin, importance_scale;
+  double input_penalty_factor, output_penalty_factor;
 };
 
 
@@ -56,12 +72,6 @@ public:
       GenNumType threads = 0);
 
 private:
-  struct LoopNode_ {
-    TensorIdx size;
-    GenNumType thread_num;
-    TensorOrder org_idx;
-  };
-
   LoopOrder<ORDER> calc_depth_(const CGraphTransDescriptor<ORDER> &des,
       std::vector<GenNumType> &strategy);
   void parallelize_(CGraphTransDescriptor<ORDER> &des,

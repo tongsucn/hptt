@@ -2,6 +2,12 @@
 #ifndef HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 #define HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 
+template <TensorOrder ORDER>
+CGraphTransDescriptor<ORDER>::CGraphTransDescriptor(GenNumType thread_num)
+    : description(thread_num) {
+}
+
+
 template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER>::~CGraphTrans() {
@@ -40,34 +46,31 @@ template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER>::CGraphTrans(
     const std::shared_ptr<ParamType> &param,
-    const LoopOrder<ORDER> loop_order,
     const CGraphTransDescriptor<ORDER> &descriptor)
     : param_(param),
-      descriptor(descriptor),
-      threads_(descriptor.size()),
-      loop_order_(loop_order),
+      descriptor_(descriptor),
+      threads_(descriptor.description.size()),
       operations_(0 != this->threads_ ? new For_ [this->threads_] : nullptr) {
-  this->init_(descriptor);
+  this->init_();
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
-void CGraphTrans<ParamType, ORDER>::init_(
-    const CGraphTransDescriptor<ORDER> &descriptor) {
+void CGraphTrans<ParamType, ORDER>::init_() {
   // Initialize for loops' parameters and loop order
-  for (TensorIdx oper_idx = 0; oper_idx < this->threads_; ++oper_idx) {
-    auto curr_oper = this->operations_ + oper_idx;
+  for (GenNumType th_idx = 0, idx_end = this->descriptor_.description[0].size();
+      th_idx < this->threads_; ++th_idx) {
+    auto curr_oper = this->operations_ + th_idx;
     curr_oper->init(this->param_);
-    curr_oper->set_loop(descriptor[oper_idx][0]);
-    curr_oper->set_order(this->loop_order_);
+    curr_oper->set_loop(this->descriptor_.description[th_idx][0]);
+    curr_oper->set_order(this->descriptor_.loop_order);
 
-    const GenNumType idx_end = descriptor[0].size();
     for (GenNumType kn_idx = 1; kn_idx < idx_end; ++kn_idx) {
       curr_oper->next = new For_(this->param_);
       curr_oper = curr_oper->next;
-      curr_oper->set_loop(descriptor[oper_idx][kn_idx]);
-      curr_oper->set_order(this->loop_order_);
+      curr_oper->set_loop(this->descriptor_.description[th_idx][kn_idx]);
+      curr_oper->set_order(this->descriptor_.loop_order);
     }
   }
 }

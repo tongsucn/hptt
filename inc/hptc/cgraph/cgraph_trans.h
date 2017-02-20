@@ -14,7 +14,12 @@
 namespace hptc {
 
 template <TensorOrder ORDER>
-using CGraphTransDescriptor = std::vector<std::array<LoopParam<ORDER>, 9>>;
+struct CGraphTransDescriptor {
+  CGraphTransDescriptor(GenNumType thread_num);
+
+  LoopOrder<ORDER> loop_order;
+  std::vector<std::array<LoopParam<ORDER>, 9>> description;
+};
 
 
 template <typename ParamType,
@@ -37,16 +42,14 @@ protected:
   using For_ = OpForTrans<ParamType, ORDER>;
 
   CGraphTrans(const std::shared_ptr<ParamType> &param,
-      const LoopOrder<ORDER> loop_order,
       const CGraphTransDescriptor<ORDER> &descriptor);
 
-  void init_(const CGraphTransDescriptor<ORDER> &descriptor);
+  void init_();
   void release_operations_();
 
   std::shared_ptr<ParamType> param_;
-  CGraphTransDescriptor<ORDER> descriptor;
+  CGraphTransDescriptor<ORDER> descriptor_;
   GenNumType threads_;
-  LoopOrder<ORDER> loop_order_;
   For_ *operations_;
 };
 

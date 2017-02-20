@@ -30,6 +30,7 @@ struct LoopParam {
   LoopParam();
 
   INLINE void set_pass(TensorOrder order);
+  INLINE void set_disable();
   INLINE bool is_disabled();
 
   TensorIdx loop_begin[ORDER];

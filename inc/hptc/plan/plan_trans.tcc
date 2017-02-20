@@ -5,38 +5,25 @@
 template <typename ParamType,
           TensorOrder ORDER>
 PlanTrans<ParamType, ORDER>::PlanTrans(
-    const std::shared_ptr<ParamType> &param)
+    const std::shared_ptr<ParamType> &param, GenNumType thread_num)
     : param_(param),
-      vectorizer_(param),
-      parallelizer_(param) {
+      optimizer_(param, thread_num) {
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::get_graph(
-    PlanTypeTrans plan_type) {
-  if (PLAN_TRANS_AUTO == plan_type)
-    return this->cgraph_auto_();
+    TensorIdx num) {
+  TensorIdx heur_loop_num, heur_para_num;
+  if (num >= 0)
+    heur_loop_num = heur_para_num = static_cast<TensorIdx>(std::sqrt(num));
   else
-    return this->cgraph_heur_();
-}
+    heur_loop_num = heur_para_num = -1;
 
-
-template <typename ParamType,
-          TensorOrder ORDER>
-CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::cgraph_auto_() {
-  auto descriptor = this->vectorizer_();
-  auto loop_order = this->parallelizer_(descriptor);
-  return new CGraphTrans<ParamType, ORDER>(this->param_, loop_order,
-      descriptor);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::cgraph_heur_() {
-  return nullptr;
+  // Construct graph descriptor
+  auto descriptor = this->optimizer_.get_optimal(heur_loop_num, heur_para_num);
+  return new CGraphTrans<ParamType, ORDER>(this->param_, descriptor);
 }
 
 #endif // HPTC_PLAN_PLAN_TRANS_TCC_
