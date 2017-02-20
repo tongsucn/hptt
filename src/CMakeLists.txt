@@ -14,6 +14,10 @@ file(GLOB HPTC_KERNEL_SRC kernels/*.cc)
 # Shared libraries
 add_library(hptc SHARED ${HPTC_ROOT_SRC} ${HPTC_CGRAPH_SRC} ${HPTC_PLAN_SRC}
     ${HPTC_OPER_SRC} ${HPTC_PARAM_SRC} ${HPTC_KERNEL_SRC})
+add_library(hptc_static STATIC ${HPTC_ROOT_SRC} ${HPTC_CGRAPH_SRC}
+    ${HPTC_PLAN_SRC} ${HPTC_OPER_SRC} ${HPTC_PARAM_SRC} ${HPTC_KERNEL_SRC})
+
+set_target_properties(hptc_static PROPERTIES OUTPUT_NAME hptc)
 
 # ----------------------------------------------------------------------------
 # Installation setting
