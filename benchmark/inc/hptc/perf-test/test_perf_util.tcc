@@ -42,7 +42,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
 
   // 4. Create plan and generate computational graph
   PlanTrans<Param, ORDER> plan(param, 1);
-  auto graph = plan.get_graph();
+  auto graph = plan.get_graph(-1);
 
   // Execute computational graph
   double hptc_time = timer(*graph);
