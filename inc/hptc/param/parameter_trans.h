@@ -48,6 +48,7 @@ struct ParamTrans {
 
   INLINE TensorIdx perm_type();
 
+  using DataType = FloatType;
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
   constexpr static MemLayout MEM_LAYOUT = LAYOUT;
 

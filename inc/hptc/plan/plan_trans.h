@@ -29,13 +29,17 @@ public:
 
   ~PlanTrans() = default;
 
-  CGraphTrans<ParamType, ORDER> *get_graph(TensorIdx num = 0);
+  CGraphTrans<ParamType, ORDER> *get_graph(TensorIdx heur_num = 0,
+      TensorIdx tune_num = 0);
 
 private:
+  using Graph = CGraphTrans<ParamType, ORDER>;
+
+  Graph *tuning_(const std::vector<CGraphTransDescriptor<ORDER>> &descriptors);
+
   std::shared_ptr<ParamType> param_;
   PlanTransOptimizer<ParamType, ORDER> optimizer_;
 };
-
 
 
 /*

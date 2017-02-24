@@ -26,8 +26,9 @@ public:
   PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
       GenNumType thread_num = 0);
 
-  CGraphTransDescriptor<ORDER> get_optimal(TensorIdx heur_loop_num = 0,
-      TensorIdx heur_para_num = 0);
+  std::vector<CGraphTransDescriptor<ORDER>> get_optimal(TensorIdx heur_loop_num,
+      TensorIdx heur_para_num, TensorIdx tune_loop_num,
+      TensorIdx tune_para_num);
 
 private:
   struct Loop_ {
@@ -46,9 +47,11 @@ private:
   void init_loop_evaluator_param_();
   void init_parallel_();
 
-  LoopOrder<ORDER> heur_loop_explorer_(TensorIdx num = 0);
+  std::vector<LoopOrder<ORDER>> heur_loop_explorer_(const TensorIdx heur_num,
+      const TensorIdx tune_num);
   double heur_loop_evaluator_(const LoopOrder<ORDER> &target_loop_order);
-  void heur_parallel_explorer_(TensorIdx num = 0);
+  void heur_parallel_explorer_(const TensorIdx heur_num,
+      const TensorIdx tune_num);
 
   std::shared_ptr<ParamType> param_;
   GenNumType threads_;

@@ -16,16 +16,19 @@ PlanTransOptimizer<ParamType, ORDER>::PlanTransOptimizer(
 
 template <typename ParamType,
           TensorOrder ORDER>
-CGraphTransDescriptor<ORDER> PlanTransOptimizer<ParamType, ORDER>::get_optimal(
-    TensorIdx heur_loop_num, TensorIdx heur_para_num) {
-  // Construct result descriptor
-  auto result = this->descriptor_;
-
+std::vector<CGraphTransDescriptor<ORDER>>
+PlanTransOptimizer<ParamType, ORDER>::get_optimal(TensorIdx heur_loop_num,
+    TensorIdx heur_para_num, TensorIdx tune_loop_num, TensorIdx tune_para_num) {
   // Heuristics of loop order
-  result.loop_order = this->heur_loop_explorer_(heur_loop_num);
+  auto loop_orders = this->heur_loop_explorer_(heur_loop_num, tune_loop_num);
+
+  auto cand_num = static_cast<TensorIdx>(loop_orders.size());
+  std::vector<CGraphTransDescriptor<ORDER>> result(cand_num, this->descriptor_);
+  for (TensorIdx cand_idx = 0; cand_idx < cand_num; ++cand_idx)
+    result[cand_idx].loop_order = loop_orders[cand_idx];
 
   // Heuristics of parallelization
-  this->heur_parallel_explorer_(heur_para_num);
+  this->heur_parallel_explorer_(heur_para_num, tune_para_num);
 
   return result;
 }
@@ -378,16 +381,24 @@ void PlanTransOptimizer<ParamType, ORDER>::init_parallel_() {
 
 template <typename ParamType,
           TensorOrder ORDER>
-LoopOrder<ORDER> PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
-    TensorIdx num) {
-  if (0 == num)
-    return this->descriptor_.loop_order;
+std::vector<LoopOrder<ORDER>>
+PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
+    const TensorIdx heur_num, const TensorIdx tune_num) {
+  if (0 == heur_num)
+    return std::vector<LoopOrder<ORDER>>{ this->descriptor_.loop_order };
 
-  // Make a copy of benchmark loop order and cost
-  auto best_loop_order = this->descriptor_.loop_order;
-  auto best_cost = this->heur_loop_evaluator_(this->descriptor_.loop_order);
+  // Create best heap to store auto tuning candidates
+  // "Cost-Order" pair
+  using OrderDes = std::pair<double, LoopOrder<ORDER>>;
+  const auto &best_order = this->descriptor_.loop_order;
+  OrderDes curr_best(this->heur_loop_evaluator_(best_order), best_order);
+  std::vector<OrderDes> best_heap{ curr_best };
 
-  // Create loop_order
+  auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
+      return a.first < b.first; };
+  std::make_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+
+  // Create initialization loop order
   LoopOrder<ORDER> loop_order;
   for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
     loop_order[order_idx] = order_idx;
@@ -396,16 +407,37 @@ LoopOrder<ORDER> PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
   bool has_next = true;
   TensorOrder begin_idx = ORDER - this->param_->merged_order;
   auto perm_start = loop_order.begin() + begin_idx;
-  for (TensorIdx times = 0; has_next and (num < 0 or times < num);
+  for (TensorIdx times = 0; has_next and (heur_num < 0 or times < heur_num);
       ++times, has_next = std::next_permutation(perm_start, loop_order.end())) {
     auto new_cost = this->heur_loop_evaluator_(loop_order);
-    if (best_cost > new_cost) {
-      best_cost = new_cost;
-      best_loop_order = loop_order;
+    if (tune_num < 0) {
+      best_heap.push_back(OrderDes(new_cost, loop_order));
+      std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+    }
+    else if (tune_num <= 1) {
+      if (best_heap[0].first > new_cost)
+        best_heap[0] = OrderDes(new_cost, loop_order);
+    }
+    else if (tune_num > best_heap.size()) {
+      best_heap.push_back(OrderDes(new_cost, loop_order));
+      std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+    }
+    else {
+      if (best_heap[0].first > new_cost) {
+        std::pop_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+        best_heap.back() = OrderDes(new_cost, loop_order);
+        std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+      }
     }
   }
 
-  return best_loop_order;
+  // Create result
+  std::vector<LoopOrder<ORDER>> result;
+  result.reserve(best_heap.size());
+  for (auto &des : best_heap)
+    result.push_back(des.second);
+
+  return result;
 }
 
 
@@ -451,7 +483,7 @@ double PlanTransOptimizer<ParamType, ORDER>::heur_loop_evaluator_(
 template <typename ParamType,
           TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::heur_parallel_explorer_(
-    TensorIdx num) {
+    const TensorIdx heur_num, const TensorIdx tune_num) {
 }
 
 
