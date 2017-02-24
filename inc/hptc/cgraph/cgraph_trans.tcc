@@ -62,15 +62,13 @@ void CGraphTrans<ParamType, ORDER>::init_() {
   for (GenNumType th_idx = 0, idx_end = this->descriptor_.description[0].size();
       th_idx < this->threads_; ++th_idx) {
     auto curr_oper = this->operations_ + th_idx;
-    curr_oper->init(this->param_);
-    curr_oper->set_loop(this->descriptor_.description[th_idx][0]);
-    curr_oper->set_order(this->descriptor_.loop_order);
+    curr_oper->init(this->param_, this->descriptor_.loop_order,
+        this->descriptor_.description[th_idx][0]);
 
     for (GenNumType kn_idx = 1; kn_idx < idx_end; ++kn_idx) {
-      curr_oper->next = new For_(this->param_);
+      curr_oper->next = new For_(this->param_, this->descriptor_.loop_order,
+          this->descriptor_.description[th_idx][kn_idx]);
       curr_oper = curr_oper->next;
-      curr_oper->set_loop(this->descriptor_.description[th_idx][kn_idx]);
-      curr_oper->set_order(this->descriptor_.loop_order);
     }
   }
 }

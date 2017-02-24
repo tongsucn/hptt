@@ -18,27 +18,24 @@ template <typename ParamType,
 class OpForTrans {
 public:
   OpForTrans();
-  OpForTrans(const std::shared_ptr<ParamType> &param);
+  OpForTrans(const std::shared_ptr<ParamType> &param,
+      const LoopOrder<ORDER> &loop_order, const LoopParam<ORDER> &loops);
 
-  OpForTrans(const OpForTrans &loop_data);
-  OpForTrans<ParamType, ORDER> &operator=(const OpForTrans &loop_data);
+  OpForTrans(const OpForTrans &loop_data) = delete;
+  OpForTrans<ParamType, ORDER> &operator=(const OpForTrans &loop_data) = delete;
 
-  INLINE void init(const std::shared_ptr<ParamType> &param);
+  INLINE void init(const std::shared_ptr<ParamType> &param,
+      const LoopOrder<ORDER> &loop_order, const LoopParam<ORDER> &loops);
 
   template <typename MacroType>
   INLINE void operator()(MacroType &macro_kernel);
-
-  INLINE TensorIdx &begin(TensorIdx idx);
-  INLINE TensorIdx &end(TensorIdx idx);
-  INLINE TensorIdx &step(TensorIdx idx);
-
-  INLINE void set_loop(const LoopParam<ORDER> &loop);
-  INLINE void set_order(const LoopOrder<ORDER> &order);
 
   OpForTrans<ParamType, ORDER> *next;
 
 private:
   void init_disable_();
+  void init_loops_(const LoopOrder<ORDER> &loop_order,
+      const LoopParam<ORDER> &loops);
   void init_perm_idx_();
 
   template <typename MacroType,
