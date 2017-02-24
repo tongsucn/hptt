@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <hptc/types.h>
-#include <htpc/util.h>
+#include <hptc/test_util.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 #include <hptc/kernels/macro_kernel_trans.h>
@@ -108,7 +108,7 @@ protected:
             GenNumType WIDTH>
   class CaseGenerator {
   public:
-    using Data = DataWrapper<FloatType>;
+    using Data = TestDataWrapper<FloatType>;
 
     CaseGenerator(TestMacroTransVec<FloatType> &outer)
         : outer(outer) {
@@ -210,7 +210,7 @@ class TestMacroTransScalar
     : public TestMacroTransBase<FloatType>, public ::testing::Test {
 protected:
   using Deduced = DeducedFloatType<FloatType>;
-  using Data = DataWrapper<FloatType>;
+  using Data = TestDataWrapper<FloatType>;
 
   virtual void SetUp() {
     // Initialize origin data from random number

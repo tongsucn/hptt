@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include <hptc/util.h>
+#include <hptc/test_util.h>
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 
@@ -116,7 +116,7 @@ protected:
     }
 
   private:
-    DataWrapper<FloatType> data;
+    TestDataWrapper<FloatType> data;
   };
 
   static const TensorOrder inner_offset = sizeof(FloatType) / sizeof(Deduced);
@@ -213,14 +213,14 @@ TYPED_TEST(TestTensorWrapper, CreationRowMajor) {
 TYPED_TEST(TestTensorWrapper, IndexingColMajor) {
   using Deduced = DeducedFloatType<TypeParam>;
 
-  DataWrapper<TypeParam> data(this->size);
+  TestDataWrapper<TypeParam> data(this->size);
   array<TensorIdx, TEST_ORDER> inner_strides;
   inner_strides[0] = 1;
   for (TensorIdx idx = 1; idx < TEST_ORDER; ++idx)
     inner_strides[idx] = inner_strides[idx - 1] * this->size_obj[idx - 1];
 
-  TensorWrapper<TypeParam, TEST_ORDER, MemLayout::COL_MAJOR> tensor(this->size_obj,
-      data.act_data);
+  TensorWrapper<TypeParam, TEST_ORDER, MemLayout::COL_MAJOR>
+      tensor(this->size_obj, data.act_data);
 }
 
 

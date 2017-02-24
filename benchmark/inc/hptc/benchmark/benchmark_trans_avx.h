@@ -7,24 +7,13 @@
 #include <hptc/types.h>
 #include <hptc/compat.h>
 #include <hptc/param/parameter_trans.h>
+#include <hptc/benchmark/benchmark_trans.h>
 
 #include "trans/avx/benchmark_par_beta.h"
 #include "trans/avx/benchmark_nopar_beta.h"
 
 
 namespace hptc {
-
-struct RefTransConfig {
-  RefTransConfig(TensorOrder order, GenNumType thread_num,
-      const std::vector<TensorOrder> &perm,
-      const std::vector<TensorOrder> &size);
-
-  TensorOrder order;
-  GenNumType thread_num;
-  std::vector<TensorOrder> perm;
-  std::vector<TensorOrder> size;
-};
-
 
 std::vector<RefTransConfig> ref_trans_configs {
   RefTransConfig(2, 1, { 1, 0 }, { 1216, 43408 }),
@@ -85,11 +74,6 @@ std::vector<RefTransConfig> ref_trans_configs {
   RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 112, 5, 15, 15, 15, 32 }),
   RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 32, 5, 15, 15, 15, 112 })
 };
-
-/*
- * Import implementation.
- */
-#include "test_util.tcc"
 
 }
 

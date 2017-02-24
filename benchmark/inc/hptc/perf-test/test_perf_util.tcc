@@ -11,13 +11,11 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   using Param = ParamTrans<FloatType, ORDER, USAGE>;
 
   DataWrapper<FloatType> data_wrapper(test_case.size);
-  data_wrapper.reset_ref();
-  data_wrapper.reset_act();
   TimerWrapper timer(50);
 
   // Measure TTC version
   double ttc_time = timer(ref_func, data_wrapper.org_in_data,
-      data_wrapper.ref_data);
+      data_wrapper.org_out_data);
 
   // Measure HPTC version
   // Create tensor wrapper and parameters
@@ -32,7 +30,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   TensorWrapper<FloatType, ORDER> input_tensor(input_size,
       data_wrapper.org_in_data);
   TensorWrapper<FloatType, ORDER> output_tensor(output_size,
-      data_wrapper.act_data);
+      data_wrapper.org_out_data);
 
   // 3. Create parameter
   std::array<TensorOrder, ORDER> perm;
@@ -42,7 +40,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
 
   // 4. Create plan and generate computational graph
   PlanTrans<Param, ORDER> plan(param, 1);
-  auto graph = plan.get_graph(-1);
+  auto graph = plan.get_graph();
 
   // Execute computational graph
   double hptc_time = timer(*graph);
@@ -50,23 +48,10 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   delete graph;
   graph = nullptr;
 
-  // Verify results
-  auto verify = data_wrapper.verify();
-
   // Print log
   std::stringstream ss;
-  /*ss << "|| (" << perm[0];
-  for (TensorOrder idx = 1; idx < ORDER; ++idx)
-    ss << ", " << perm[idx];
-  ss << ") || (" << param->input_tensor.get_size()[0];
-  for (TensorOrder idx = 1; idx < ORDER; ++idx)
-    ss << ", " << param->input_tensor.get_size()[idx];
-  ss << ") || " << std::setprecision(3) << ttc_time << "ms || "
-      << std::setprecision(3) << hptc_time << "ms || "
-      << (-1 == verify ? "SUCCEED! ||" : "FAILED ||");*/
   ss << std::setprecision(3) << ttc_time << ","
-      << std::setprecision(3) << hptc_time << ","
-      << (-1 == verify ? "SUCCEED! ||" : "FAILED ||");
+      << std::setprecision(3) << hptc_time;
   std::cout << ss.str() << std::endl;
 }
 
