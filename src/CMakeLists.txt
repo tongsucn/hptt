@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Dependencies setting
 # ----------------------------------------------------------------------------
-file(GLOB HPTC_ROOT_SRC tensor.cc)
+file(GLOB HPTC_ROOT_SRC *.cc)
 file(GLOB HPTC_CGRAPH_SRC cgraph/*.cc)
 file(GLOB HPTC_PLAN_SRC plan/*.cc)
 file(GLOB HPTC_OPER_SRC operations/*.cc)
