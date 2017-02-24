@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <hptc/types.h>
-#include <hptc/test_util.h>
+#include <htpc/util.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 #include <hptc/kernels/macro_kernel_trans.h>

@@ -8,10 +8,9 @@
 
 #include <gtest/gtest.h>
 
+#include <hptc/util.h>
 #include <hptc/types.h>
 #include <hptc/tensor.h>
-
-#include <hptc/test_util.h>
 
 using namespace std;
 using namespace hptc;
