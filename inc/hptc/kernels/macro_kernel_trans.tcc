@@ -9,9 +9,7 @@ template <typename FloatType,
           typename KernelFunc>
 MacroTransVecData<FloatType, KernelFunc>::MacroTransVecData(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : kernel_(),
-      reg_alpha_(this->kernel_.reg_coef(alpha)),
-      reg_beta_(this->kernel_.reg_coef(beta)),
+    : kernel_(alpha, beta),
       kn_wd_(this->kernel_.get_kernel_width()) {
 }
 
@@ -54,7 +52,7 @@ INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler(
   this->kernel_(
       input_data + CONT * this->kn_wd_ + NCONT * this->kn_wd_ * input_stride,
       output_data + NCONT * this->kn_wd_ + CONT * this->kn_wd_ * output_stride,
-      input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
+      input_stride, output_stride);
 }
 
 
@@ -66,8 +64,7 @@ INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler(
     FloatType * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride) {
   this->kernel_(input_data + NCONT * this->kn_wd_ * input_stride,
-      output_data + NCONT * this->kn_wd_, input_stride, output_stride,
-      this->reg_alpha_, this->reg_beta_);
+      output_data + NCONT * this->kn_wd_, input_stride, output_stride);
 }
 
 
@@ -138,71 +135,27 @@ MacroTransScalarData<FloatType, USAGE>::MacroTransScalarData(
 /*
  * Implementation for class MacroTransScalar
  */
-template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsageTrans::USE_NONE>
-    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_NONE> {
-public:
-  MacroTransScalar(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_NONE>(alpha, beta) {
-  }
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+MacroTransScalar<FloatType, USAGE>::MacroTransScalar(
+    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
+    : MacroTransScalarData<FloatType, USAGE>(alpha, beta) {
+}
 
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
-      const TensorIdx output_stride = 0) {
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+INLINE void MacroTransScalar<FloatType, USAGE>::operator()(
+    const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) {
+  if (USAGE == CoefUsageTrans::USE_NONE)
     *output_data = *input_data;
-  }
-};
-
-
-template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsageTrans::USE_ALPHA>
-    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_ALPHA> {
-public:
-  MacroTransScalar(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_ALPHA>(alpha, beta) {
-  }
-
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
-      const TensorIdx output_stride = 0) {
+  else if (USAGE == CoefUsageTrans::USE_ALPHA)
     *output_data = this->alpha * (*input_data);
-  }
-};
-
-
-template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsageTrans::USE_BETA>
-    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_BETA> {
-public:
-  MacroTransScalar(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_BETA>(alpha, beta) {
-  }
-
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
-      const TensorIdx output_stride = 0) {
+  else if (USAGE == CoefUsageTrans::USE_BETA)
     *output_data = *input_data + this->beta * (*output_data);
-  }
-};
-
-
-template <typename FloatType>
-class MacroTransScalar<FloatType, CoefUsageTrans::USE_BOTH>
-    : public MacroTransScalarData<FloatType, CoefUsageTrans::USE_BOTH> {
-public:
-  MacroTransScalar(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta)
-      : MacroTransScalarData<FloatType, CoefUsageTrans::USE_BOTH>(alpha, beta) {
-  }
-
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
-      const TensorIdx output_stride = 0) {
+  else
     *output_data = this->alpha * (*input_data) + this->beta * (*output_data);
-  }
-};
+}
 
 #endif // HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_

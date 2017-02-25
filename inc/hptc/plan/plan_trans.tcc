@@ -61,7 +61,7 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::tuning_(
   fake_param->input_tensor.set_data(fake_data.org_in_data);
   fake_param->output_tensor.set_data(fake_data.org_out_data);
 
-  // Create timer, value defined in inc/hptc/define.h
+  // Create timer
   TimerWrapper timer(tune_timing);
 
   // Create candidates

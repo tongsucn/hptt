@@ -18,8 +18,6 @@ public:
       DeducedFloatType<FloatType> beta);
 
 protected:
-  using RegType = typename KernelFunc::RegType;
-
   template <GenNumType CONT,
             GenNumType NCONT>
   INLINE void ncont_tiler(DualCounter<CONT, NCONT>,
@@ -44,7 +42,6 @@ protected:
 
 
   KernelFunc kernel_;
-  RegType reg_alpha_, reg_beta_;
   GenNumType kn_wd_;    // Kernel width, number of elements in one register
 };
 
@@ -83,6 +80,12 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 class MacroTransScalar
     : public MacroTransScalarData<FloatType, USAGE> {
+public:
+  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+      DeducedFloatType<FloatType> beta);
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
+      const TensorIdx output_stride = 0);
 };
 
 

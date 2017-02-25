@@ -15,10 +15,24 @@ enum class CoefUsageTrans : GenNumType {
 };
 
 
-enum class KernelTypeTrans : bool {
-  KERNEL_FULL = true,
-  KERNEL_HALF = false
+enum class KernelTypeTrans : GenNumType {
+  KERNEL_FULL = 0,
+  KERNEL_HALF = 1,
+  KERNEL_FLIN = 2,
+  KERNEL_HLIN = 3
 };
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE,
+          typename Enable = void>
+struct RegTypeDeducer {
+};
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+using DeducedRegType = typename RegTypeDeducer<FloatType, TYPE>::type;
 
 }
 

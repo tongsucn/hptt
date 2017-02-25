@@ -5,159 +5,104 @@
 /*
  * Implementation for class KernelTransAvxBase
  */
-template <>
-struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL> {
-  using RegType = __m256;
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+KernelTransAvxBase<FloatType, TYPE>::KernelTransAvxBase(Deduced coef_alpha,
+    Deduced coef_beta)
+    : reg_alpha(this->reg_coef(coef_alpha)),
+      reg_beta(this->reg_coef(coef_beta)) {
+}
 
-  INLINE GenNumType get_kernel_width() {
-    return 8;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 8;
-  }
-
-  INLINE RegType reg_coef(float coef) {
-    return _mm256_set1_ps(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL> {
-  using RegType = __m256d;
-
-  INLINE GenNumType get_kernel_width() {
-    return 4;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 4;
-  }
-
-  INLINE RegType reg_coef(double coef) {
-    return _mm256_set1_pd(coef);
-  }
-};
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+INLINE GenNumType KernelTransAvxBase<FloatType, TYPE>::get_kernel_width() {
+  constexpr GenNumType width = REG_SIZE_BYTE_AVX / sizeof(FloatType);
+  if (TYPE == KernelTypeTrans::KERNEL_FULL or
+      TYPE == KernelTypeTrans::KERNEL_FLIN)
+    return width;
+  else
+    return width / 2;
+}
 
 
-template <>
-struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL> {
-  using RegType = __m256;
-
-  INLINE GenNumType get_kernel_width() {
-    return 4;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 4;
-  }
-
-  INLINE RegType reg_coef(float coef) {
-    return _mm256_set1_ps(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL> {
-  using RegType = __m256d;
-
-  INLINE GenNumType get_kernel_width() {
-    return 2;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 2;
-  }
-
-  INLINE RegType reg_coef(double coef) {
-    return _mm256_set1_pd(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF> {
-  using RegType = __m128;
-
-  INLINE GenNumType get_kernel_width() {
-    return 4;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 4;
-  }
-
-  INLINE RegType reg_coef(float coef) {
-    return _mm_set1_ps(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF> {
-  using RegType = __m128d;
-
-  INLINE GenNumType get_kernel_width() {
-    return 2;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 2;
-  }
-
-  INLINE RegType reg_coef(double coef) {
-    return _mm_set1_pd(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF> {
-  using RegType = __m128;
-
-  INLINE GenNumType get_kernel_width() {
-    return 2;
-  }
-
-  INLINE GenNumType get_reg_num() {
-    return 2;
-  }
-
-  INLINE RegType reg_coef(float coef) {
-    return _mm_set1_ps(coef);
-  }
-};
-
-
-template <>
-struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF> {
-  using RegType = double;
-
-  INLINE GenNumType get_kernel_width() {
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+INLINE GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
+  if (TYPE == KernelTypeTrans::KERNEL_FLIN or
+      TYPE == KernelTypeTrans::KERNEL_HLIN)
     return 1;
-  }
+  else
+    return this->get_kernel_width();
+}
 
-  INLINE GenNumType get_reg_num() {
-    return 1;
-  }
 
-  INLINE RegType reg_coef(double coef) {
-    return coef;
-  }
-};
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+template <KernelTypeTrans KERNEL,
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+              KERNEL == KernelTypeTrans::KERNEL_FLIN> *>
+INLINE DeducedRegType<float, KERNEL>
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
+  return _mm256_set1_ps(coef);
+}
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+template <KernelTypeTrans KERNEL,
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+              KERNEL == KernelTypeTrans::KERNEL_FLIN> *>
+INLINE DeducedRegType<double, KERNEL>
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+  return _mm256_set1_pd(coef);
+}
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+template <KernelTypeTrans KERNEL,
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_HALF or
+              KERNEL == KernelTypeTrans::KERNEL_HLIN> *>
+INLINE DeducedRegType<float, KERNEL>
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
+  return _mm_set1_ps(coef);
+}
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+template <KernelTypeTrans KERNEL,
+          std::enable_if_t<std::is_same<FloatType, double>::value and
+              (KERNEL == KernelTypeTrans::KERNEL_HALF or
+              KERNEL == KernelTypeTrans::KERNEL_HLIN)> *>
+INLINE DeducedRegType<double, KERNEL>
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+  return _mm_set1_pd(coef);
+}
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+template <KernelTypeTrans KERNEL,
+          std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
+              (KERNEL == KernelTypeTrans::KERNEL_HALF or
+              KERNEL == KernelTypeTrans::KERNEL_HLIN)> *>
+INLINE DeducedRegType<DoubleComplex, KERNEL>
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+  return coef;
+}
 
 
 /*
- * Implementation for class KernelTransAvx
+ * Specialization for class KernelTransAvx
  */
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL> {
+  KernelTransAvx(float coef_alpha, float coef_beta)
+    : KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m256 &reg_alpha, __m256 &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m256 reg_input[8];
     reg_input[0] = _mm256_loadu_ps(input_data);
@@ -202,14 +147,14 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg_input[0] = _mm256_mul_ps(reg_input[0], reg_alpha);
-      reg_input[1] = _mm256_mul_ps(reg_input[1], reg_alpha);
-      reg_input[2] = _mm256_mul_ps(reg_input[2], reg_alpha);
-      reg_input[3] = _mm256_mul_ps(reg_input[3], reg_alpha);
-      reg_input[4] = _mm256_mul_ps(reg_input[4], reg_alpha);
-      reg_input[5] = _mm256_mul_ps(reg_input[5], reg_alpha);
-      reg_input[6] = _mm256_mul_ps(reg_input[6], reg_alpha);
-      reg_input[7] = _mm256_mul_ps(reg_input[7], reg_alpha);
+      reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha);
+      reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha);
+      reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha);
+      reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha);
+      reg_input[4] = _mm256_mul_ps(reg_input[4], this->reg_alpha);
+      reg_input[5] = _mm256_mul_ps(reg_input[5], this->reg_alpha);
+      reg_input[6] = _mm256_mul_ps(reg_input[6], this->reg_alpha);
+      reg_input[7] = _mm256_mul_ps(reg_input[7], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -227,14 +172,14 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
       reg_output[7] = _mm256_loadu_ps(output_data + 7 * output_stride);
 
       // Update output data
-      reg_output[0] = _mm256_mul_ps(reg_output[0], reg_beta);
-      reg_output[1] = _mm256_mul_ps(reg_output[1], reg_beta);
-      reg_output[2] = _mm256_mul_ps(reg_output[2], reg_beta);
-      reg_output[3] = _mm256_mul_ps(reg_output[3], reg_beta);
-      reg_output[4] = _mm256_mul_ps(reg_output[4], reg_beta);
-      reg_output[5] = _mm256_mul_ps(reg_output[5], reg_beta);
-      reg_output[6] = _mm256_mul_ps(reg_output[6], reg_beta);
-      reg_output[7] = _mm256_mul_ps(reg_output[7], reg_beta);
+      reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta);
+      reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta);
+      reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta);
+      reg_output[4] = _mm256_mul_ps(reg_output[4], this->reg_beta);
+      reg_output[5] = _mm256_mul_ps(reg_output[5], this->reg_beta);
+      reg_output[6] = _mm256_mul_ps(reg_output[6], this->reg_beta);
+      reg_output[7] = _mm256_mul_ps(reg_output[7], this->reg_beta);
 
       // Add updated result into input registers
       reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -263,9 +208,14 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+    : KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m256d &reg_alpha, __m256d &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m256d reg_input[4];
     reg_input[0] = _mm256_loadu_pd(input_data);
@@ -288,10 +238,10 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg_input[0] = _mm256_mul_pd(reg_input[0], reg_alpha);
-      reg_input[1] = _mm256_mul_pd(reg_input[1], reg_alpha);
-      reg_input[2] = _mm256_mul_pd(reg_input[2], reg_alpha);
-      reg_input[3] = _mm256_mul_pd(reg_input[3], reg_alpha);
+      reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha);
+      reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha);
+      reg_input[2] = _mm256_mul_pd(reg_input[2], this->reg_alpha);
+      reg_input[3] = _mm256_mul_pd(reg_input[3], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -305,10 +255,10 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
       reg_output[3] = _mm256_loadu_pd(output_data + 3 * output_stride);
 
       // Update output data
-      reg_output[0] = _mm256_mul_pd(reg_output[0], reg_beta);
-      reg_output[1] = _mm256_mul_pd(reg_output[1], reg_beta);
-      reg_output[2] = _mm256_mul_pd(reg_output[2], reg_beta);
-      reg_output[3] = _mm256_mul_pd(reg_output[3], reg_beta);
+      reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta);
+      reg_output[2] = _mm256_mul_pd(reg_output[2], this->reg_beta);
+      reg_output[3] = _mm256_mul_pd(reg_output[3], this->reg_beta);
 
       // Add updated result into input registers
       reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);
@@ -329,9 +279,14 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL> {
+  KernelTransAvx(float coef_alpha, float coef_beta)
+    : KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m256 &reg_alpha, __m256 &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m256 reg_input[4];
     reg_input[0] = _mm256_loadu_ps(reinterpret_cast<const float *>(input_data));
@@ -357,10 +312,10 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg_input[0] = _mm256_mul_ps(reg_input[0], reg_alpha);
-      reg_input[1] = _mm256_mul_ps(reg_input[1], reg_alpha);
-      reg_input[2] = _mm256_mul_ps(reg_input[2], reg_alpha);
-      reg_input[3] = _mm256_mul_ps(reg_input[3], reg_alpha);
+      reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha);
+      reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha);
+      reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha);
+      reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -378,10 +333,10 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
           reinterpret_cast<const float *>(output_data + 3 * output_stride));
 
       // Update output data
-      reg_output[0] = _mm256_mul_ps(reg_output[0], reg_beta);
-      reg_output[1] = _mm256_mul_ps(reg_output[1], reg_beta);
-      reg_output[2] = _mm256_mul_ps(reg_output[2], reg_beta);
-      reg_output[3] = _mm256_mul_ps(reg_output[3], reg_beta);
+      reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta);
+      reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta);
+      reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta);
 
       // Add updated result into input registers
       reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -405,9 +360,14 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+    : KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL>(
+        coef_alpha, coef_beta) {
+  }
+
   INLINE void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m256d &reg_alpha, __m256d &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m256d reg_input[2];
     reg_input[0] = _mm256_loadu_pd(reinterpret_cast<const double *>(input_data));
@@ -425,8 +385,8 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg_input[0] = _mm256_mul_pd(reg_input[0], reg_alpha);
-      reg_input[1] = _mm256_mul_pd(reg_input[1], reg_alpha);
+      reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha);
+      reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -440,8 +400,8 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
           reinterpret_cast<const double *>(output_data + output_stride));
 
       // Update output data
-      reg_output[0] = _mm256_mul_pd(reg_output[0], reg_beta);
-      reg_output[1] = _mm256_mul_pd(reg_output[1], reg_beta);
+      reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta);
 
       // Add updated result into input registers
       reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);
@@ -459,9 +419,14 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF> {
+  KernelTransAvx(float coef_alpha, float coef_beta)
+    : KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m128 &reg_alpha, __m128 &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m128 reg_input[4];
     reg_input[0] = _mm_loadu_ps(input_data);
@@ -484,10 +449,10 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg_input[0] = _mm_mul_ps(reg_input[0], reg_alpha);
-      reg_input[1] = _mm_mul_ps(reg_input[1], reg_alpha);
-      reg_input[2] = _mm_mul_ps(reg_input[2], reg_alpha);
-      reg_input[3] = _mm_mul_ps(reg_input[3], reg_alpha);
+      reg_input[0] = _mm_mul_ps(reg_input[0], this->reg_alpha);
+      reg_input[1] = _mm_mul_ps(reg_input[1], this->reg_alpha);
+      reg_input[2] = _mm_mul_ps(reg_input[2], this->reg_alpha);
+      reg_input[3] = _mm_mul_ps(reg_input[3], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -501,10 +466,10 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
       reg_output[3] = _mm_loadu_ps(output_data + 3 * output_stride);
 
       // Update output data
-      reg_output[0] = _mm_mul_ps(reg_output[0], reg_beta);
-      reg_output[1] = _mm_mul_ps(reg_output[1], reg_beta);
-      reg_output[2] = _mm_mul_ps(reg_output[2], reg_beta);
-      reg_output[3] = _mm_mul_ps(reg_output[3], reg_beta);
+      reg_output[0] = _mm_mul_ps(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm_mul_ps(reg_output[1], this->reg_beta);
+      reg_output[2] = _mm_mul_ps(reg_output[2], this->reg_beta);
+      reg_output[3] = _mm_mul_ps(reg_output[3], this->reg_beta);
 
       // Add updated result into input registers
       reg_input[0] = _mm_add_ps(reg_output[0], reg_input[0]);
@@ -525,9 +490,14 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+    : KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m128d &reg_alpha, __m128d &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m128d reg_input[2];
     reg_input[0] = _mm_loadu_pd(input_data);
@@ -542,8 +512,8 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg[0] = _mm_mul_pd(reg[0], reg_alpha);
-      reg[1] = _mm_mul_pd(reg[1], reg_alpha);
+      reg[0] = _mm_mul_pd(reg[0], this->reg_alpha);
+      reg[1] = _mm_mul_pd(reg[1], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -555,8 +525,8 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
       reg_output[1] = _mm_loadu_pd(output_data + output_stride);
 
       // Update output data
-      reg_output[0] = _mm_mul_pd(reg_output[0], reg_beta);
-      reg_output[1] = _mm_mul_pd(reg_output[1], reg_beta);
+      reg_output[0] = _mm_mul_pd(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm_mul_pd(reg_output[1], this->reg_beta);
 
       // Add updated result into input registers
       reg[0] = _mm_add_pd(reg_output[0], reg[0]);
@@ -573,9 +543,14 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF> {
+  KernelTransAvx(float coef_alpha, float coef_beta)
+    : KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF>(coef_alpha,
+        coef_beta) {
+  }
+
   INLINE void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, __m128 &reg_alpha, __m128 &reg_beta) {
+      const TensorIdx output_stride) {
     // Load input data into registers
     __m128 reg_input[2];
     reg_input[0] = _mm_loadu_ps(reinterpret_cast<const float *>(input_data));
@@ -591,8 +566,8 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
     constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
       CoefUsageTrans::USE_ALPHA == USAGE;
     if (need_rescale) {
-      reg[0] = _mm_mul_ps(reg[0], reg_alpha);
-      reg[1] = _mm_mul_ps(reg[1], reg_alpha);
+      reg[0] = _mm_mul_ps(reg[0], this->reg_alpha);
+      reg[1] = _mm_mul_ps(reg[1], this->reg_alpha);
     }
 
     constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -605,8 +580,8 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
           reinterpret_cast<float *>(output_data + output_stride));
 
       // Update output data
-      reg_output[0] = _mm_mul_ps(reg_output[0], reg_beta);
-      reg_output[1] = _mm_mul_ps(reg_output[1], reg_beta);
+      reg_output[0] = _mm_mul_ps(reg_output[0], this->reg_beta);
+      reg_output[1] = _mm_mul_ps(reg_output[1], this->reg_beta);
 
       // Add updated result into input registers
       reg[0] = _mm_add_ps(reg_output[0], reg[0]);
@@ -624,17 +599,200 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+    : KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF>(
+        coef_alpha, coef_beta) {
+  }
+
   INLINE void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, double alpha, double beta) {
+      const TensorIdx output_stride) {
     if (CoefUsageTrans::USE_NONE == USAGE)
       *output_data = *input_data;
     else if (CoefUsageTrans::USE_ALPHA == USAGE)
-      *output_data = alpha * *input_data;
+      *output_data = this->reg_alpha * *input_data;
     else if (CoefUsageTrans::USE_BETA == USAGE)
-      *output_data = *input_data + beta * *output_data;
+      *output_data = *input_data + this->reg_beta * *output_data;
     else
-      *output_data = alpha * *input_data + beta * *output_data;
+      *output_data = this->reg_alpha * *input_data
+          + this->reg_beta * *output_data;
+  }
+};
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+struct KernelTransAvx<FloatType, USAGE, KernelTypeTrans::KERNEL_FLIN,
+    std::enable_if_t<std::is_same<FloatType, float>::value or
+        std::is_same<FloatType, FloatComplex>::value>> final
+    : public KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_FLIN> {
+  using Deduced = DeducedFloatType<FloatType>;
+
+  KernelTransAvx(Deduced coef_alpha, Deduced coef_beta)
+      : KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_FLIN>(coef_alpha,
+          coef_beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    // Load input data into registers
+    auto reg_input = _mm256_loadu_ps(
+        reinterpret_cast<const Deduced *>(input_data));
+
+    // Rescale transposed input data
+    constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_ALPHA == USAGE;
+    if (need_rescale)
+      reg_input = _mm256_mul_ps(reg_input, this->reg_alpha);
+
+    constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_BETA == USAGE;
+    if (need_update) {
+      auto reg_output = _mm256_loadu_ps(
+          reinterpret_cast<Deduced *>(output_data));
+      reg_output = _mm256_mul_ps(reg_output, this->reg_beta);
+      reg_input = _mm256_add_ps(reg_output, reg_input);
+    }
+
+    _mm256_storeu_ps(reinterpret_cast<Deduced *>(output_data), reg_input);
+  }
+};
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+struct KernelTransAvx<FloatType, USAGE, KernelTypeTrans::KERNEL_FLIN,
+    std::enable_if_t<std::is_same<FloatType, double>::value or
+        std::is_same<DoubleComplex, DoubleComplex>::value>> final
+    : public KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_FLIN> {
+  using Deduced = DeducedFloatType<FloatType>;
+
+  KernelTransAvx(Deduced coef_alpha, Deduced coef_beta)
+      : KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_FLIN>(coef_alpha,
+          coef_beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    // Load input data into registers
+    auto reg_input = _mm256_loadu_pd(
+        reinterpret_cast<const Deduced *>(input_data));
+
+    // Rescale transposed input data
+    constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_ALPHA == USAGE;
+    if (need_rescale)
+      reg_input = _mm256_mul_pd(reg_input, this->reg_alpha);
+
+    constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_BETA == USAGE;
+    if (need_update) {
+      auto reg_output = _mm256_loadu_pd(
+          reinterpret_cast<Deduced *>(output_data));
+      reg_output = _mm256_mul_pd(reg_output, this->reg_beta);
+      reg_input = _mm256_add_pd(reg_output, reg_input);
+    }
+
+    _mm256_storeu_pd(reinterpret_cast<Deduced *>(output_data), reg_input);
+  }
+};
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+struct KernelTransAvx<FloatType, USAGE, KernelTypeTrans::KERNEL_HLIN,
+    std::enable_if_t<std::is_same<FloatType, float>::value or
+        std::is_same<FloatComplex, FloatComplex>::value>> final
+    : public KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_HLIN> {
+  using Deduced = DeducedFloatType<FloatType>;
+
+  KernelTransAvx(Deduced coef_alpha, Deduced coef_beta)
+      : KernelTransAvxBase<FloatType, KernelTypeTrans::KERNEL_HLIN>(coef_alpha,
+          coef_beta) {
+  }
+
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    // Load input data into registers
+    auto reg_input = _mm_loadu_ps(reinterpret_cast<const Deduced *>(input_data));
+
+    // Rescale transposed input data
+    constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_ALPHA == USAGE;
+    if (need_rescale)
+      reg_input = _mm_mul_ps(reg_input, this->reg_alpha);
+
+    constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_BETA == USAGE;
+    if (need_update) {
+      auto reg_output = _mm_loadu_ps(reinterpret_cast<Deduced *>(output_data));
+      reg_output = _mm_mul_ps(reg_output, this->reg_beta);
+      reg_input = _mm_add_ps(reg_output, reg_input);
+    }
+
+    _mm_storeu_ps(reinterpret_cast<Deduced *>(output_data), reg_input);
+  }
+};
+
+
+template <CoefUsageTrans USAGE>
+struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HLIN> final
+    : public KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HLIN> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+      : KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HLIN>(coef_alpha,
+          coef_beta) {
+  }
+
+  INLINE void operator()(const double * RESTRICT input_data,
+      double * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    // Load input data into registers
+    auto reg_input = _mm_loadu_pd(
+        reinterpret_cast<const Deduced *>(input_data));
+
+    // Rescale transposed input data
+    constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_ALPHA == USAGE;
+    if (need_rescale)
+      reg_input = _mm_mul_pd(reg_input, this->reg_alpha);
+
+    constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
+      CoefUsageTrans::USE_BETA == USAGE;
+    if (need_update) {
+      auto reg_output = _mm_loadu_pd(
+          reinterpret_cast<Deduced *>(output_data));
+      reg_output = _mm_mul_pd(reg_output, this->reg_beta);
+      reg_input = _mm_add_pd(reg_output, reg_input);
+    }
+
+    _mm_storeu_pd(reinterpret_cast<Deduced *>(output_data), reg_input);
+  }
+};
+
+
+template <CoefUsageTrans USAGE>
+struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_HLIN> final
+    : public KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HLIN> {
+  KernelTransAvx(double coef_alpha, double coef_beta)
+    : KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HLIN>(
+        coef_alpha, coef_beta) {
+  }
+
+  INLINE void operator()(const DoubleComplex * RESTRICT input_data,
+      DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) {
+    if (CoefUsageTrans::USE_NONE == USAGE)
+      *output_data = *input_data;
+    else if (CoefUsageTrans::USE_ALPHA == USAGE)
+      *output_data = this->reg_alpha * *input_data;
+    else if (CoefUsageTrans::USE_BETA == USAGE)
+      *output_data = *input_data + this->reg_beta * *output_data;
+    else
+      *output_data = this->reg_alpha * *input_data
+          + this->reg_beta * *output_data;
   }
 };
 
