@@ -266,8 +266,7 @@ void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
     loops[loop_idx].org_idx = loop_idx;
   }
 
-  // Put input leading index at inner most level, and put output leading index
-  // at second inner most level
+  // Put larger leading index at inner most level
   TensorIdx input_ld_idx, output_ld_idx;
   if (MemLayout::COL_MAJOR == this->param_->MEM_LAYOUT) {
     input_ld_idx = begin_idx;
@@ -278,20 +277,36 @@ void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
     output_ld_idx = this->param_->perm[ORDER - 1] + begin_idx;
   }
 
-  if (ORDER == 2)
-    std::swap(loops[ORDER - 1], loops[ORDER - 2]);
-  else if (ORDER - 2 == output_ld_idx)
+  if (ORDER == 2) {
+    if (loops[ORDER - 1].size < loops[ORDER - 2].size)
+      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
+  }
+  else if (ORDER - 2 == output_ld_idx) {
     std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+    if (loops[input_ld_idx].size < loops[output_ld_idx].size)
+      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
+  }
   else if (ORDER - 1 == output_ld_idx) {
-    std::swap(loops[ORDER - 1], loops[ORDER - 2]);
-    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+    if (loops[input_ld_idx].size < loops[output_ld_idx].size)
+      std::swap(loops[ORDER - 2], loops[input_ld_idx]);
+    else {
+      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
+      std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+    }
   }
   else {
-    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
-    std::swap(loops[ORDER - 2], loops[output_ld_idx]);
+    if (loops[input_ld_idx].size > loops[output_ld_idx].size) {
+      std::swap(loops[ORDER - 1], loops[input_ld_idx]);
+      std::swap(loops[ORDER - 2], loops[output_ld_idx]);
+    }
+    else {
+      std::swap(loops[ORDER - 2], loops[input_ld_idx]);
+      std::swap(loops[ORDER - 1], loops[output_ld_idx]);
+    }
   }
 
-  // Sort non-leading orders according to the sizes
+  // Sort non-leading orders according to the sizes, for loop with smallest size
+  // will be put at outer most for loop
   std::sort(loops + begin_idx, loops + end_idx,
       [] (const auto &first, const auto &second) -> bool {
         return first.size < second.size; });

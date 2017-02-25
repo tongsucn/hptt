@@ -47,7 +47,9 @@ struct LoopParam {
 template <typename FloatType>
 class DataWrapper {
 public:
-  DataWrapper(const std::vector<TensorOrder> &size);
+  DataWrapper(const std::vector<TensorOrder> &size, bool randomize = true);
+  DataWrapper(const std::vector<TensorOrder> &size, const FloatType *input_data,
+      const FloatType *output_data);
   virtual ~DataWrapper();
 
   FloatType *org_in_data, *org_out_data;
