@@ -14,6 +14,9 @@
 #include <hptc/kernels/kernel_trans.h>
 #include <hptc/kernels/macro_kernel_trans.h>
 
+#define ALPHA 2.3f
+#define BETA 4.2f
+
 using namespace std;
 using namespace hptc;
 
@@ -33,8 +36,8 @@ protected:
   }
 
   constexpr static TensorOrder in_offset = sizeof(FloatType) / sizeof(Deduced);
-  constexpr static Deduced alpha = static_cast<Deduced>(2.3f);
-  constexpr static Deduced beta = static_cast<Deduced>(4.2f);
+  constexpr static Deduced alpha = static_cast<Deduced>(ALPHA);
+  constexpr static Deduced beta = static_cast<Deduced>(BETA);
 
   random_device rd;
   mt19937 gen;
@@ -49,7 +52,8 @@ protected:
   using Deduced = DeducedFloatType<FloatType>;
 
   TestMacroTransVec()
-      : macro_width(this->kernel.get_reg_num() * this->max_macro),
+      : kernel(ALPHA, BETA),
+        macro_width(this->kernel.get_reg_num() * this->max_macro),
         data_height(this->macro_width + this->height_extra),
         data_width(this->macro_width + this->width_extra),
         data_len(this->data_height * this->data_width),
@@ -115,19 +119,23 @@ protected:
     }
 
     array<TensorIdx, 8> operator()() {
-      KernelTrans<FloatType, CoefUsageTrans::USE_NONE, TYPE> kernel_none;
+      KernelTrans<FloatType, CoefUsageTrans::USE_NONE, TYPE> kernel_none(ALPHA,
+          BETA);
       MacroTransVec<FloatType, decltype(kernel_none), WIDTH, HEIGHT>
           macro_none(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsageTrans::USE_ALPHA, TYPE> kernel_alpha;
+      KernelTrans<FloatType, CoefUsageTrans::USE_ALPHA, TYPE> kernel_alpha(
+          ALPHA, BETA);
       MacroTransVec<FloatType, decltype(kernel_alpha), WIDTH, HEIGHT>
           macro_alpha(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsageTrans::USE_BETA, TYPE> kernel_beta;
+      KernelTrans<FloatType, CoefUsageTrans::USE_BETA, TYPE> kernel_beta(ALPHA,
+          BETA);
       MacroTransVec<FloatType, decltype(kernel_beta), WIDTH, HEIGHT>
           macro_beta(outer.alpha, outer.beta);
 
-      KernelTrans<FloatType, CoefUsageTrans::USE_BOTH, TYPE> kernel_both;
+      KernelTrans<FloatType, CoefUsageTrans::USE_BOTH, TYPE> kernel_both(ALPHA,
+          BETA);
       MacroTransVec<FloatType, decltype(kernel_both), WIDTH, HEIGHT>
           macro_both(outer.alpha, outer.beta);
 

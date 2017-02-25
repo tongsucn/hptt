@@ -15,6 +15,9 @@
 #include <hptc/kernels/kernel_trans.h>
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
+#define ALPHA 2.3f
+#define BETA 4.2f
+
 using namespace std;
 using namespace hptc;
 
@@ -97,7 +100,7 @@ protected:
       using KernelTypeTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
       using RegType = typename KernelTypeTrans::RegType;
 
-      KernelTransAvx<FloatType, USAGE, TYPE> kernel;
+      KernelTransAvx<FloatType, USAGE, TYPE> kernel(ALPHA, BETA);
       RegType reg_alpha = kernel.reg_coef(outer.alpha);
       RegType reg_beta = kernel.reg_coef(outer.beta);
       array<TensorIdx, 5> result{ -1, 0, 0, 0, 0 };
@@ -112,7 +115,7 @@ protected:
               outer.reset_act();
               kernel(outer.org_data + org_0 * outer.data_width + org_1,
                   outer.act_data + act_0 + act_1 * outer.data_width,
-                  outer.data_width, outer.data_width, reg_alpha, reg_beta);
+                  outer.data_width, outer.data_width);
               result[0] = TestDataWrapper<FloatType>::verify(outer.ref_data,
                   outer.act_data, outer.data_len);
               if (-1 != result[0])
@@ -146,13 +149,13 @@ TYPED_TEST(TestKernelTransAvx, TestUtilities) {
   // Test register number selection
   // Full kernel
   KernelTransAvx<TypeParam, CoefUsageTrans::USE_BOTH,
-      KernelTypeTrans::KERNEL_FULL> full;
+      KernelTypeTrans::KERNEL_FULL> full(ALPHA, BETA);
   EXPECT_EQ(full.get_reg_num(), this->kernel_width_full)
       << "Register number does not match for full kernel.";
 
   // Half kernel
   KernelTransAvx<TypeParam, CoefUsageTrans::USE_BOTH,
-      KernelTypeTrans::KERNEL_HALF> half;
+      KernelTypeTrans::KERNEL_HALF> half(ALPHA, BETA);
   EXPECT_EQ(half.get_reg_num(), this->kernel_width_half)
       << "Register number does not match for half kernel.";
 }
