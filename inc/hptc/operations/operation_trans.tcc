@@ -94,11 +94,10 @@ void OpForTrans<ParamType, ORDER>::init_loops_(
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void OpForTrans<ParamType, ORDER>::init_perm_idx_() {
-  auto end_idx = ORDER - this->param_->merged_order;
-  for (TensorOrder idx = 0; idx < end_idx; ++idx)
+  for (TensorOrder idx = 0; idx < this->param_->begin_order_idx; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
 
-  for (TensorOrder idx = end_idx; idx < ORDER; ++idx)
+  for (TensorOrder idx = this->param_->begin_order_idx; idx < ORDER; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
         - this->param_->merged_order];
 }

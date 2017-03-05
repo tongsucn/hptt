@@ -18,27 +18,10 @@ CGraphTrans<ParamType, ORDER>::~CGraphTrans() {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void CGraphTrans<ParamType, ORDER>::operator()() {
-#pragma omp parallel for
-  for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
-    auto task = this->operations_ + idx;
-    (*task)(this->param_->kn_fb);
-    task = task->next;
-    (*task)(this->param_->kn_fv);
-    task = task->next;
-    (*task)(this->param_->kn_fh);
-    task = task->next;
-    (*task)(this->param_->kn_fs);
-    task = task->next;
-    (*task)(this->param_->kn_hv);
-    task = task->next;
-    (*task)(this->param_->kn_hh);
-    task = task->next;
-    (*task)(this->param_->kn_hs);
-    task = task->next;
-    (*task)(this->param_->kn_sc);
-    task = task->next;
-    (*task)(this->param_->kn_sc);
-  }
+  if (this->param_->is_common_leading())
+    this->exec_common_leading_();
+  else
+    this->exec_general_();
 }
 
 
@@ -89,6 +72,61 @@ void CGraphTrans<ParamType, ORDER>::release_operations_() {
 
   delete [] this->operations_;
   this->operations_ = nullptr;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void CGraphTrans<ParamType, ORDER>::exec_general_() {
+#pragma omp parallel for
+  for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
+    auto task = this->operations_ + idx;
+    (*task)(this->param_->kn_fb);
+    task = task->next;
+    (*task)(this->param_->kn_fv);
+    task = task->next;
+    (*task)(this->param_->kn_fh);
+    task = task->next;
+    (*task)(this->param_->kn_fs);
+    task = task->next;
+    (*task)(this->param_->kn_hv);
+    task = task->next;
+    (*task)(this->param_->kn_hh);
+    task = task->next;
+    (*task)(this->param_->kn_hs);
+    task = task->next;
+    (*task)(this->param_->kn_sc);
+    task = task->next;
+    (*task)(this->param_->kn_sc);
+  }
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void CGraphTrans<ParamType, ORDER>::exec_common_leading_() {
+#pragma omp parallel for
+  for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
+    auto task = this->operations_ + idx;
+    (*task)(this->param_->kn_lb);
+    task = task->next;
+    (*task)(this->param_->kn_lm);
+    task = task->next;
+    (*task)(this->param_->kn_ls);
+    task = task->next;
+    (*task)(this->param_->kn_ln);
+    task = task->next;
+    (*task)(this->param_->kn_sc);
+  }
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+INLINE void CGraphTrans<ParamType, ORDER>::exec_common_leading_noncoef_() {
+#pragma omp parallel for
+  for (TensorOrder idx = 0; idx < this->threads_; ++idx)
+    this->operations_[idx](this->param_->kn_mc);
 }
 
 #endif // HPTC_CGRAPH_CGRAPH_TRANS_TCC_

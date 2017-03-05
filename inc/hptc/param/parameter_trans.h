@@ -3,6 +3,7 @@
 #define HPTC_PARAM_PARAMETER_TRANS_H_
 
 #include <array>
+#include <utility>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
@@ -28,7 +29,6 @@ public:
   INLINE FloatType &operator[](TensorIdx **indices);
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
-  INLINE TensorOrder get_leading();
   void merge_idx(const std::unordered_set<TensorOrder> &merge_set);
 
 private:
@@ -41,34 +41,47 @@ template <typename FloatType,
           CoefUsageTrans USAGE,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 struct ParamTrans {
+  using DataType = FloatType;
+
   ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
       const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
       const std::array<TensorOrder, ORDER> &perm,
       DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
 
-  INLINE TensorIdx perm_type();
+  INLINE bool is_common_leading();
+  INLINE std::pair<TensorOrder, TensorOrder> get_leading();
 
-  using DataType = FloatType;
+
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
-  constexpr static MemLayout MEM_LAYOUT = LAYOUT;
+  constexpr static bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
 
-  TensorWrapper<FloatType, ORDER, LAYOUT> org_input_tensor, org_output_tensor;
   TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
   DeducedFloatType<FloatType> alpha, beta;
 
   TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
   TensorOrder merged_order;
+  TensorOrder begin_order_idx;
 
   // Kernels
-  MacroTransVecFullBig<FloatType, USAGE>        kn_fb;
-  MacroTransVecFullVertical<FloatType, USAGE>   kn_fv;
-  MacroTransVecFullHorizontal<FloatType, USAGE> kn_fh;
-  MacroTransVecFullSmall<FloatType, USAGE>      kn_fs;
-  MacroTransVecHalfVertical<FloatType, USAGE>   kn_hv;
-  MacroTransVecHalfHorizontal<FloatType, USAGE> kn_hh;
-  MacroTransVecHalfSmall<FloatType, USAGE>      kn_hs;
-  MacroTransScalar<FloatType, USAGE>            kn_sc;
+  // Non-linear kernels
+  MacroTransVecFullBig<FloatType, USAGE>            kn_fb;
+  MacroTransVecFullVertical<FloatType, USAGE>       kn_fv;
+  MacroTransVecFullHorizontal<FloatType, USAGE>     kn_fh;
+  MacroTransVecFullSmall<FloatType, USAGE>          kn_fs;
+  MacroTransVecHalfVertical<FloatType, USAGE>       kn_hv;
+  MacroTransVecHalfHorizontal<FloatType, USAGE>     kn_hh;
+  MacroTransVecHalfSmall<FloatType, USAGE>          kn_hs;
+
+  // Linear kernels
+  MacroTransLinBig<FloatType, USAGE>                kn_lb;
+  MacroTransLinMid<FloatType, USAGE>                kn_lm;
+  MacroTransLinSmall<FloatType, USAGE>              kn_ls;
+  MacroTransLinNano<FloatType, USAGE>               kn_ln;
+
+  // Special kernels
+  MacroTransMemcpy<FloatType, USAGE>                kn_mc;
+  MacroTransScalar<FloatType, USAGE>                kn_sc;
 
 private:
   void merge_idx_(const std::array<TensorOrder, ORDER> &perm);

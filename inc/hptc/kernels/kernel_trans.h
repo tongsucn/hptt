@@ -15,6 +15,9 @@ template <typename FloatType,
 using KernelTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
 
 
+/*
+ * Alias for micro kernels
+ */
 template <typename FloatType,
           CoefUsageTrans USAGE>
 using KernelTransFull = KernelTrans<FloatType, USAGE,
@@ -25,6 +28,12 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 using KernelTransHalf = KernelTrans<FloatType, USAGE,
     KernelTypeTrans::KERNEL_HALF>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using KernelTransLinear = KernelTrans<FloatType, USAGE,
+    KernelTypeTrans::KERNEL_LINE>;
 
 }
 

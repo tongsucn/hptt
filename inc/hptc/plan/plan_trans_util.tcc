@@ -6,10 +6,13 @@ template <typename ParamType,
           TensorOrder ORDER>
 PlanTransOptimizer<ParamType, ORDER>::PlanTransOptimizer(
     const std::shared_ptr<ParamType> &param, GenNumType thread_num)
-    : param_(param),
+    : param_(param->merged_order <= 1 ? nullptr : param),
       threads_(thread_num),
       strategy_(),
       descriptor_(1) {
+  if (nullptr == this->param_)
+    return;
+
   this->init_();
 }
 
@@ -19,6 +22,10 @@ template <typename ParamType,
 std::vector<CGraphTransDescriptor<ORDER>>
 PlanTransOptimizer<ParamType, ORDER>::get_optimal(TensorIdx heur_loop_num,
     TensorIdx heur_para_num, TensorIdx tune_loop_num, TensorIdx tune_para_num) {
+  // Check plan status
+  if (nullptr == this->param_)
+    return {};
+
   // Heuristics of loop order
   auto loop_orders = this->heur_loop_explorer_(heur_loop_num, tune_loop_num);
 
@@ -40,8 +47,13 @@ void PlanTransOptimizer<ParamType, ORDER>::init_() {
   // Initialize thread number
   this->init_thread_num_();
 
-  // Initialize vectorization
-  this->init_vec_();
+  // Check input and output leading and initialize vectorization
+  if (this->param_->is_common_leading())
+    // Input and output tensor's leading order ARE the same.
+    this->init_vec_cl_();
+  else
+    // Input and output tensor's leading order ARE NOT the same.
+    this->init_vec_();
 
   // Initialize default loop order
   this->init_loop_();
@@ -66,248 +78,232 @@ void PlanTransOptimizer<ParamType, ORDER>::init_thread_num_() {
 template <typename ParamType,
           TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_vec_() {
-  // Check permutation type
-  if (-1 == this->param_->perm_type()) {
-    // For now, do nothing when leading dimensions are the same.
-    return;
-  }
-
   // Get parameters
-  auto input_leading = this->param_->input_tensor.get_leading();
-  auto output_leading = this->param_->output_tensor.get_leading();
+  const auto leadings = this->param_->get_leading();
+  auto input_leading = leadings.first;
+  auto output_leading = leadings.second;
 
   // Vectorize single thread version
   auto &oper = this->descriptor_.description[0];
   TensorIdx oper_idx = 0;
+  TensorOrder cont_rests[] = { input_leading, input_leading, input_leading };
+  TensorOrder ncont_rests[] = {
+      output_leading, output_leading, output_leading };
 
   // Vectorization
   // Full big kernel (4 ncont x 4 cont full macro)
-  auto fb_size = this->param_->kn_fb.get_cont_len();
-  TensorOrder fb_cont_rest = input_leading, fb_ncont_rest = output_leading;
-  TensorIdx fb_cont_begin = 0, fb_ncont_begin = 0;
-  auto fb_set = this->init_vec_kernels_(oper[oper_idx], fb_size, fb_size,
-      fb_cont_rest, fb_ncont_rest, fb_cont_begin, fb_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_fb.get_cont_len(),
+      this->param_->kn_fb.get_ncont_len(), cont_rests[0], ncont_rests[0]);
 
   // Full vertical kernel (4 ncont x 1 cont full macro)
   ++oper_idx;
-  TensorOrder fv_cont_rest = fb_cont_rest, fv_ncont_rest = output_leading;
-  TensorIdx fv_cont_begin = fb_cont_begin, fv_ncont_begin = 0;
-  auto fv_set = this->init_vec_kernels_(oper[oper_idx],
-      this->param_->kn_fv.get_cont_len(), this->param_->kn_fv.get_ncont_len(),
-      fv_cont_rest, fv_ncont_rest, fv_cont_begin, fv_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_fv.get_cont_len(),
+      this->param_->kn_fv.get_ncont_len(), cont_rests[0], ncont_rests[1]);
+  ncont_rests[0] = ncont_rests[1] = std::min(ncont_rests[0], ncont_rests[1]);
 
   // Full horizontal kernel (1 ncont x 4 cont full macro)
   ++oper_idx;
-  TensorOrder fh_cont_rest = input_leading, fh_ncont_rest = fb_ncont_rest;
-  TensorIdx fh_cont_begin = 0, fh_ncont_begin = fb_ncont_begin;
-  auto fh_set = this->init_vec_kernels_(oper[oper_idx],
-      this->param_->kn_fh.get_cont_len(), this->param_->kn_fh.get_ncont_len(),
-      fh_cont_rest, fh_ncont_rest, fh_cont_begin, fh_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_fh.get_cont_len(),
+      this->param_->kn_fh.get_ncont_len(), cont_rests[1], ncont_rests[0]);
 
   // Full small kernel (1 ncont x 1 cont full macro)
   ++oper_idx;
-  auto fs_size = this->param_->kn_fs.get_cont_len();
-  TensorOrder fs_cont_rest = input_leading, fs_ncont_rest = output_leading;
-  TensorIdx fs_cont_begin = 0, fs_ncont_begin = 0;
-  if (fb_set) {
-    fs_cont_rest = fb_cont_rest, fs_ncont_rest = fb_ncont_rest;
-    fs_cont_begin = fb_cont_begin, fs_ncont_begin = fb_ncont_begin;
-  }
-  else if (fv_set)
-    fs_ncont_rest = fv_ncont_rest, fs_ncont_begin = fv_ncont_begin;
-  else if (fh_set)
-    fs_cont_rest = fh_cont_rest, fs_cont_begin = fh_cont_begin;
-  auto fs_set = this->init_vec_kernels_(oper[oper_idx], fs_size, fs_size,
-      fs_cont_rest, fs_ncont_rest, fs_cont_begin, fs_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_fs.get_cont_len(),
+      this->param_->kn_fs.get_ncont_len(), cont_rests[1], ncont_rests[1]);
+  cont_rests[0] = cont_rests[1] = std::min(cont_rests[0], cont_rests[1]);
+  ncont_rests[0] = ncont_rests[1] = std::min(ncont_rests[0], ncont_rests[1]);
 
-  // Half vertical kernel (2 ncont x 1 cont half macro) and half horizontal
-  // kernel (1 ncont x 2 cont half macro)
+  // Half vertical kernel (2 ncont x 1 cont half macro)
   ++oper_idx;
-  TensorOrder hv_cont_rest = input_leading, hv_ncont_rest = output_leading;
-  TensorIdx hv_cont_begin = 0, hv_ncont_begin = 0;
-  TensorOrder hh_cont_rest = input_leading, hh_ncont_rest = output_leading;
-  TensorIdx hh_cont_begin = 0, hh_ncont_begin = 0;
-  TensorOrder hs_cont_rest = input_leading, hs_ncont_rest = output_leading;
-  TensorIdx hs_cont_begin = 0, hs_ncont_begin = 0;
-  if (fs_set) {
-    hv_cont_rest = fs_cont_rest, hh_ncont_rest = fs_ncont_rest;
-    hv_cont_begin = fs_cont_begin, hh_ncont_begin = fs_ncont_begin;
-    hs_cont_rest = fs_cont_rest, hs_ncont_rest = fs_ncont_rest;
-    hs_cont_begin = fs_cont_begin, hs_ncont_begin = fs_ncont_begin;
-  }
-  else if (fv_set) {
-    hv_cont_rest = fv_cont_rest, hh_ncont_rest = fv_ncont_rest;
-    hv_cont_begin = fv_cont_begin, hh_ncont_begin = fv_ncont_begin;
-    hs_cont_rest = fv_cont_rest, hs_ncont_rest = fv_ncont_rest;
-    hs_cont_begin = fv_cont_begin, hs_ncont_begin = fv_ncont_begin;
-  }
-  else if (fh_set) {
-    hv_cont_rest = fh_cont_rest, hh_ncont_rest = fh_ncont_rest;
-    hv_cont_begin = fh_cont_begin, hh_ncont_begin = fh_ncont_begin;
-    hs_cont_rest = fh_cont_rest, hs_ncont_rest = fh_ncont_rest;
-    hs_cont_begin = fh_cont_begin, hs_ncont_begin = fh_ncont_begin;
-  }
-  else if (fb_set) {
-    hv_cont_rest = fb_cont_rest, hh_ncont_rest = fb_ncont_rest;
-    hv_cont_begin = fb_cont_begin, hh_ncont_begin = fb_ncont_begin;
-    hs_cont_rest = fb_cont_rest, hs_ncont_rest = fb_ncont_rest;
-    hs_cont_begin = fb_cont_begin, hs_ncont_begin = fb_ncont_begin;
-  }
-  auto hv_set = this->init_vec_kernels_(oper[oper_idx],
-      this->param_->kn_hv.get_cont_len(), this->param_->kn_hv.get_ncont_len(),
-      hv_cont_rest, hv_ncont_rest, hv_cont_begin, hv_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_hv.get_cont_len(),
+      this->param_->kn_hv.get_ncont_len(), cont_rests[1], ncont_rests[2]);
+  ncont_rests[2] = std::min(ncont_rests[0], ncont_rests[2]);
 
+  // Half horizontal kernel (1 ncont x 2 cont half macro)
   ++oper_idx;
-  auto hh_set = this->init_vec_kernels_(oper[oper_idx],
-      this->param_->kn_hh.get_cont_len(), this->param_->kn_hh.get_ncont_len(),
-      hh_cont_rest, hh_ncont_rest, hh_cont_begin, hh_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_hh.get_cont_len(),
+      this->param_->kn_hh.get_ncont_len(), cont_rests[2], ncont_rests[1]);
+  cont_rests[2] = std::min(cont_rests[0], cont_rests[2]);
 
   // Half small kernel (1 ncont x 1 cont half macro)
   ++oper_idx;
-  auto hs_size = this->param_->kn_hs.get_cont_len();
-  if (hv_set and hh_set)
-    ;
-  else if (hv_set)
-    hs_ncont_begin = hv_ncont_begin, hs_ncont_rest = hv_ncont_rest;
-  else if (hh_set)
-    hs_ncont_begin = hh_ncont_begin, hs_ncont_rest = hh_ncont_rest;
-  auto hs_set = this->init_vec_kernels_(oper[oper_idx], hs_size, hs_size,
-      hs_cont_rest, hs_ncont_rest, hs_cont_begin, hs_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], this->param_->kn_hs.get_cont_len(),
+      this->param_->kn_hs.get_ncont_len(), cont_rests[0], ncont_rests[0]);
+  cont_rests[1] = cont_rests[2]
+      = std::min(std::min(cont_rests[0], cont_rests[1]), cont_rests[2]);
+  ncont_rests[1] = ncont_rests[2]
+      = std::min(std::min(ncont_rests[0], ncont_rests[1]), ncont_rests[2]);
 
-  // Scalar horizontal and then scalar vertical
+  // Scalar vertical
   ++oper_idx;
-  TensorOrder sh_cont_rest = input_leading, sh_ncont_rest = hs_ncont_rest;
-  TensorIdx sh_cont_begin = 0, sh_ncont_begin = hs_ncont_begin;
-  TensorOrder sv_cont_rest = hs_cont_rest, sv_ncont_rest = sh_ncont_begin;
-  TensorIdx sv_cont_begin = hs_cont_begin, sv_ncont_begin = 0;
-  if (hs_set)
-    ;
-  else if (hv_set)
-    sv_cont_rest = hv_cont_rest, sv_cont_begin = hv_cont_begin;
-  else if (hh_set) {
-    sh_ncont_rest = hh_ncont_rest, sh_ncont_begin = hh_ncont_begin;
-    sv_ncont_rest = sh_ncont_begin;
-  }
-  this->init_vec_kernels_(oper[oper_idx], 1, 1, sh_cont_rest, sh_ncont_rest,
-      sh_cont_begin, sh_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], 1, 1, cont_rests[2], output_leading,
+      true);
 
+  // Scalar horizontal
   ++oper_idx;
-  this->init_vec_kernels_(oper[oper_idx], 1, 1, sv_cont_rest, sv_ncont_rest,
-      sv_cont_begin, sv_ncont_begin);
+  this->init_vec_kernels_(oper[oper_idx], 1, 1, input_leading, ncont_rests[2]);
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
-bool PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_(
-    LoopParam<ORDER> &loop, GenNumType cont_len, GenNumType ncont_len,
-    TensorOrder &cont_rest, TensorOrder &ncont_rest,
-    TensorIdx &cont_begin, TensorIdx &ncont_begin) {
-  if (cont_len <= cont_rest and ncont_len <= ncont_rest) {
-    const TensorIdx begin_idx = ORDER - this->param_->merged_order;
-    const TensorIdx ncont_rest_idx = begin_idx + this->param_->perm[begin_idx];
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_(
+    LoopParam<ORDER> &loop, const GenNumType kn_cont_len,
+    const GenNumType kn_ncont_len, TensorOrder &cont_rest,
+    TensorOrder &ncont_rest, const bool is_sv) {
+  if (kn_cont_len <= cont_rest and kn_ncont_len <= ncont_rest) {
+    // Skip merged order
+    auto leadings = this->param_->get_leading();
+    const auto input_leading = leadings.first;
+    const auto output_leading = leadings.second;
+    const auto begin_order_idx = ORDER - this->param_->merged_order;
+    loop.set_pass(begin_order_idx);
 
-    // Set pass on merged orders
-    loop.set_pass(static_cast<TensorOrder>(begin_idx));
-    // Vectorize
-    for (TensorIdx idx = begin_idx; idx < ORDER; ++idx) {
-      if (begin_idx == idx) {
-        // Vectorize input tensor stride-1 order
-        TensorIdx times = cont_rest / cont_len;
-        loop.loop_begin[idx] = cont_begin;
+    // Locate loop's positions per memory layout
+    auto vec_cont_loop_idx = this->param_->is_col_major ?
+        begin_order_idx : ORDER - 1;
+    auto vec_ncont_order_idx = this->param_->perm[vec_cont_loop_idx]
+        + begin_order_idx;
 
-        auto span = times * cont_len;
-        cont_begin += span;
-        cont_rest -= span;
-
-        loop.loop_end[idx] = cont_begin;
-        loop.loop_step[idx] = cont_len;
+    // Setup loops
+    for (auto order_idx = begin_order_idx; order_idx < ORDER; ++order_idx) {
+      if (vec_cont_loop_idx == order_idx) {
+        loop.loop_begin[order_idx] = input_leading - cont_rest;
+        loop.loop_end[order_idx] = (cont_rest / kn_cont_len) * kn_cont_len
+            + loop.loop_begin[order_idx];
+        loop.loop_step[order_idx] = kn_cont_len;
       }
-      else if (ncont_rest_idx == idx) {
-        // Vectorize output tensor stride-1 order
-        TensorIdx times = ncont_rest / ncont_len;
-        loop.loop_begin[idx] = ncont_begin;
+      else if (vec_ncont_order_idx == order_idx) {
+        loop.loop_begin[order_idx] = output_leading - ncont_rest;
+        loop.loop_end[order_idx] = (ncont_rest / kn_ncont_len) * kn_ncont_len
+            + loop.loop_begin[order_idx];
+        loop.loop_step[order_idx] = kn_ncont_len;
 
-        auto span = times * ncont_len;
-        ncont_begin += span;
-        ncont_rest -= span;
-
-        loop.loop_end[idx] = ncont_begin;
-        loop.loop_step[idx] = ncont_len;
+        // Modify end if it's vertical scalar kernel
+        if (is_sv)
+          loop.loop_end[order_idx] -= ncont_rest;
       }
       else {
-        loop.loop_begin[idx] = 0;
-        loop.loop_end[idx] = this->param_->input_tensor.get_size()[idx];
-        loop.loop_step[idx] = 1;
+        loop.loop_begin[order_idx] = 0;
+        loop.loop_end[order_idx]
+            = this->param_->input_tensor.get_size()[order_idx];
+        loop.loop_step[order_idx] = 1;
       }
     }
-    return true;
+
+    // Update rests
+    cont_rest %= kn_cont_len;
+    ncont_rest %= kn_ncont_len;
   }
-  return false;
+  else
+    loop.set_disable();
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_cl_() {
+  // Get parameters
+  const auto input_leading = this->param_->get_leading().first;
+  auto cont_rest = input_leading;
+  auto &oper = this->descriptor_.description[0];
+  TensorIdx oper_idx = 0;
+
+  // Vectorize single thread version
+  // Linear big kernel (8 cont macro kernels)
+  std::cout << "lb: " << this->param_->kn_lb.get_cont_len() << std::endl;
+  std::cout << "rest: " << cont_rest << std::endl;
+  this->init_vec_kernels_cl_(oper[oper_idx++],
+      this->param_->kn_lb.get_cont_len(), input_leading, cont_rest);
+
+  // Linear middle kernel (4 cont macro kernels)
+  std::cout << "lm: " << this->param_->kn_lm.get_cont_len() << std::endl;
+  std::cout << "rest: " << cont_rest << std::endl;
+  this->init_vec_kernels_cl_(oper[oper_idx++],
+      this->param_->kn_lm.get_cont_len(), input_leading, cont_rest);
+
+  // Linear small kernel (2 cont macro kernels)
+  std::cout << "ls: " << this->param_->kn_ls.get_cont_len() << std::endl;
+  std::cout << "rest: " << cont_rest << std::endl;
+  this->init_vec_kernels_cl_(oper[oper_idx++],
+      this->param_->kn_ls.get_cont_len(), input_leading, cont_rest);
+
+  // Linear nano kernel (1 cont macro kernel)
+  std::cout << "ln: " << this->param_->kn_ln.get_cont_len() << std::endl;
+  std::cout << "rest: " << cont_rest << std::endl;
+  this->init_vec_kernels_cl_(oper[oper_idx++],
+      this->param_->kn_ln.get_cont_len(), input_leading, cont_rest);
+
+  // Scalar kernel (1 scalar kernel)
+  this->init_vec_kernels_cl_(oper[oper_idx], 1, input_leading, cont_rest);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_cl_(
+    LoopParam<ORDER> &loop, const GenNumType kn_len,
+    const TensorOrder input_leading, TensorOrder &cont_rest) {
+  if (kn_len <= cont_rest) {
+    const auto &begin_idx = this->param_->begin_order_idx;
+    const auto ld_idx = this->param_->is_col_major ? begin_idx : ORDER - 1;
+    loop.set_pass(begin_idx);
+
+    for (auto loop_idx = begin_idx; loop_idx < ORDER; ++loop_idx) {
+      // Initialize vectorized loop
+      if (ld_idx != loop_idx) {
+        loop.loop_begin[loop_idx] = 0;
+        loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+        loop.loop_step[loop_idx] = 1;
+      }
+      else {
+        loop.loop_begin[ld_idx] = input_leading - cont_rest;
+        loop.loop_end[ld_idx] = (cont_rest / kn_len) * kn_len
+          + loop.loop_begin[ld_idx];
+        loop.loop_step[ld_idx] = kn_len;
+      }
+    }
+
+    // Update rests
+    cont_rest %= kn_len;
+  }
+  else
+    loop.set_disable();
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
+  struct Loop {
+    Loop(TensorIdx size, TensorOrder org_idx) : size(size), org_idx(org_idx) {}
+    TensorIdx size;
+    TensorOrder org_idx;
+  };
+
   // Initialize loop evaluator's parameters
   this->init_loop_evaluator_param_();
 
-  // Locate loop re-order entry (first loop that need to be re-ordered)
-  const auto begin_idx
-      = static_cast<TensorIdx>(ORDER - this->param_->merged_order);
-  const auto end_idx = static_cast<TensorIdx>(ORDER - 2);
+  // Locate loop re-order position (first loop that need to be re-ordered)
+  const auto begin_idx = this->param_->begin_order_idx;
+  const auto end_idx = ORDER - 2 + this->param_->is_common_leading() ? 1 : 0;
+  const auto output_ld_idx = this->param_->perm[begin_idx] + begin_idx;
 
   // Create and initialize loop description array
-  Loop_ loops[ORDER];
-  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx) {
-    loops[loop_idx].size = this->param_->input_tensor.get_size()[loop_idx];
-    loops[loop_idx].thread_num = 1;
-    loops[loop_idx].org_idx = loop_idx;
-  }
+  std::vector<Loop> loops;
+  const auto &size_obj = this->param_->input_tensor.get_size();
+  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx)
+    if (begin_idx != loop_idx and output_ld_idx != loop_idx)
+      loops.push_back(Loop(size_obj[loop_idx], loop_idx));
 
-  // Put larger leading index at inner most level
-  TensorIdx input_ld_idx, output_ld_idx;
-  if (MemLayout::COL_MAJOR == this->param_->MEM_LAYOUT) {
-    input_ld_idx = begin_idx;
-    output_ld_idx = this->param_->perm[begin_idx] + begin_idx;
-  }
-  else {
-    input_ld_idx = ORDER - 1;
-    output_ld_idx = this->param_->perm[ORDER - 1] + begin_idx;
-  }
+  loops.push_back(Loop(size_obj[begin_idx], begin_idx));
+  if (not this->param_->is_common_leading())
+    loops.push_back(Loop(size_obj[output_ld_idx], output_ld_idx));
 
-  if (ORDER == 2) {
-    if (loops[ORDER - 1].size < loops[ORDER - 2].size)
-      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
-  }
-  else if (ORDER - 2 == output_ld_idx) {
-    std::swap(loops[ORDER - 1], loops[input_ld_idx]);
-    if (loops[input_ld_idx].size < loops[output_ld_idx].size)
-      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
-  }
-  else if (ORDER - 1 == output_ld_idx) {
-    if (loops[input_ld_idx].size < loops[output_ld_idx].size)
-      std::swap(loops[ORDER - 2], loops[input_ld_idx]);
-    else {
-      std::swap(loops[ORDER - 1], loops[ORDER - 2]);
-      std::swap(loops[ORDER - 1], loops[input_ld_idx]);
-    }
-  }
-  else {
-    if (loops[input_ld_idx].size > loops[output_ld_idx].size) {
-      std::swap(loops[ORDER - 1], loops[input_ld_idx]);
-      std::swap(loops[ORDER - 2], loops[output_ld_idx]);
-    }
-    else {
-      std::swap(loops[ORDER - 2], loops[input_ld_idx]);
-      std::swap(loops[ORDER - 1], loops[output_ld_idx]);
-    }
-  }
 
   // Sort non-leading orders according to the sizes, for loop with smallest size
   // will be put at outer most for loop
-  std::sort(loops + begin_idx, loops + end_idx,
+  std::sort(loops.begin() + begin_idx, loops.begin() + end_idx,
       [] (const auto &first, const auto &second) -> bool {
         return first.size < second.size; });
 
@@ -400,57 +396,51 @@ std::vector<LoopOrder<ORDER>>
 PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
     const TensorIdx heur_num, const TensorIdx tune_num) {
   if (0 == heur_num)
-    return std::vector<LoopOrder<ORDER>>{ this->descriptor_.loop_order };
+    return { this->descriptor_.loop_order };
 
   // Create best heap to store auto tuning candidates
-  // "Cost-Order" pair
+  // "Cost-Order" pair: (cost, loop order)
   using OrderDes = std::pair<double, LoopOrder<ORDER>>;
-  const auto &best_order = this->descriptor_.loop_order;
-  OrderDes curr_best(this->heur_loop_evaluator_(best_order), best_order);
-  std::vector<OrderDes> best_heap{ curr_best };
-
   auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
       return a.first < b.first; };
-  std::make_heap(best_heap.begin(), best_heap.end(), heap_cmp);
 
-  // Create initialization loop order
   LoopOrder<ORDER> loop_order;
+  const auto ld_idx = this->param_->is_col_major ?
+      this->param_->begin_order_idx : ORDER - 1;
   for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
     loop_order[order_idx] = order_idx;
+  std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
+      best_heap(heap_cmp);
 
+  // Create initialization loop order
   // Look for best
   bool has_next = true;
-  TensorOrder begin_idx = ORDER - this->param_->merged_order;
-  auto perm_start = loop_order.begin() + begin_idx;
-  for (TensorIdx times = 0; has_next and (heur_num < 0 or times < heur_num);
-      ++times, has_next = std::next_permutation(perm_start, loop_order.end())) {
+  TensorIdx times = 0;
+  do {
+    // Skip stride-1 leading loop in common leading case
+    if (this->param_->is_common_leading() and ld_idx == loop_order[0]) {
+      std::next_permutation(
+          loop_order.begin() + this->param_->begin_order_idx, loop_order.end());
+      continue;
+    }
+
     auto new_cost = this->heur_loop_evaluator_(loop_order);
-    if (tune_num < 0) {
-      best_heap.push_back(OrderDes(new_cost, loop_order));
-      std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
-    }
-    else if (tune_num <= 1) {
-      if (best_heap[0].first > new_cost)
-        best_heap[0] = OrderDes(new_cost, loop_order);
-    }
-    else if (tune_num > best_heap.size()) {
-      best_heap.push_back(OrderDes(new_cost, loop_order));
-      std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
-    }
-    else {
-      if (best_heap[0].first > new_cost) {
-        std::pop_heap(best_heap.begin(), best_heap.end(), heap_cmp);
-        best_heap.back() = OrderDes(new_cost, loop_order);
-        std::push_heap(best_heap.begin(), best_heap.end(), heap_cmp);
+    if (tune_num < 0 or tune_num > best_heap.size())
+      best_heap.push(OrderDes(new_cost, loop_order));
+    else
+      if (best_heap.top().first > new_cost) {
+        best_heap.pop();
+        best_heap.push(OrderDes(new_cost, loop_order));
       }
-    }
-  }
+  } while (has_next and (times < heur_num or heur_num < 0));
 
   // Create result
   std::vector<LoopOrder<ORDER>> result;
   result.reserve(best_heap.size());
-  for (auto &des : best_heap)
-    result.push_back(des.second);
+  while (not best_heap.empty()) {
+    result.push_back(best_heap.top().second);
+    best_heap.pop();
+  }
 
   return result;
 }
@@ -461,15 +451,22 @@ template <typename ParamType,
 double PlanTransOptimizer<ParamType, ORDER>::heur_loop_evaluator_(
     const LoopOrder<ORDER> &target_loop_order) {
   // Locate begin index
-  auto merged_order = this->param_->merged_order;
-  auto begin_idx = ORDER - merged_order;
+  const auto merged_order = this->param_->merged_order;
+  const auto begin_idx = this->param_->begin_order_idx;
 
   // Create loop penalty array
   // [..., 2 * penalty_step, 1 * penalty_step, 0 * penalty_step]
   std::vector<double> loop_penalty(merged_order, 0.0);
-  loop_penalty.back() = this->penalty_begin;
-  for (TensorIdx loop_idx = merged_order - 1; loop_idx >= 0; --loop_idx)
-    loop_penalty[loop_idx] = loop_penalty[loop_idx + 1] + this->penalty_step;
+  if (this->param_->is_col_major) {
+    loop_penalty.back() = this->penalty_begin;
+    for (TensorIdx loop_idx = merged_order - 2; loop_idx >= 0; --loop_idx)
+      loop_penalty[loop_idx] = loop_penalty[loop_idx + 1] + this->penalty_step;
+  }
+  else {
+    loop_penalty.front() = this->penalty_begin;
+    for (TensorIdx loop_idx = 1; loop_idx < merged_order; --loop_idx)
+      loop_penalty[loop_idx] = loop_penalty[loop_idx - 1] + this->penalty_step;
+  }
 
   // Create target loop order's index map
   // Key is a specific tensor order, values is its level in loop

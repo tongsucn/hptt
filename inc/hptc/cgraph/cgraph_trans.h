@@ -8,6 +8,7 @@
 
 #include <hptc/types.h>
 #include <hptc/util.h>
+#include <hptc/config/config_trans.h>
 #include <hptc/operations/operation_trans.h>
 
 
@@ -46,6 +47,11 @@ protected:
 
   void init_();
   void release_operations_();
+
+  INLINE void exec_general_();
+  INLINE void exec_common_leading_();
+  INLINE void exec_common_leading_noncoef_();
+
 
   std::shared_ptr<ParamType> param_;
   CGraphTransDescriptor<ORDER> descriptor_;

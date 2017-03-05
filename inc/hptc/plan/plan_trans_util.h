@@ -3,6 +3,7 @@
 #define HPTC_PLAN_PLAN_TRANS_UTIL_H_
 
 #include <vector>
+#include <queue>
 #include <memory>
 #include <utility>
 #include <numeric>
@@ -31,18 +32,16 @@ public:
       TensorIdx tune_para_num);
 
 private:
-  struct Loop_ {
-    TensorIdx size;
-    GenNumType thread_num;
-    TensorOrder org_idx;
-  };
-
   void init_();
   void init_thread_num_();
   void init_vec_();
-  bool init_vec_kernels_(LoopParam<ORDER> &loop, GenNumType cont_len,
-      GenNumType ncont_len, TensorOrder &cont_rest, TensorOrder &ncont_rest,
-      TensorIdx &cont_begin, TensorIdx &ncont_begin);
+  void init_vec_kernels_(LoopParam<ORDER> &loop, const GenNumType kn_cont_len,
+      const GenNumType kn_ncont_len, TensorOrder &cont_rest,
+      TensorOrder &ncont_rest, bool is_sv = false);
+  void init_vec_cl_();
+  void init_vec_kernels_cl_(LoopParam<ORDER> &loop, const GenNumType kn_len,
+      const TensorOrder input_leading, TensorOrder &cont_rest);
+
   void init_loop_();
   void init_loop_evaluator_param_();
   void init_parallel_();

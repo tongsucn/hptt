@@ -18,13 +18,13 @@ template <typename FloatType,
           typename KernelFunc>
 template <GenNumType CONT,
          GenNumType NCONT>
-INLINE void MacroTransVecData<FloatType, KernelFunc>::ncont_tiler(
+INLINE void MacroTransVecData<FloatType, KernelFunc>::ncont_tiler_(
     DualCounter<CONT, NCONT>, const FloatType * RESTRICT input_data,
     FloatType * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride) {
-  this->ncont_tiler(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
+  this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
       input_stride, output_stride);
-  this->cont_tiler(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
+  this->cont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
       input_stride, output_stride);
 }
 
@@ -32,8 +32,8 @@ INLINE void MacroTransVecData<FloatType, KernelFunc>::ncont_tiler(
 template <typename FloatType,
           typename KernelFunc>
 template <GenNumType CONT>
-INLINE void MacroTransVecData<FloatType, KernelFunc>::
-ncont_tiler(DualCounter<CONT, 0>,
+INLINE void
+MacroTransVecData<FloatType, KernelFunc>::ncont_tiler_(DualCounter<CONT, 0>,
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride) {
 }
@@ -43,11 +43,11 @@ template <typename FloatType,
           typename KernelFunc>
 template <GenNumType CONT,
          GenNumType NCONT>
-INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler(
+INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler_(
     DualCounter<CONT, NCONT>, const FloatType * RESTRICT input_data,
     FloatType * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride) {
-  this->cont_tiler(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
+  this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
       input_stride, output_stride);
   this->kernel_(
       input_data + CONT * this->kn_wd_ + NCONT * this->kn_wd_ * input_stride,
@@ -59,7 +59,7 @@ INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler(
 template <typename FloatType,
           typename KernelFunc>
 template <GenNumType NCONT>
-INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler(
+INLINE void MacroTransVecData<FloatType, KernelFunc>::cont_tiler_(
     DualCounter<0, NCONT>, const FloatType * RESTRICT input_data,
     FloatType * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride) {
@@ -116,19 +116,28 @@ INLINE void MacroTransVec<FloatType, KernelFunc, CONT_LEN, NCONT_LEN>::
 operator()(const FloatType * RESTRICT input_data,
     FloatType * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride) {
-  this->ncont_tiler(DualCounter<CONT_LEN, NCONT_LEN>(),
+  this->ncont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(),
       input_data, output_data, input_stride, output_stride);
 }
 
 
 /*
- * Implementation for class MacroTransScalarData
+ * Implementation for class MacroTransMemcpy
  */
 template <typename FloatType,
           CoefUsageTrans USAGE>
-MacroTransScalarData<FloatType, USAGE>::MacroTransScalarData(
+MacroTransMemcpy<FloatType, USAGE>::MacroTransMemcpy(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
     : alpha(alpha), beta(beta) {
+}
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+INLINE void MacroTransMemcpy<FloatType, USAGE>::operator()(
+    const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) {
+  std::copy(input_data, input_data + input_stride, output_data);
 }
 
 
@@ -139,7 +148,7 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 MacroTransScalar<FloatType, USAGE>::MacroTransScalar(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : MacroTransScalarData<FloatType, USAGE>(alpha, beta) {
+    : alpha(alpha), beta(beta) {
 }
 
 

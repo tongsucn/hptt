@@ -225,14 +225,6 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() const {
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE TensorOrder get_leading() {
-  return this->size_[MemLayout::COL_MAJOR == LAYOUT ? 0 : ORDER - 1];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
 INLINE FloatType *TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() {
   return this->raw_data_;
 }
@@ -329,7 +321,7 @@ template <typename FloatType,
           MemLayout LAYOUT>
 INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
     TensorOrder curr_order, TensorIdx curr_offset) {
-  return curr_offset;
+  return this->raw_data_[curr_offset];
 }
 
 #endif // HPTC_TENSOR_TCC_

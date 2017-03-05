@@ -2,6 +2,8 @@
 #ifndef HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
+#include <algorithm>
+
 #include <hptc/util.h>
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
@@ -20,26 +22,25 @@ public:
 protected:
   template <GenNumType CONT,
             GenNumType NCONT>
-  INLINE void ncont_tiler(DualCounter<CONT, NCONT>,
+  INLINE void ncont_tiler_(DualCounter<CONT, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType CONT>
-  INLINE void ncont_tiler(DualCounter<CONT, 0>,
+  INLINE void ncont_tiler_(DualCounter<CONT, 0>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType CONT,
             GenNumType NCONT>
-  INLINE void cont_tiler(DualCounter<CONT, NCONT>,
+  INLINE void cont_tiler_(DualCounter<CONT, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType NCONT>
-  INLINE void cont_tiler(DualCounter<0, NCONT>,
+  INLINE void cont_tiler_(DualCounter<0, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
-
 
   KernelFunc kernel_;
   GenNumType kn_wd_;    // Kernel width, number of elements in one register
@@ -66,26 +67,31 @@ public:
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-class MacroTransScalarData {
+class MacroTransMemcpy {
 public:
-  MacroTransScalarData(DeducedFloatType<FloatType> alpha,
+  MacroTransMemcpy(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
+  INLINE void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride);
 
-protected:
+private:
   DeducedFloatType<FloatType> alpha, beta;
 };
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-class MacroTransScalar
-    : public MacroTransScalarData<FloatType, USAGE> {
+class MacroTransScalar {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
   INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride = 0,
-      const TensorIdx output_stride = 0);
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride);
+
+private:
+  DeducedFloatType<FloatType> alpha, beta;
 };
 
 
@@ -106,6 +112,13 @@ template <typename FloatType,
           GenNumType NCONT_LEN>
 using MacroTransVecHalf = MacroTransVec<FloatType,
       KernelTransHalf<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE,
+          GenNumType LEN>
+using MacroTransLinear = MacroTransVec<FloatType,
+      KernelTransLinear<FloatType, USAGE>, LEN, 1>;
 
 
 template <typename FloatType,
@@ -141,6 +154,26 @@ using MacroTransVecHalfHorizontal = MacroTransVecHalf<FloatType, USAGE, 2, 1>;
 template <typename FloatType,
           CoefUsageTrans USAGE>
 using MacroTransVecHalfSmall = MacroTransVecHalf<FloatType, USAGE, 1, 1>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransLinBig = MacroTransLinear<FloatType, USAGE, 8>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransLinMid = MacroTransLinear<FloatType, USAGE, 4>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransLinSmall = MacroTransLinear<FloatType, USAGE, 2>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+using MacroTransLinNano = MacroTransLinear<FloatType, USAGE, 1>;
 
 
 /*

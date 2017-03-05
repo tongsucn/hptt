@@ -14,7 +14,7 @@ PlanTrans<ParamType, ORDER>::PlanTrans(
 template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::get_graph(
-    TensorIdx heur_num, TensorIdx tune_num, GenNumType tune_timing) {
+    TensorIdx heur_num, TensorIdx tune_num, GenNumType tune_times) {
   // Compute heuristic number
   TensorIdx heur_loop_num, heur_para_num;
   if (heur_num >= 0)
@@ -34,7 +34,7 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::get_graph(
       tune_loop_num, tune_para_num);
 
   // Return tuned result
-  return this->tuning_(descriptors, tune_timing);
+  return this->tuning_(descriptors, tune_times);
 }
 
 
@@ -42,9 +42,11 @@ template <typename ParamType,
           TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::tuning_(
     const std::vector<CGraphTransDescriptor<ORDER>> &descriptors,
-    GenNumType tune_timing) {
+    GenNumType tune_times) {
   auto cand_num = static_cast<TensorIdx>(descriptors.size());
-  if (1 == cand_num)
+  if (0 == cand_num)
+    return nullptr;
+  else if (1 == cand_num)
     return new Graph(this->param_, descriptors[0]);
 
   // Create fake data parameter
@@ -62,7 +64,7 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::tuning_(
   fake_param->output_tensor.set_data(fake_data.org_out_data);
 
   // Create timer
-  TimerWrapper timer(tune_timing);
+  TimerWrapper timer(tune_times);
 
   // Create candidates
   std::vector<Graph *> candidates(cand_num, nullptr);

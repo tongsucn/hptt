@@ -6,6 +6,7 @@
 #include <immintrin.h>
 
 #include <type_traits>
+#include <algorithm>
 
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
@@ -13,7 +14,7 @@
 
 namespace hptc {
 
-#define REG_SIZE_BYTE_AVX   32
+#define REG_SIZE_BYTE_AVX 32
 
 
 template <typename FloatType,
@@ -22,7 +23,7 @@ struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, float>::value or
             std::is_same<FloatType, FloatComplex>::value) and
         (TYPE == KernelTypeTrans::KERNEL_FULL or
-            TYPE == KernelTypeTrans::KERNEL_FLIN)>> {
+            TYPE == KernelTypeTrans::KERNEL_LINE)>> {
   using type = __m256;
 };
 
@@ -32,7 +33,7 @@ struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, double>::value or
             std::is_same<FloatType, DoubleComplex>::value) and
         (TYPE == KernelTypeTrans::KERNEL_FULL or
-            TYPE == KernelTypeTrans::KERNEL_FLIN)>> {
+            TYPE == KernelTypeTrans::KERNEL_LINE)>> {
   using type = __m256d;
 };
 
@@ -41,8 +42,7 @@ template <typename FloatType,
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, float>::value or
             std::is_same<FloatType, FloatComplex>::value) and
-        (TYPE == KernelTypeTrans::KERNEL_HALF or
-            TYPE == KernelTypeTrans::KERNEL_HLIN)>> {
+        TYPE == KernelTypeTrans::KERNEL_HALF>> {
   using type = __m128;
 };
 
@@ -50,8 +50,7 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<std::is_same<FloatType, double>::value and
-        (TYPE == KernelTypeTrans::KERNEL_HALF or
-            TYPE == KernelTypeTrans::KERNEL_HLIN)>> {
+        TYPE == KernelTypeTrans::KERNEL_HALF>> {
   using type = __m128d;
 };
 
@@ -59,8 +58,7 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
-        (TYPE == KernelTypeTrans::KERNEL_HALF or
-            TYPE == KernelTypeTrans::KERNEL_HLIN)>> {
+            TYPE == KernelTypeTrans::KERNEL_HALF>> {
   using type = double;
 };
 
@@ -78,29 +76,27 @@ struct KernelTransAvxBase {
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-                KERNEL == KernelTypeTrans::KERNEL_FLIN> * = nullptr>
+                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
   INLINE DeducedRegType<float, KERNEL> reg_coef(float coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-                KERNEL == KernelTypeTrans::KERNEL_FLIN> * = nullptr>
+                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
   INLINE DeducedRegType<double, KERNEL> reg_coef(double coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
-            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_HALF or
-                KERNEL == KernelTypeTrans::KERNEL_HLIN> * = nullptr>
+            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_HALF> *
+                = nullptr>
   INLINE DeducedRegType<float, KERNEL> reg_coef(float coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<std::is_same<FloatType, double>::value and
-                (KERNEL == KernelTypeTrans::KERNEL_HALF or
-                KERNEL == KernelTypeTrans::KERNEL_HLIN)> * = nullptr>
+                KERNEL == KernelTypeTrans::KERNEL_HALF> * = nullptr>
   INLINE DeducedRegType<double, KERNEL> reg_coef(double coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
-                (KERNEL == KernelTypeTrans::KERNEL_HALF or
-                KERNEL == KernelTypeTrans::KERNEL_HLIN)> * = nullptr>
+                KERNEL == KernelTypeTrans::KERNEL_HALF> * = nullptr>
   INLINE DeducedRegType<DoubleComplex, KERNEL> reg_coef(double coef);
 
   RegType reg_alpha, reg_beta;
@@ -109,8 +105,7 @@ struct KernelTransAvxBase {
 
 template <typename FloatType,
           CoefUsageTrans USAGE,
-          KernelTypeTrans TYPE = KernelTypeTrans::KERNEL_FULL,
-          typename Enable = void>
+          KernelTypeTrans TYPE>
 struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
 };
 

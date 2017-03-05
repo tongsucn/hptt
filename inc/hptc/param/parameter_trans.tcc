@@ -68,16 +68,6 @@ TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE TensorOrder
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::get_leading() {
-  auto idx = ORDER - (MemLayout::COL_MAJOR == LAYOUT ? this->merged_order_ : 1);
-  return this->size_[idx];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
 void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
     const std::unordered_set<TensorOrder> &merge_set) {
   if (ORDER <= 2)
@@ -151,21 +141,21 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
     const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
     const std::array<TensorOrder, ORDER> &perm,
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : org_input_tensor(input_tensor),
-      org_output_tensor(output_tensor),
-      input_tensor(input_tensor),
-      output_tensor(output_tensor),
+    : input_tensor(input_tensor), output_tensor(output_tensor),
       alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
-      merged_order(ORDER),
+      merged_order(ORDER), begin_order_idx(0),
       kn_fb(alpha, beta), kn_fv(alpha, beta), kn_fh(alpha, beta),
       kn_fs(alpha, beta), kn_hv(alpha, beta), kn_hh(alpha, beta),
-      kn_hs(alpha, beta), kn_sc(alpha, beta) {
+      kn_hs(alpha, beta), kn_lb(alpha, beta), kn_lm(alpha, beta),
+      kn_ls(alpha, beta), kn_ln(alpha, beta), kn_mc(alpha, beta),
+      kn_sc(alpha, beta) {
   // Initialize perm
   std::copy(perm.begin(), perm.end(), this->perm);
 
   // Initialize access stride according to memory layout
-  if (MemLayout::COL_MAJOR == LAYOUT) {
+  constexpr auto is_col_major = MemLayout::COL_MAJOR == LAYOUT;
+  if (is_col_major) {
     for (TensorIdx idx = 0; idx < perm[0]; ++idx)
       this->input_stride *= input_tensor.get_outer_size()[idx];
     for (TensorIdx idx = 0; 0 != perm[idx]; ++idx)
@@ -180,6 +170,7 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
 
   // Merge index in tensor wrapper and Initialize merged permutation array
   this->merge_idx_(perm);
+  this->begin_order_idx = ORDER - this->merged_order;
 }
 
 
@@ -187,19 +178,32 @@ template <typename FloatType,
           TensorOrder ORDER,
           CoefUsageTrans USAGE,
           MemLayout LAYOUT>
-INLINE TensorIdx ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::perm_type() {
+INLINE bool ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::is_common_leading() {
   if (MemLayout::COL_MAJOR == LAYOUT) {
-    if (0 == this->perm[ORDER - this->merged_order])
-      return -1;
-    else
-      return 1;
+    if (0 == this->perm[this->begin_order_idx])
+        return true;
   }
-  else {
-    if (ORDER - 1 == this->perm[ORDER - 1])
-      return -1;
-    else
-      return 1;
-  }
+  else if (ORDER - 1 == this->perm[ORDER - 1] + this->begin_order_idx)
+      return true;
+  return false;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          CoefUsageTrans USAGE,
+          MemLayout LAYOUT>
+INLINE std::pair<TensorOrder, TensorOrder>
+ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::get_leading() {
+  std::pair<TensorOrder, TensorOrder> result;
+
+  constexpr auto is_col_major = MemLayout::COL_MAJOR == LAYOUT;
+
+  auto idx = is_col_major ? this->begin_order_idx : ORDER - 1;
+  result.first = this->input_tensor.get_size()[idx];
+  result.second = this->output_tensor.get_size()[idx];
+
+  return result;
 }
 
 
@@ -274,7 +278,7 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
     }
   }
   // Fill unused part of the permutation array
-  std::fill(this->perm, this->perm + ORDER - this->merged_order, 0);
+  std::fill(this->perm, this->perm + this->begin_order_idx, 0);
 
   // Execute merge
   this->input_tensor.merge_idx(input_perm_set);
