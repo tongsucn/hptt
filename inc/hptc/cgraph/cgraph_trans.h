@@ -16,9 +16,10 @@ namespace hptc {
 
 template <TensorOrder ORDER>
 struct CGraphTransDescriptor {
-  CGraphTransDescriptor(GenNumType thread_num);
+  CGraphTransDescriptor();
 
   LoopOrder<ORDER> loop_order;
+  std::vector<GenNumType> parallel_strategy;
   std::vector<std::array<LoopParam<ORDER>, 9>> description;
 };
 

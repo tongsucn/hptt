@@ -3,8 +3,9 @@
 #define HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 
 template <TensorOrder ORDER>
-CGraphTransDescriptor<ORDER>::CGraphTransDescriptor(GenNumType thread_num)
-    : description(thread_num) {
+CGraphTransDescriptor<ORDER>::CGraphTransDescriptor()
+    : parallel_strategy{ 1 },
+      description(1) {
 }
 
 

@@ -29,9 +29,12 @@ public:
 
   std::vector<CGraphTransDescriptor<ORDER>> get_optimal(TensorIdx heur_loop_num,
       TensorIdx heur_para_num, TensorIdx tune_loop_num,
-      TensorIdx tune_para_num);
+      TensorIdx tune_para_num) const;
 
 private:
+  using Loop_ = std::array<std::pair<TensorIdx, GenNumType>, ORDER>;
+  using Factor_ = std::vector<std::pair<GenNumType, GenNumType>>;
+
   void init_();
   void init_thread_num_();
   void init_vec_();
@@ -45,42 +48,38 @@ private:
   void init_loop_();
   void init_loop_evaluator_param_();
   void init_parallel_();
+  template <typename Cmp>
+  void init_parallel_loop_(Loop_ &loops, Factor_ &fact_map,
+      const TensorOrder input_ld_idx, const TensorOrder output_ld_idx,
+      Cmp cmp) const;
 
   std::vector<LoopOrder<ORDER>> heur_loop_explorer_(const TensorIdx heur_num,
-      const TensorIdx tune_num);
-  double heur_loop_evaluator_(const LoopOrder<ORDER> &target_loop_order);
-  void heur_parallel_explorer_(const TensorIdx heur_num,
-      const TensorIdx tune_num);
+      const TensorIdx tune_num) const;
+  double heur_loop_evaluator_(const LoopOrder<ORDER> &target_loop_order) const;
+
+  std::vector<std::vector<GenNumType>> heur_parallel_explorer_(
+      const TensorIdx heur_num, const TensorIdx tune_num) const;
+  double heur_parallel_evaluator_(
+      const std::vector<GenNumType> &target_para) const;
+
+  std::vector<CGraphTransDescriptor<ORDER>> gen_candidates_(
+      const std::vector<LoopOrder<ORDER>> &loop_orders,
+      const std::vector<std::vector<GenNumType>> &parallel_strategies) const;
+  void parallelize_(CGraphTransDescriptor<ORDER> &descriptor) const;
+
 
   std::shared_ptr<ParamType> param_;
   GenNumType threads_;
-  std::vector<GenNumType> strategy_;
-  CGraphTransDescriptor<ORDER> descriptor_;
 
-  // Parameters for loop order cost calculation
+  CGraphTransDescriptor<ORDER> descriptor_;
+  Factor_ th_fact_map_;
+
+  // Parameters for loop order heuristics
   double penalty_begin, penalty_step;
   double importance_begin, importance_scale;
   double input_penalty_factor, output_penalty_factor;
-};
 
-
-template <typename ParamType,
-          TensorOrder ORDER>
-class PlanTransParallelizer {
-public:
-  PlanTransParallelizer(const std::shared_ptr<ParamType> &param);
-
-  LoopOrder<ORDER> operator()(CGraphTransDescriptor<ORDER> &descriptor,
-      GenNumType threads = 0);
-
-private:
-  LoopOrder<ORDER> calc_depth_(const CGraphTransDescriptor<ORDER> &des,
-      std::vector<GenNumType> &strategy);
-  void parallelize_(CGraphTransDescriptor<ORDER> &des,
-      const LoopOrder<ORDER> &loop_order,
-      const std::vector<GenNumType> &strategy);
-
-  std::shared_ptr<ParamType> param_;
+  // Parameters for parallelization heuristics
 };
 
 
