@@ -17,12 +17,14 @@
 namespace hptc {
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
-class TensorMergedWrapper : public TensorWrapper<FloatType, ORDER, LAYOUT> {
+          TensorOrder ORDER>
+class TensorMergedWrapper
+    : public TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR> {
 public:
   TensorMergedWrapper() = delete;
-  TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, LAYOUT> &wrapper);
+
+  template <MemLayout ACT_MAJOR>
+  TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor);
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
@@ -53,9 +55,8 @@ struct ParamTrans {
 
 
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
-  constexpr static bool is_col_major = MemLayout::COL_MAJOR == LAYOUT;
 
-  TensorMergedWrapper<FloatType, ORDER, LAYOUT> input_tensor, output_tensor;
+  TensorMergedWrapper<FloatType, ORDER> input_tensor, output_tensor;
   DeducedFloatType<FloatType> alpha, beta;
 
   TensorOrder perm[ORDER];

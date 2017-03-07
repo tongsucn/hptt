@@ -169,9 +169,7 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_(
     const auto begin_order_idx = ORDER - this->param_->merged_order;
     loop.set_pass(begin_order_idx);
 
-    // Locate loop's positions per memory layout
-    auto vec_cont_loop_idx = this->param_->is_col_major ?
-        begin_order_idx : ORDER - 1;
+    auto vec_cont_loop_idx = begin_order_idx;
     auto vec_ncont_order_idx = this->param_->perm[vec_cont_loop_idx]
         + begin_order_idx;
 
@@ -248,21 +246,20 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_cl_(
     const TensorOrder input_leading, TensorOrder &cont_rest) {
   if (kn_len <= cont_rest) {
     const auto &begin_idx = this->param_->begin_order_idx;
-    const auto ld_idx = this->param_->is_col_major ? begin_idx : ORDER - 1;
     loop.set_pass(begin_idx);
 
     for (auto loop_idx = begin_idx; loop_idx < ORDER; ++loop_idx) {
       // Initialize vectorized loop
-      if (ld_idx != loop_idx) {
+      if (begin_idx != loop_idx) {
         loop.loop_begin[loop_idx] = 0;
         loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
         loop.loop_step[loop_idx] = 1;
       }
       else {
-        loop.loop_begin[ld_idx] = input_leading - cont_rest;
-        loop.loop_end[ld_idx] = (cont_rest / kn_len) * kn_len
-          + loop.loop_begin[ld_idx];
-        loop.loop_step[ld_idx] = kn_len;
+        loop.loop_begin[begin_idx] = input_leading - cont_rest;
+        loop.loop_end[begin_idx] = (cont_rest / kn_len) * kn_len
+          + loop.loop_begin[begin_idx];
+        loop.loop_step[begin_idx] = kn_len;
       }
     }
 
@@ -423,8 +420,7 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
       return a.first < b.first; };
 
   LoopOrder<ORDER> loop_order;
-  const auto ld_idx = this->param_->is_col_major ?
-      this->param_->begin_order_idx : ORDER - 1;
+  const auto ld_idx = this->param_->begin_order_idx;
   for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
     loop_order[order_idx] = order_idx;
   std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
@@ -475,16 +471,9 @@ double PlanTransOptimizer<ParamType, ORDER>::heur_loop_evaluator_(
   // Create loop penalty array
   // [..., 2 * penalty_step, 1 * penalty_step, 0 * penalty_step]
   std::vector<double> loop_penalty(merged_order, 0.0);
-  if (this->param_->is_col_major) {
-    loop_penalty.back() = this->penalty_begin;
-    for (TensorIdx loop_idx = merged_order - 2; loop_idx >= 0; --loop_idx)
-      loop_penalty[loop_idx] = loop_penalty[loop_idx + 1] + this->penalty_step;
-  }
-  else {
-    loop_penalty.front() = this->penalty_begin;
-    for (TensorIdx loop_idx = 1; loop_idx < merged_order; --loop_idx)
-      loop_penalty[loop_idx] = loop_penalty[loop_idx - 1] + this->penalty_step;
-  }
+  loop_penalty.back() = this->penalty_begin;
+  for (TensorIdx loop_idx = merged_order - 2; loop_idx >= 0; --loop_idx)
+    loop_penalty[loop_idx] = loop_penalty[loop_idx + 1] + this->penalty_step;
 
   // Create target loop order's index map
   // Key is a specific tensor order, values is its level in loop

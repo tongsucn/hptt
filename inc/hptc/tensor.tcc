@@ -105,6 +105,43 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
+template <MemLayout ACT_MAJOR>
+TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
+    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
+    : size_(wrapper.get_size()),
+      outer_size_(wrapper.get_outer_size()),
+      raw_data_(wrapper.get_data()) {
+  std::array<TensorIdx, ORDER> order_offset;
+  // Translate if input wrapper has different layout
+  if (LAYOUT != ACT_MAJOR) {
+    // Reverse size objects
+    TensorIdx left_idx = 0, right_idx = ORDER - 1;
+    while (left_idx < right_idx) {
+      std::swap(this->size_[left_idx], this->size_[right_idx]);
+      std::swap(this->outer_size_[left_idx], this->outer_size_[right_idx]);
+      ++left_idx, --right_idx;
+    }
+
+    // Reverse offsets
+    std::reverse_copy(wrapper.get_offset(), wrapper.get_offset() + ORDER,
+        order_offset.begin());
+  }
+  else
+    std::copy(wrapper.get_offset(), wrapper.get_offset() + ORDER,
+        order_offset.begin());
+
+  // this->strides_ and this->offsets_ are initialized here
+  if (this->size_ == this->outer_size_)
+    this->init_offset_();
+  else
+    this->init_offset_(order_offset);
+  this->init_offset_();
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
 template <typename... Idx>
 INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator()(
     Idx... indices) {
@@ -245,6 +282,15 @@ template <typename FloatType,
 INLINE void
 TensorWrapper<FloatType, ORDER, LAYOUT>::set_data(FloatType *new_data) {
   this->raw_data_ = new_data;
+}
+
+
+template <typename FloatType,
+          TensorOrder ORDER,
+          MemLayout LAYOUT>
+INLINE const TensorIdx *TensorWrapper<FloatType, ORDER, LAYOUT>::get_offset(
+    ) const {
+  return this->offsets_;
 }
 
 

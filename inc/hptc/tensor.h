@@ -55,6 +55,9 @@ public:
       const TensorSize<ORDER> &outer_size_obj,
       const std::array<TensorIdx, ORDER> &order_offset, FloatType *raw_data);
 
+  template <MemLayout ACT_MAJOR>
+  TensorWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
+
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);
 
@@ -76,8 +79,7 @@ public:
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
   INLINE void set_data(FloatType *new_data);
-
-  constexpr static TensorOrder TENSOR_ORDER = ORDER;
+  INLINE const TensorIdx *get_offset() const;
 
 protected:
   // Internal function member

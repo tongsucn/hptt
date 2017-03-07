@@ -6,19 +6,18 @@
  * Implementation for class TensorMergedWrapper
  */
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::TensorMergedWrapper(
-    const TensorWrapper<FloatType, ORDER, LAYOUT> &wrapper)
-    : TensorWrapper<FloatType, ORDER, LAYOUT>(wrapper),
+          TensorOrder ORDER>
+template <MemLayout ACT_MAJOR>
+TensorMergedWrapper<FloatType, ORDER>::TensorMergedWrapper(
+    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor)
+    : TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR>(tensor),
       merged_order_(ORDER) {
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorOrder ORDER>
+INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
@@ -28,10 +27,8 @@ INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE const FloatType &
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorOrder ORDER>
+INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
@@ -41,9 +38,8 @@ TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorOrder ORDER>
+INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     TensorIdx **indices) {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
@@ -53,10 +49,8 @@ INLINE FloatType &TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE const FloatType &
-TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorOrder ORDER>
+INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx **indices) const {
   TensorIdx abs_offset = 0;
   for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
@@ -66,9 +60,8 @@ TensorMergedWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
+          TensorOrder ORDER>
+void TensorMergedWrapper<FloatType, ORDER>::merge_idx(
     const std::unordered_set<TensorOrder> &merge_set) {
   if (ORDER <= 2)
     return;
@@ -76,48 +69,24 @@ void TensorMergedWrapper<FloatType, ORDER, LAYOUT>::merge_idx(
   this->merged_order_ = static_cast<TensorOrder>(merge_set.size());
   const TensorIdx start_idx = ORDER - this->merged_order_;
 
-  if (MemLayout::COL_MAJOR == LAYOUT) {
-    // Merge size, outer size and offsets
-    for (TensorIdx idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
-      if (1 == merge_set.count(idx)) {
-        --curr_idx;
-        this->size_[curr_idx] = this->size_[idx];
-        this->outer_size_[curr_idx] = this->outer_size_[idx];
-        this->offsets_[curr_idx] = this->offsets_[idx];
-      }
-      else {
-        this->size_[curr_idx] *= this->size_[idx];
-        this->outer_size_[curr_idx] *= this->outer_size_[idx];
-      }
+  // Merge size, outer size and offsets
+  for (TensorIdx idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
+    if (1 == merge_set.count(idx)) {
+      --curr_idx;
+      this->size_[curr_idx] = this->size_[idx];
+      this->outer_size_[curr_idx] = this->outer_size_[idx];
+      this->offsets_[curr_idx] = this->offsets_[idx];
     }
-
-    // Merge strides
-    this->strides_[start_idx] = 1;
-    for (TensorIdx idx = start_idx; idx < ORDER - 1; ++idx)
-      this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
-  }
-  else {
-    // Merge size, outer size and offsets
-    TensorIdx size_acc = 1, outer_size_acc = 1;
-    for (TensorIdx idx = ORDER - 1, curr_idx = ORDER - 1; idx >= 0; --idx) {
-      if (1 == merge_set.count(idx)) {
-        this->size_[curr_idx] = this->size_[idx] * size_acc;
-        this->outer_size_[curr_idx] = this->outer_size_[idx] * outer_size_acc;
-        this->offsets_[curr_idx] = this->offsets_[idx];
-        size_acc = outer_size_acc = 1;
-        --curr_idx;
-      }
-      else {
-        size_acc *= this->size_[idx];
-        outer_size_acc *= this->outer_size_[idx];
-      }
+    else {
+      this->size_[curr_idx] *= this->size_[idx];
+      this->outer_size_[curr_idx] *= this->outer_size_[idx];
     }
-
-    // Merge strides
-    this->strides_[ORDER - 1] = 1;
-    for (TensorIdx idx = ORDER - 1; idx > start_idx; --idx)
-      this->strides_[idx - 1] = this->outer_size_[idx] * this->strides_[idx];
   }
+
+  // Merge strides
+  this->strides_[start_idx] = 1;
+  for (TensorIdx idx = start_idx; idx < ORDER - 1; ++idx)
+    this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
 
   // Fill the unused part
   for (TensorIdx idx = 0; idx < start_idx; ++idx) {
@@ -150,23 +119,16 @@ ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::ParamTrans(
       kn_hs(alpha, beta), kn_lb(alpha, beta), kn_lm(alpha, beta),
       kn_ls(alpha, beta), kn_ln(alpha, beta), kn_mc(alpha, beta),
       kn_sc(alpha, beta) {
-  // Initialize perm
+  // Initialize permutation array, do not need to transform its format when
+  // tensor layout is not column major
   std::copy(perm.begin(), perm.end(), this->perm);
 
-  // Initialize access stride according to memory layout
-  constexpr auto is_col_major = MemLayout::COL_MAJOR == LAYOUT;
-  if (is_col_major) {
-    for (TensorIdx idx = 0; idx < perm[0]; ++idx)
-      this->input_stride *= input_tensor.get_outer_size()[idx];
-    for (TensorIdx idx = 0; 0 != perm[idx]; ++idx)
-      this->output_stride *= output_tensor.get_outer_size()[idx];
-  }
-  else {
-    for (TensorIdx idx = ORDER - 1; idx > perm[ORDER - 1]; --idx)
-      this->input_stride *= input_tensor.get_outer_size()[idx];
-    for (TensorIdx idx = ORDER - 1; ORDER - 1 != perm[idx]; --idx)
-      this->output_stride *= output_tensor.get_outer_size()[idx];
-  }
+
+  // Initialize access strides
+  for (TensorIdx idx = 0; idx < perm[0]; ++idx)
+    this->input_stride *= input_tensor.get_outer_size()[idx];
+  for (TensorIdx idx = 0; 0 != perm[idx]; ++idx)
+    this->output_stride *= output_tensor.get_outer_size()[idx];
 
   // Merge index in tensor wrapper and Initialize merged permutation array
   this->merge_idx_(perm);
@@ -179,12 +141,8 @@ template <typename FloatType,
           CoefUsageTrans USAGE,
           MemLayout LAYOUT>
 INLINE bool ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::is_common_leading() {
-  if (MemLayout::COL_MAJOR == LAYOUT) {
-    if (0 == this->perm[this->begin_order_idx])
-        return true;
-  }
-  else if (ORDER - 1 == this->perm[ORDER - 1] + this->begin_order_idx)
-      return true;
+  if (0 == this->perm[this->begin_order_idx])
+    return true;
   return false;
 }
 
@@ -197,11 +155,8 @@ INLINE std::pair<TensorOrder, TensorOrder>
 ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::get_leading() {
   std::pair<TensorOrder, TensorOrder> result;
 
-  constexpr auto is_col_major = MemLayout::COL_MAJOR == LAYOUT;
-
-  auto idx = is_col_major ? this->begin_order_idx : ORDER - 1;
-  result.first = this->input_tensor.get_size()[idx];
-  result.second = this->output_tensor.get_size()[idx];
+  result.first = this->input_tensor.get_size()[this->begin_order_idx];
+  result.second = this->output_tensor.get_size()[this->begin_order_idx];
 
   return result;
 }
@@ -216,42 +171,26 @@ void ParamTrans<FloatType, ORDER, USAGE, LAYOUT>::merge_idx_(
   if (ORDER <= 1)
     return;
 
-  auto input_size = this->input_tensor.get_size();
-  auto input_outer_size = this->input_tensor.get_outer_size();
-  auto output_size = this->output_tensor.get_size();
-  auto output_outer_size = this->output_tensor.get_outer_size();
+  const auto &input_size = this->input_tensor.get_size();
+  const auto &input_outer_size = this->input_tensor.get_outer_size();
+  const auto &output_size = this->output_tensor.get_size();
+  const auto &output_outer_size = this->output_tensor.get_outer_size();
   std::unordered_set<TensorOrder> input_perm_set, output_perm_set;
 
-  if (MemLayout::COL_MAJOR == LAYOUT) {
-    // If column major, then merging will begin from left
-    // Create permutation set
-    for (TensorOrder idx = 1; idx < ORDER; ++idx) {
-      // If current order ID does not equal to previous order ID plus one, or
-      // the previous order size does not equal to the outer size, then push
-      // previous ID into set.
-      if (perm[idx] != perm[idx - 1] + 1 or
-          input_size[perm[idx - 1]] != input_outer_size[perm[idx - 1]] or
-          output_size[idx - 1] != output_outer_size[idx - 1]) {
-        input_perm_set.insert(perm[idx - 1]);
-        output_perm_set.insert(idx - 1);
-      }
+  // Create permutation set
+  for (TensorOrder idx = 1; idx < ORDER; ++idx) {
+    // If current order ID does not equal to previous order ID plus one, or
+    // the previous order size does not equal to the outer size, then push
+    // previous ID into set.
+    if (perm[idx] != perm[idx - 1] + 1 or
+        input_size[perm[idx - 1]] != input_outer_size[perm[idx - 1]] or
+        output_size[idx - 1] != output_outer_size[idx - 1]) {
+      input_perm_set.insert(perm[idx - 1]);
+      output_perm_set.insert(idx - 1);
     }
-    input_perm_set.insert(perm[ORDER - 1]);
-    output_perm_set.insert(ORDER - 1);
   }
-  else {
-    // If row major, then merging will begin from right
-    for (TensorIdx idx = ORDER - 2; idx >= 0; --idx) {
-      if (perm[idx] + 1 != perm[idx + 1] or
-          input_size[perm[idx + 1]] != input_outer_size[perm[idx + 1]] or
-          output_size[idx + 1] != output_outer_size[idx + 1]) {
-        input_perm_set.insert(perm[idx + 1]);
-        output_perm_set.insert(idx + 1);
-      }
-    }
-    input_perm_set.insert(perm[0]);
-    output_perm_set.insert(0);
-  }
+  input_perm_set.insert(perm[ORDER - 1]);
+  output_perm_set.insert(ORDER - 1);
 
   // Set merged order
   this->merged_order = static_cast<TensorOrder>(input_perm_set.size());
