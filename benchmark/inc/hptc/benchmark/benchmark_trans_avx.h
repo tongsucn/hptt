@@ -10,7 +10,6 @@
 #include <hptc/benchmark/benchmark_trans.h>
 
 #include "trans/avx/benchmark_par_beta.h"
-#include "trans/avx/benchmark_nopar_beta.h"
 
 
 namespace hptc {
