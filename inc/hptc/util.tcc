@@ -2,6 +2,9 @@
 #ifndef HPTC_UTIL_TCC_
 #define HPTC_UTIL_TCC_
 
+/*
+ * Implementation for struct LoopParam
+ */
 template <TensorOrder ORDER>
 LoopParam<ORDER>::LoopParam() {
   std::fill(this->loop_begin, this->loop_begin + ORDER, 0);
@@ -32,6 +35,9 @@ INLINE bool LoopParam<ORDER>::is_disabled() {
 }
 
 
+/*
+ * Implementation for class DataWrapper
+ */
 template <typename FloatType>
 DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
     bool randomize)
@@ -75,6 +81,9 @@ DataWrapper<FloatType>::~DataWrapper() {
 }
 
 
+/*
+ * Implementation for class TimerWrapper
+ */
 template <typename Callable,
           typename... Args>
 INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {

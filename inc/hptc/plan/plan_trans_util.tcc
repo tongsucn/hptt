@@ -433,7 +433,7 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
   do {
     // Skip stride-1 leading loop in common leading case
     if (this->param_->is_common_leading() and ld_idx == loop_order[0]) {
-      std::next_permutation(
+      has_next = std::next_permutation(
           loop_order.begin() + this->param_->begin_order_idx, loop_order.end());
       continue;
     }
@@ -441,11 +441,12 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
     auto new_cost = this->heur_loop_evaluator_(loop_order);
     if (tune_num < 0 or tune_num > best_heap.size())
       best_heap.push(OrderDes(new_cost, loop_order));
-    else
-      if (best_heap.top().first > new_cost) {
+    else if (best_heap.top().first > new_cost) {
         best_heap.pop();
         best_heap.push(OrderDes(new_cost, loop_order));
-      }
+    }
+    has_next = std::next_permutation(
+        loop_order.begin() + this->param_->begin_order_idx, loop_order.end());
   } while (has_next and (times < heur_num or heur_num < 0));
 
   // Create result
@@ -574,7 +575,8 @@ void PlanTransOptimizer<ParamType, ORDER>::parallelize_(
 
       // Create vector to store steps for each thread at current loop level
       const auto curr_para = strategy[loop_idx];
-      std::vector<TensorIdx> split_steps(curr_para, steps / curr_para);
+      std::vector<TensorIdx> split_steps(curr_para,
+          curr_para <= steps ? steps / curr_para : 0);
       std::for_each(split_steps.end() - steps % curr_para, split_steps.end(),
           [] (auto &num) { ++num; });
 

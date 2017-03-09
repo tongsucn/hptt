@@ -176,30 +176,6 @@ INLINE const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    TensorIdx **indices) {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = 0; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-INLINE const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
-    const TensorIdx **indices) const {
-  TensorIdx abs_offset = 0;
-  for (TensorIdx idx = 0; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
-  return this->raw_data_[abs_offset];
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
 template <typename... Ranges>
 TensorWrapper<FloatType, ORDER, LAYOUT>
 TensorWrapper<FloatType, ORDER, LAYOUT>::slice(TRI range, Ranges... rest) {
@@ -212,15 +188,6 @@ template <typename FloatType,
 TensorWrapper<FloatType, ORDER, LAYOUT>
 TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
     const std::array<TRI, ORDER> &ranges) {
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
-    const TRI *ranges) {
 }
 
 

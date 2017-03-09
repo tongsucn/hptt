@@ -63,14 +63,11 @@ public:
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
-  INLINE FloatType &operator[](TensorIdx **indices);
-  INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
   template <typename... Ranges>
   TensorWrapper<FloatType, ORDER, LAYOUT> slice(TRI range, Ranges... rest);
   TensorWrapper<FloatType, ORDER, LAYOUT> slice(
       const std::array<TRI, ORDER> &ranges);
-  TensorWrapper<FloatType, ORDER, LAYOUT> slice(const TRI *ranges);
 
   INLINE TensorSize<ORDER> &get_size();
   INLINE const TensorSize<ORDER> &get_size() const;
