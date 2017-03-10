@@ -40,7 +40,7 @@ protected:
             TensorOrder ORDER>
   friend class PlanTrans;
 
-  using For_ = OpForTrans<ParamType, ORDER>;
+  using For_ = OpForTrans<ORDER>;
 
   CGraphTrans(const std::shared_ptr<ParamType> &param,
       const CGraphTransDescriptor<ORDER> &descriptor);

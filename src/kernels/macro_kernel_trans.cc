@@ -158,7 +158,7 @@ void MacroTransScalar<FloatType, USAGE>::operator()(
 
 
 /*
- * Explicit instantiation for class MacroTransVec
+ * Explicit template instantiation for class MacroTransVec
  */
 template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 4>;
@@ -517,7 +517,7 @@ template class MacroTransVec<
 
 
 /*
- * Explicit instantiation for class MacroTransMemcpy
+ * Explicit template instantiation for class MacroTransMemcpy
  */
 template class MacroTransMemcpy<float>;
 template class MacroTransMemcpy<double>;
@@ -526,7 +526,7 @@ template class MacroTransMemcpy<DoubleComplex>;
 
 
 /*
- * Explicit instantiation for class MacroTransScalar
+ * Explicit template instantiation for class MacroTransScalar
  */
 template class MacroTransScalar<float, CoefUsageTrans::USE_NONE>;
 template class MacroTransScalar<float, CoefUsageTrans::USE_ALPHA>;

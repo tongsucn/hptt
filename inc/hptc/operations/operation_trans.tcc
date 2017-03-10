@@ -3,16 +3,16 @@
 #define HPTC_OPERATIONS_OPERATION_TRANS_TCC_
 
 /*
- * Specialization for class OpForTrans
+ * Specialization for class OpForTrans' invalid cases
  */
-template <typename ParamType>
-class OpForTrans<ParamType, 0> {
+template <>
+class OpForTrans<0> {
   OpForTrans() = delete;
 };
 
 
-template <typename ParamType>
-class OpForTrans<ParamType, 1> {
+template <>
+class OpForTrans<1> {
   OpForTrans() = delete;
 };
 
@@ -20,58 +20,51 @@ class OpForTrans<ParamType, 1> {
 /*
  * Implementation for class OpForTrans
  */
-template <typename ParamType,
-          TensorOrder ORDER>
-OpForTrans<ParamType, ORDER>::OpForTrans()
-    : next(nullptr),
-      param_(nullptr) {
+template <TensorOrder ORDER>
+OpForTrans<ORDER>::OpForTrans()
+    : next(nullptr) {
   this->init_disable_();
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-OpForTrans<ParamType, ORDER>::OpForTrans(
-    const std::shared_ptr<ParamType> &param,
-    const LoopOrderTrans<ORDER> &loop_order, const LoopParamTrans<ORDER> &loops)
-    : next(nullptr),
-      param_(param) {
-  this->init(param, loop_order, loops);
+template <TensorOrder ORDER>
+OpForTrans<ORDER>::OpForTrans(const LoopOrderTrans<ORDER> &loop_order,
+    const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
+    const TensorOrder *perm)
+    : next(nullptr) {
+  this->init(loop_order, loops, begin_order_idx, perm);
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-void OpForTrans<ParamType, ORDER>::init(
-    const std::shared_ptr<ParamType> &param,
-    const LoopOrderTrans<ORDER> &loop_order,
-    const LoopParamTrans<ORDER> &loops) {
-  this->param_ = param;
-
+template <TensorOrder ORDER>
+void OpForTrans<ORDER>::init(const LoopOrderTrans<ORDER> &loop_order,
+    const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
+    const TensorOrder *perm) {
   // Initialize loops
   this->init_loops_(loop_order, loops);
 
   // Initialize permutation array
-  for (TensorOrder idx = 0; idx < this->param_->begin_order_idx; ++idx)
+  for (TensorOrder idx = 0; idx < begin_order_idx; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
 
-  for (TensorOrder idx = this->param_->begin_order_idx; idx < ORDER; ++idx)
-    this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
-        - this->param_->merged_order];
+  for (auto idx = begin_order_idx; idx < ORDER; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[perm[idx] + begin_order_idx];
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-template <typename MacroType>
-INLINE void OpForTrans<ParamType, ORDER>::operator()(MacroType &macro_kernel) {
-  this->unroller_(GenCounter<ORDER>(), macro_kernel);
+template <TensorOrder ORDER>
+template <typename MacroType,
+          typename TensorType>
+INLINE void OpForTrans<ORDER>::operator()(MacroType &macro_kernel,
+    const TensorType &input_tensor, TensorType &output_tensor,
+    const TensorIdx input_stride, const TensorIdx output_stride) {
+  this->unroller_(GenCounter<ORDER>(), macro_kernel, input_tensor,
+      output_tensor, input_stride, output_stride);
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-void OpForTrans<ParamType, ORDER>::init_disable_() {
+template <TensorOrder ORDER>
+void OpForTrans<ORDER>::init_disable_() {
   std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
   std::fill(this->loop_perm_idx_, this->loop_perm_idx_ + ORDER, nullptr);
   std::fill(this->loop_begin_, this->loop_begin_ + ORDER, 0);
@@ -83,10 +76,8 @@ void OpForTrans<ParamType, ORDER>::init_disable_() {
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-void OpForTrans<ParamType, ORDER>::init_loops_(
-    const LoopOrderTrans<ORDER> &loop_order,
+template <TensorOrder ORDER>
+void OpForTrans<ORDER>::init_loops_(const LoopOrderTrans<ORDER> &loop_order,
     const LoopParamTrans<ORDER> &loop) {
   // Initialize loop order
   std::copy(loop_order.begin(), loop_order.end(), this->loop_order_);
@@ -98,28 +89,43 @@ void OpForTrans<ParamType, ORDER>::init_loops_(
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
+template <TensorOrder ORDER>
 template <typename MacroType,
+          typename TensorType,
           GenNumType UNROLL_NUM>
-INLINE void OpForTrans<ParamType, ORDER>::unroller_(GenCounter<UNROLL_NUM>,
-    MacroType &macro_kernel) {
+INLINE void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
+    MacroType &macro_kernel, const TensorType &input_tensor,
+    TensorType &output_tensor, const TensorIdx input_stride,
+    const TensorIdx output_stride) {
   auto for_idx = this->loop_order_[ORDER - UNROLL_NUM];
   for (this->loop_idx_[for_idx] = this->loop_begin_[for_idx];
       this->loop_idx_[for_idx] < this->loop_end_[for_idx];
       this->loop_idx_[for_idx] += this->loop_step_[for_idx])
-    this->unroller_(GenCounter<UNROLL_NUM - 1>(), macro_kernel);
+    this->unroller_(GenCounter<UNROLL_NUM - 1>(), macro_kernel, input_tensor,
+        output_tensor, input_stride, output_stride);
 }
 
 
-template <typename ParamType,
-          TensorOrder ORDER>
-template <typename MacroType>
-INLINE void OpForTrans<ParamType, ORDER>::unroller_(GenCounter<0>,
-    MacroType &macro_kernel) {
-  macro_kernel(&this->param_->input_tensor[this->loop_idx_],
-      &this->param_->output_tensor[this->loop_perm_idx_],
-      this->param_->input_stride, this->param_->output_stride);
+template <TensorOrder ORDER>
+template <typename MacroType,
+          typename TensorType>
+INLINE void OpForTrans<ORDER>::unroller_(GenCounter<0>, MacroType &macro_kernel,
+    const TensorType &input_tensor, TensorType &output_tensor,
+    const TensorIdx input_stride, const TensorIdx output_stride) {
+  macro_kernel(&input_tensor[this->loop_idx_],
+      &output_tensor[this->loop_perm_idx_], input_stride, output_stride);
 }
+
+
+/*
+ * Avoid template instantiation for class OpForTrans
+ */
+extern template class OpForTrans<2>;
+extern template class OpForTrans<3>;
+extern template class OpForTrans<4>;
+extern template class OpForTrans<5>;
+extern template class OpForTrans<6>;
+extern template class OpForTrans<7>;
+extern template class OpForTrans<8>;
 
 #endif // HPTC_OPERATIONS_OPERATION_TRANS_TCC_

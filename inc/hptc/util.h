@@ -2,13 +2,10 @@
 #ifndef HPTC_UTIL_H_
 #define HPTC_UTIL_H_
 
-#include <array>
-#include <chrono>
+#include <vector>
 #include <random>
-#include <numeric>
-#include <functional>
+#include <chrono>
 #include <utility>
-#include <algorithm>
 
 #include <hptc/types.h>
 
@@ -51,7 +48,7 @@ protected:
 
 class TimerWrapper {
 public:
-  TimerWrapper(GenNumType times) : times_(times) {}
+  TimerWrapper(GenNumType times);
 
   template <typename Callable,
             typename... Args>
