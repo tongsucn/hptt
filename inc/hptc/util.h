@@ -26,24 +26,6 @@ struct DualCounter {
 };
 
 
-template <TensorOrder ORDER>
-using LoopOrder = std::array<TensorOrder, ORDER>;
-
-
-template <TensorOrder ORDER>
-struct LoopParam {
-  LoopParam();
-
-  INLINE void set_pass(TensorOrder order);
-  INLINE void set_disable();
-  INLINE bool is_disabled();
-
-  TensorIdx loop_begin[ORDER];
-  TensorIdx loop_end[ORDER];
-  TensorIdx loop_step[ORDER];
-};
-
-
 template <typename FloatType>
 class DataWrapper {
 public:

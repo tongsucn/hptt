@@ -7,7 +7,6 @@
 #include <memory>
 
 #include <hptc/types.h>
-#include <hptc/util.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/operations/operation_trans.h>
 
@@ -18,9 +17,9 @@ template <TensorOrder ORDER>
 struct CGraphTransDescriptor {
   CGraphTransDescriptor();
 
-  LoopOrder<ORDER> loop_order;
-  std::vector<GenNumType> parallel_strategy;
-  std::vector<std::array<LoopParam<ORDER>, 9>> description;
+  LoopOrderTrans<ORDER> loop_order;
+  ParaStrategyTrans<ORDER> parallel_strategy;
+  std::vector<LoopGroupTrans<ORDER>> description;
 };
 
 
