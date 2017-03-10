@@ -56,7 +56,7 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::tuning_(
     size_vec[size_idx] = size_obj[size_idx];
 
   // Creating fake data and fake transpose parameter
-  DataWrapper<typename ParamType::DataType> fake_data(size_vec,
+  DataWrapper<typename ParamType::FloatType> fake_data(size_vec,
       this->param_->input_tensor.get_data(),
       this->param_->output_tensor.get_data());
   auto fake_param = std::make_shared<ParamType>(*this->param_);

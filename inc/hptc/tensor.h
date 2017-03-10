@@ -48,6 +48,9 @@ template <typename FloatType,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
+  using FLOAT = FloatType;
+  constexpr static auto TENSOR_ORDER = ORDER;
+
   TensorWrapper();
 
   TensorWrapper(const TensorSize<ORDER> &size_obj, FloatType *raw_data);
@@ -56,7 +59,7 @@ public:
       const std::array<TensorIdx, ORDER> &order_offset, FloatType *raw_data);
 
   template <MemLayout ACT_MAJOR>
-  TensorWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
+  TensorWrapper(TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
 
   template <typename... Idx>
   INLINE FloatType &operator()(Idx... indices);

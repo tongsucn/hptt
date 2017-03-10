@@ -107,7 +107,7 @@ template <typename FloatType,
           MemLayout LAYOUT>
 template <MemLayout ACT_MAJOR>
 TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
-    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
+    TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
     : size_(wrapper.get_size()),
       outer_size_(wrapper.get_outer_size()),
       raw_data_(wrapper.get_data()) {
@@ -188,6 +188,7 @@ template <typename FloatType,
 TensorWrapper<FloatType, ORDER, LAYOUT>
 TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
     const std::array<TRI, ORDER> &ranges) {
+  return *this;
 }
 
 

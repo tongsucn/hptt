@@ -24,7 +24,7 @@ public:
   TensorMergedWrapper() = delete;
 
   template <MemLayout ACT_MAJOR>
-  TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor);
+  TensorMergedWrapper(TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor);
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
@@ -38,17 +38,15 @@ private:
 };
 
 
-template <typename FloatType,
-          TensorOrder ORDER,
-          CoefUsageTrans USAGE,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
+template <typename TensorType,
+          CoefUsageTrans USAGE>
 struct ParamTrans {
-  using DataType = FloatType;
+  using FloatType = typename TensorType::FLOAT;
+  using Deduced = DeducedFloatType<FloatType>;
+  constexpr static auto ORDER = TensorType::TENSOR_ORDER;
 
-  ParamTrans(const TensorWrapper<FloatType, ORDER, LAYOUT> &input_tensor,
-      const TensorWrapper<FloatType, ORDER, LAYOUT> &output_tensor,
-      const std::array<TensorOrder, ORDER> &perm,
-      DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta);
+  ParamTrans(TensorType &input_tensor, TensorType &output_tensor,
+      const std::array<TensorOrder, ORDER> &perm, Deduced alpha, Deduced beta);
 
   INLINE bool is_common_leading();
   INLINE std::pair<TensorOrder, TensorOrder> get_leading();
@@ -57,7 +55,7 @@ struct ParamTrans {
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   TensorMergedWrapper<FloatType, ORDER> input_tensor, output_tensor;
-  DeducedFloatType<FloatType> alpha, beta;
+  Deduced alpha, beta;
 
   TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
