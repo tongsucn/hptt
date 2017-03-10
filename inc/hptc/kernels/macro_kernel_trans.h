@@ -12,33 +12,43 @@
 
 namespace hptc {
 
-template <typename FloatType,
-          typename KernelFunc>
-class MacroTransVecData {
+template <typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+class MacroTransVec {
 public:
-  MacroTransVecData(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta);
+  using FloatType = typename KernelFunc::FLOAT;
+  using Deduced = DeducedFloatType<FloatType>;
 
-protected:
+  MacroTransVec(Deduced alpha, Deduced beta);
+
+  GenNumType get_cont_len();
+  GenNumType get_ncont_len();
+
+  void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride);
+
+private:
   template <GenNumType CONT,
             GenNumType NCONT>
-  INLINE void ncont_tiler_(DualCounter<CONT, NCONT>,
+  void ncont_tiler_(DualCounter<CONT, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType CONT>
-  INLINE void ncont_tiler_(DualCounter<CONT, 0>,
+  void ncont_tiler_(DualCounter<CONT, 0>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType CONT,
             GenNumType NCONT>
-  INLINE void cont_tiler_(DualCounter<CONT, NCONT>,
+  void cont_tiler_(DualCounter<CONT, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
   template <GenNumType NCONT>
-  INLINE void cont_tiler_(DualCounter<0, NCONT>,
+  void cont_tiler_(DualCounter<0, NCONT>,
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride);
 
@@ -47,31 +57,12 @@ protected:
 };
 
 
-template <typename FloatType,
-          typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-class MacroTransVec : public MacroTransVecData<FloatType, KernelFunc> {
-public:
-  MacroTransVec(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta);
-
-  INLINE GenNumType get_cont_len();
-  INLINE GenNumType get_ncont_len();
-
-  INLINE void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
-};
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
+template <typename FloatType>
 class MacroTransMemcpy {
 public:
   MacroTransMemcpy(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
-  INLINE void operator()(const FloatType * RESTRICT input_data,
+  void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
       const TensorIdx output_stride);
 
@@ -86,7 +77,7 @@ class MacroTransScalar {
 public:
   MacroTransScalar(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
-  INLINE void operator()(const FloatType * RESTRICT input_data,
+  void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
       const TensorIdx output_stride);
 
@@ -102,23 +93,23 @@ template <typename FloatType,
           CoefUsageTrans USAGE,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-using MacroTransVecFull = MacroTransVec<FloatType,
-      KernelTransFull<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+using MacroTransVecFull = MacroTransVec<KernelTransFull<FloatType, USAGE>,
+      CONT_LEN, NCONT_LEN>;
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-using MacroTransVecHalf = MacroTransVec<FloatType,
-      KernelTransHalf<FloatType, USAGE>, CONT_LEN, NCONT_LEN>;
+using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
+      CONT_LEN, NCONT_LEN>;
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE,
           GenNumType LEN>
-using MacroTransLinear = MacroTransVec<FloatType,
-      KernelTransLinear<FloatType, USAGE>, LEN, 1>;
+using MacroTransLinear = MacroTransVec<KernelTransLinear<FloatType, USAGE>,
+      LEN, 1>;
 
 
 template <typename FloatType,
@@ -177,7 +168,7 @@ using MacroTransLinNano = MacroTransLinear<FloatType, USAGE, 1>;
 
 
 /*
- * Import implementation
+ * Import explicit template instantiation declaration
  */
 #include "macro_kernel_trans.tcc"
 

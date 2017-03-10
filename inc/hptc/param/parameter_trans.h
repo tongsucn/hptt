@@ -81,7 +81,7 @@ struct ParamTrans {
   MacroTransLinNano<FloatType, USAGE>               kn_ln;
 
   // Special kernels
-  MacroTransMemcpy<FloatType, USAGE>                kn_mc;
+  MacroTransMemcpy<FloatType>                       kn_mc;
   MacroTransScalar<FloatType, USAGE>                kn_sc;
 
 private:

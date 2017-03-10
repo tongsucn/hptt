@@ -8,6 +8,7 @@
 
 #include <hptc/types.h>
 #include <hptc/util.h>
+#include <hptc/config/config_trans.h>
 #include <hptc/param/parameter_trans.h>
 
 
@@ -19,13 +20,15 @@ class OpForTrans {
 public:
   OpForTrans();
   OpForTrans(const std::shared_ptr<ParamType> &param,
-      const LoopOrder<ORDER> &loop_order, const LoopParam<ORDER> &loops);
+      const LoopOrderTrans<ORDER> &loop_order,
+      const LoopParamTrans<ORDER> &loops);
 
   OpForTrans(const OpForTrans &loop_data) = delete;
   OpForTrans<ParamType, ORDER> &operator=(const OpForTrans &loop_data) = delete;
 
   INLINE void init(const std::shared_ptr<ParamType> &param,
-      const LoopOrder<ORDER> &loop_order, const LoopParam<ORDER> &loops);
+      const LoopOrderTrans<ORDER> &loop_order,
+      const LoopParamTrans<ORDER> &loops);
 
   template <typename MacroType>
   INLINE void operator()(MacroType &macro_kernel);
@@ -34,9 +37,8 @@ public:
 
 private:
   void init_disable_();
-  void init_loops_(const LoopOrder<ORDER> &loop_order,
-      const LoopParam<ORDER> &loops);
-  void init_perm_idx_();
+  void init_loops_(const LoopOrderTrans<ORDER> &loop_order,
+      const LoopParamTrans<ORDER> &loops);
 
   template <typename MacroType,
             GenNumType UNROLL_NUM>

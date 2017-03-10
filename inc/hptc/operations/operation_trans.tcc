@@ -32,8 +32,8 @@ OpForTrans<ParamType, ORDER>::OpForTrans()
 template <typename ParamType,
           TensorOrder ORDER>
 OpForTrans<ParamType, ORDER>::OpForTrans(
-    const std::shared_ptr<ParamType> &param, const LoopOrder<ORDER> &loop_order,
-    const LoopParam<ORDER> &loops)
+    const std::shared_ptr<ParamType> &param,
+    const LoopOrderTrans<ORDER> &loop_order, const LoopParamTrans<ORDER> &loops)
     : next(nullptr),
       param_(param) {
   this->init(param, loop_order, loops);
@@ -43,15 +43,21 @@ OpForTrans<ParamType, ORDER>::OpForTrans(
 template <typename ParamType,
           TensorOrder ORDER>
 void OpForTrans<ParamType, ORDER>::init(
-    const std::shared_ptr<ParamType> &param, const LoopOrder<ORDER> &loop_order,
-    const LoopParam<ORDER> &loops) {
+    const std::shared_ptr<ParamType> &param,
+    const LoopOrderTrans<ORDER> &loop_order,
+    const LoopParamTrans<ORDER> &loops) {
   this->param_ = param;
 
   // Initialize loops
   this->init_loops_(loop_order, loops);
 
   // Initialize permutation array
-  this->init_perm_idx_();
+  for (TensorOrder idx = 0; idx < this->param_->begin_order_idx; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
+
+  for (TensorOrder idx = this->param_->begin_order_idx; idx < ORDER; ++idx)
+    this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
+        - this->param_->merged_order];
 }
 
 
@@ -80,7 +86,8 @@ void OpForTrans<ParamType, ORDER>::init_disable_() {
 template <typename ParamType,
           TensorOrder ORDER>
 void OpForTrans<ParamType, ORDER>::init_loops_(
-    const LoopOrder<ORDER> &loop_order,const LoopParam<ORDER> &loop) {
+    const LoopOrderTrans<ORDER> &loop_order,
+    const LoopParamTrans<ORDER> &loop) {
   // Initialize loop order
   std::copy(loop_order.begin(), loop_order.end(), this->loop_order_);
 
@@ -88,18 +95,6 @@ void OpForTrans<ParamType, ORDER>::init_loops_(
   std::copy(loop.loop_begin, loop.loop_begin + ORDER, this->loop_begin_);
   std::copy(loop.loop_end, loop.loop_end + ORDER, this->loop_end_);
   std::copy(loop.loop_step, loop.loop_step + ORDER, this->loop_step_);
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void OpForTrans<ParamType, ORDER>::init_perm_idx_() {
-  for (TensorOrder idx = 0; idx < this->param_->begin_order_idx; ++idx)
-    this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
-
-  for (TensorOrder idx = this->param_->begin_order_idx; idx < ORDER; ++idx)
-    this->loop_perm_idx_[idx] = &this->loop_idx_[this->param_->perm[idx] + ORDER
-        - this->param_->merged_order];
 }
 
 
