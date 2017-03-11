@@ -12,19 +12,6 @@
 
 namespace hptc {
 
-struct TensorRangeIdx {
-  TensorRangeIdx(TensorIdx left_idx, TensorIdx right_idx)
-    : left_idx(left_idx),
-      right_idx(right_idx) {
-  }
-
-  TensorIdx left_idx;
-  TensorIdx right_idx;
-};
-
-using TRI = TensorRangeIdx;
-
-
 template <TensorOrder ORDER>
 class TensorSize {
 public:
@@ -66,11 +53,6 @@ public:
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
-
-  template <typename... Ranges>
-  TensorWrapper<FloatType, ORDER, LAYOUT> slice(TRI range, Ranges... rest);
-  TensorWrapper<FloatType, ORDER, LAYOUT> slice(
-      const std::array<TRI, ORDER> &ranges);
 
   INLINE TensorSize<ORDER> &get_size();
   INLINE const TensorSize<ORDER> &get_size() const;

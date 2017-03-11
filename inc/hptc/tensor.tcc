@@ -176,25 +176,6 @@ INLINE const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-template <typename... Ranges>
-TensorWrapper<FloatType, ORDER, LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::slice(TRI range, Ranges... rest) {
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::slice(
-    const std::array<TRI, ORDER> &ranges) {
-  return *this;
-}
-
-
-template <typename FloatType,
-          TensorOrder ORDER,
-          MemLayout LAYOUT>
 INLINE TensorSize<ORDER> &TensorWrapper<FloatType, ORDER, LAYOUT>::get_size() {
   return this->size_;
 }
