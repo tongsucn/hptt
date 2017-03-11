@@ -14,6 +14,7 @@
 #include <hptc/tensor.h>
 #include <hptc/plan/plan_trans.h>
 #include <hptc/param/parameter_trans.h>
+#include <hptc/test_util.h>
 
 #define ALPHA 2.3f
 #define BETA 4.2f
