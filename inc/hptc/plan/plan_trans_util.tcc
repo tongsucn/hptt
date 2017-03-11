@@ -507,6 +507,21 @@ void PlanTransOptimizer<ParamType, ORDER>::init_parallel_() {
     // by dynamic programming, inspired by "ugly number" problem
   }
 
+  // Reset thread number and thread prime factor map
+  this->threads_ = 1;
+  for (TensorOrder loop_idx = input_ld_idx; loop_idx < ORDER; ++loop_idx)
+    this->threads_ *= loops[loop_idx].th_num;
+  this->th_fact_map_.clear();
+  for (GenNumType num = 2, target = this->threads_; target > 1; ++num) {
+    if (0 == target % num) {
+      this->th_fact_map_.push_back(std::pair<GenNumType, GenNumType>(num, 0));
+      while (0 == target % num) {
+        ++this->th_fact_map_.back().second;
+        target /= num;
+      }
+    }
+  }
+
   set_strategy();
 }
 
@@ -619,32 +634,70 @@ PlanTransOptimizer<ParamType, ORDER>::heur_parallel_explorer_(
   auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
       return a.first < b.first; };
 
-  // Create initial parallelization strategy
+  // Create initial parallelization strategy.
   ParaStrategyTrans<ORDER> parallel_strategy;
-  parallel_strategy.fill(1);
   std::priority_queue<ParaDes, std::vector<ParaDes>, decltype(heap_cmp)>
       best_heap(heap_cmp);
 
+  // Create stack for permuting all possible parallelization combinations
+  const auto input_ld_idx = this->param_->begin_order_idx;
+  TensorOrder fact_num = 0;
+  std::stack<TensorOrder> loop_stack;
+  std::vector<GenNumType> factors;
+  auto fact_map = this->th_fact_map_;
+  for (auto &fact : fact_map) {
+    fact_num += fact.second;
+    while (fact.second > 0) {
+      factors.push_back(fact.first);
+      --fact.second;
+    }
+  }
+  for (TensorOrder loop_idx = 0; loop_idx < fact_num; ++loop_idx)
+    loop_stack.push(input_ld_idx);
+
+  // Closure for getting next permutation of parallelization
+  auto get_next = [fact_num, input_ld_idx, &loop_stack] () -> bool {
+    if (loop_stack.top() + 1 < ORDER)
+      ++loop_stack.top();
+    else {
+      while (not loop_stack.empty() and loop_stack.top() + 1 == ORDER)
+        loop_stack.pop();
+      if (loop_stack.empty())
+        return false;
+      ++loop_stack.top();
+      for (auto fact_idx = loop_stack.size(); fact_idx <= fact_num; ++fact_idx)
+        loop_stack.push(input_ld_idx);
+    }
+    return true;
+  };
+
   // Look for best
-  /*const auto ld_idx = this->param_->begin_order_idx;
   TensorIdx times = 0;
   for (bool has_next = true; has_next and (times < heur_num or heur_num < 0);
-      ++times, has_next = std::next_permutation(parallel_strategy)) {
-    // Skip stride-1 leading loop in common leading case
-    while (ld_idx == loop_order[0] and (has_next = std::next_permutation(
-            parallel_strategy)));
+      ++times, has_next = get_next()) {
     if (not has_next)
       break;
+
+    // Get next parallelization
+    std::vector<TensorOrder> pos;
+    auto loop_stack_cp = loop_stack;
+    while (not loop_stack_cp.empty()) {
+      pos.push_back(loop_stack_cp.top());
+      loop_stack_cp.pop();
+    }
+    parallel_strategy.fill(1);
+    for (TensorOrder fact_idx = 0; fact_idx < fact_num; ++fact_idx)
+      parallel_strategy[pos[fact_idx]] *= factors[fact_idx];
 
     // Update best heap
     auto new_cost = this->heur_parallel_evaluator_(parallel_strategy);
     if (tune_num < 0 or tune_num > best_heap.size())
-      best_heap.push(OrderDes(new_cost, parallel_strategy));
+      best_heap.push(ParaDes(new_cost, parallel_strategy));
     else if (best_heap.top().first > new_cost) {
         best_heap.pop();
         best_heap.push(ParaDes(new_cost, parallel_strategy));
     }
-  }*/
+  }
 
   // Create result
   std::vector<ParaStrategyTrans<ORDER>> result;
@@ -654,8 +707,7 @@ PlanTransOptimizer<ParamType, ORDER>::heur_parallel_explorer_(
     best_heap.pop();
   }
 
-  return { this->descriptor_.parallel_strategy };
-  //return result;
+  return result;
 }
 
 

@@ -42,7 +42,7 @@ struct LoopParamTrans {
 
   INLINE void set_pass(TensorOrder order);
   INLINE void set_disable();
-  INLINE bool is_disabled();
+  INLINE bool is_disabled() const;
 
   TensorIdx loop_begin[ORDER];
   TensorIdx loop_end[ORDER];

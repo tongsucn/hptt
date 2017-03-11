@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 #include <numeric>
+#include <stack>
 #include <algorithm>
 
 #include <omp.h>
@@ -86,7 +87,7 @@ private:
 
   // Parameters for parallelization heuristics
   double penalty_factor_cl, penalty_factor_inld, penalty_factor_outld;
-  double max_penalty_threads;
+  GenNumType max_penalty_threads;
 };
 
 

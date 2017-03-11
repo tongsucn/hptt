@@ -28,7 +28,7 @@ INLINE void LoopParamTrans<ORDER>::set_disable() {
 
 
 template <TensorOrder ORDER>
-INLINE bool LoopParamTrans<ORDER>::is_disabled() {
+INLINE bool LoopParamTrans<ORDER>::is_disabled() const {
   return this->loop_begin[0] >= this->loop_end[0];
 }
 
