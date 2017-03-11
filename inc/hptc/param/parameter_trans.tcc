@@ -128,6 +128,11 @@ ParamTrans<TensorType, USAGE>::ParamTrans(TensorType &input_tensor,
   // Merge index in tensor wrapper and Initialize merged permutation array
   this->merge_idx_(perm);
   this->begin_order_idx = ORDER - this->merged_order;
+
+  // Set input_stride to the length of common leading order in common leading
+  // and CoefUsageTrans::USE_NONE case
+  if (USAGE == CoefUsageTrans::USE_NONE and this->is_common_leading())
+    this->input_stride = this->get_leading().first;
 }
 
 

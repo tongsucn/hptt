@@ -42,13 +42,22 @@ PlanTransOptimizer<ParamType, ORDER>::get_optimal(TensorIdx heur_loop_num,
 template <typename ParamType,
           TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_() {
+  // Initialize all kinds of parameters and configurations
+  this->init_config_();
+
   // Initialize thread number
   this->init_thread_num_();
 
   // Check input and output leading and initialize vectorization
-  if (this->param_->is_common_leading())
+  if (this->param_->is_common_leading()) {
     // Input and output tensor's leading order ARE the same.
-    this->init_vec_cl_();
+    if (this->param_->COEF_USAGE == CoefUsageTrans::USE_NONE)
+      // Transpose does NOT use coefficient
+      this->init_vec_common_leading_memcpy_();
+    else
+      // Transpose use coefficient
+      this->init_vec_common_leading_();
+  }
   else
     // Input and output tensor's leading order ARE NOT the same.
     this->init_vec_();
@@ -58,6 +67,35 @@ void PlanTransOptimizer<ParamType, ORDER>::init_() {
 
   // Initialize parallelization (expand descriptor)
   this->init_parallel_();
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_config_() {
+  // Initialize loop evaluator's parameters
+  this->init_loop_evaluator_param_();
+
+  // Initialize parallelization evaluator's parameters
+  this->init_parallel_evaluator_param_();
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_loop_evaluator_param_() {
+  this->penalty_begin = 0.0, this->penalty_step = 20.0;
+  this->importance_begin = 1.0, this->importance_scale = 0.5;
+  this->input_penalty_factor = 1.0, this->output_penalty_factor = 1.01;
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_parallel_evaluator_param_() {
+  this->penalty_factor_cl = 1.01;
+  this->penalty_factor_inld = 1.00010, this->penalty_factor_outld = 1.00015;
+  this->max_penalty_threads = 16;
 }
 
 
@@ -210,7 +248,7 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_(
 
 template <typename ParamType,
           TensorOrder ORDER>
-void PlanTransOptimizer<ParamType, ORDER>::init_vec_cl_() {
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_common_leading_() {
   // Get parameters
   const auto input_leading = this->param_->get_leading().first;
   auto cont_rest = input_leading;
@@ -219,29 +257,30 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_cl_() {
 
   // Vectorize single thread version
   // Linear big kernel (8 cont macro kernels)
-  this->init_vec_kernels_cl_(oper[oper_idx++],
+  this->init_vec_kernels_common_leading_(oper[oper_idx++],
       this->param_->kn_lb.get_cont_len(), input_leading, cont_rest);
 
   // Linear middle kernel (4 cont macro kernels)
-  this->init_vec_kernels_cl_(oper[oper_idx++],
+  this->init_vec_kernels_common_leading_(oper[oper_idx++],
       this->param_->kn_lm.get_cont_len(), input_leading, cont_rest);
 
   // Linear small kernel (2 cont macro kernels)
-  this->init_vec_kernels_cl_(oper[oper_idx++],
+  this->init_vec_kernels_common_leading_(oper[oper_idx++],
       this->param_->kn_ls.get_cont_len(), input_leading, cont_rest);
 
   // Linear nano kernel (1 cont macro kernel)
-  this->init_vec_kernels_cl_(oper[oper_idx++],
+  this->init_vec_kernels_common_leading_(oper[oper_idx++],
       this->param_->kn_ln.get_cont_len(), input_leading, cont_rest);
 
   // Scalar kernel (1 scalar kernel)
-  this->init_vec_kernels_cl_(oper[oper_idx], 1, input_leading, cont_rest);
+  this->init_vec_kernels_common_leading_(oper[oper_idx], 1, input_leading,
+      cont_rest);
 }
 
 
 template <typename ParamType,
           TensorOrder ORDER>
-void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_cl_(
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_common_leading_(
     LoopParamTrans<ORDER> &loop, const GenNumType kn_len,
     const TensorOrder input_leading, TensorOrder &cont_rest) {
   if (kn_len <= cont_rest) {
@@ -252,7 +291,8 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_cl_(
       // Initialize vectorized loop
       if (begin_idx != loop_idx) {
         loop.loop_begin[loop_idx] = 0;
-        loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+        loop.loop_end[loop_idx]
+            = this->param_->input_tensor.get_size()[loop_idx];
         loop.loop_step[loop_idx] = 1;
       }
       else {
@@ -273,13 +313,29 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_cl_(
 
 template <typename ParamType,
           TensorOrder ORDER>
+void PlanTransOptimizer<ParamType, ORDER>::init_vec_common_leading_memcpy_() {
+  // Get parameters
+  const auto begin_idx = this->param_->begin_order_idx;
+  auto &loop = this->descriptor_.description[0][0];
+
+  // Skip merged orders
+  loop.set_pass(begin_idx + 1);
+
+  // Set loops for other orders
+  for (auto loop_idx = begin_idx + 1; loop_idx < ORDER; ++loop_idx) {
+    loop.loop_begin[loop_idx] = 0;
+    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+    loop.loop_step[loop_idx] = 1;
+  }
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
   // Data structure for describing loop, first is loop's size,
   // second is the order a loop stands for
   using Loop = std::pair<TensorIdx, TensorOrder>;
-
-  // Initialize loop evaluator's parameters
-  this->init_loop_evaluator_param_();
 
   // Locate loop re-order position (first loop that need to be re-ordered)
   const auto begin_idx = this->param_->begin_order_idx;
@@ -311,103 +367,147 @@ void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
 
 template <typename ParamType,
           TensorOrder ORDER>
-void PlanTransOptimizer<ParamType, ORDER>::init_loop_evaluator_param_() {
-  this->penalty_begin = 0.0, this->penalty_step = 20.0;
-  this->importance_begin = 1.0, this->importance_scale = 0.5;
-  this->input_penalty_factor = 1.0, this->output_penalty_factor = 1.01;
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_parallel_() {
-  // Initialize parallelization evaluator's parameters
-  this->init_parallel_evaluator_param_();
-
-  // Create data structure storing parallelization information, first is the
-  // size of one loop, second is the number of parallelization at this loop.
-  const auto input_ld_idx = this->param_->begin_order_idx;
-  const auto output_ld_idx = this->param_->perm[input_ld_idx] + input_ld_idx;
-  Loop_ loops;
-  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx) {
-    loops[loop_idx].first = this->param_->input_tensor.get_size()[loop_idx];
-    loops[loop_idx].second = 1;
-  }
+  /*
+   * Create data structure storing parallelization information. It contains
+   * three members. The size ((end - begin) / step) of a loop, number of threads
+   * assigned to this loop, the original index of this loop.
+   */
+  struct Loop {
+    TensorOrder size;
+    GenNumType th_num;
+    TensorOrder loop_idx;
+  };
 
   // Find the largest loop group among different vectorized loop groups
   TensorOrder largest_idx = 0;
   while (this->descriptor_.description[0][largest_idx].is_disabled())
     ++largest_idx;
-
-  // Find the leading dimension's loop position and reset related loops' sizes
   const auto &largest = this->descriptor_.description[0][largest_idx];
-  auto span = largest.loop_end[input_ld_idx] - largest.loop_begin[input_ld_idx];
-  loops[input_ld_idx].first = span / largest.loop_step[input_ld_idx];
-  span = largest.loop_end[output_ld_idx] - largest.loop_begin[output_ld_idx];
-  loops[output_ld_idx].first = span / largest.loop_step[output_ld_idx];
 
-  // Parallelize non-leading order loops that can be exact divided by
-  // prime factors
+  // Initialize loop data structure
+  Loop loops[ORDER];
+  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx) {
+    loops[loop_idx].size
+        = largest.loop_end[loop_idx] - largest.loop_begin[loop_idx];
+    loops[loop_idx].size /= largest.loop_step[loop_idx];
+    loops[loop_idx].th_num = 1;
+    loops[loop_idx].loop_idx = loop_idx;
+
+    // Initialize loops' maximum available thread number
+    this->avail_parallel_[loop_idx] = loops[loop_idx].size;
+  }
+
+  const auto input_ld_idx = this->param_->begin_order_idx;
+  const auto output_ld_idx = this->param_->perm[input_ld_idx] + input_ld_idx;
   auto fact_map = this->th_fact_map_;
-  std::reverse(fact_map.begin(), fact_map.end());
-  this->init_parallel_loop_(loops, fact_map, input_ld_idx, output_ld_idx,
-      [] (auto a, auto b) -> bool { return 0 == a % b; });
+  auto rest_threads = this->threads_;
 
-  // Parallelize non-leading order loops that CANNOT be exact divided by
-  // prime factors
-  this->init_parallel_loop_(loops, fact_map, input_ld_idx, output_ld_idx,
-      [] (auto a, auto b) -> bool { return a > b; });
-
-  // Write parallelization strategy to template descriptor
-  for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
-    this->descriptor_.parallel_strategy[order_idx] = loops[order_idx].second;
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-  template <typename Cmp>
-void PlanTransOptimizer<ParamType, ORDER>::init_parallel_loop_(
-    Loop_ &loops, Factor_ &fact_map, const TensorOrder input_ld_idx,
-    const TensorOrder output_ld_idx, Cmp cmp) const {
+  // Parallelize non-leading order loops that can be exactly divided
   for (auto &fact : fact_map) {
-    if (fact.second < 1)
-      continue;
-
-    for (auto loop_idx = input_ld_idx + 1; loop_idx < ORDER; ++loop_idx) {
-      // Skip leading order loop
-      if (output_ld_idx == loop_idx)
-        continue;
-      while (fact.second > 0 and cmp(loops[loop_idx].first, fact.first)) {
-        loops[loop_idx].first /= fact.first;
-        loops[loop_idx].second *= fact.first;
+    for (auto loop_idx = input_ld_idx + 1; fact.second > 0 and loop_idx < ORDER;
+        ++loop_idx) {
+      while (output_ld_idx != loop_idx and fact.second > 0 and
+          0 == loops[loop_idx].size % fact.first) {
+        loops[loop_idx].size /= fact.first;
+        loops[loop_idx].th_num *= fact.first;
         --fact.second;
+        rest_threads /= fact.first;
       }
     }
-
-    // Parallelize output leading order loops first
-    TensorIdx target_idx = -1;
-    if (0 == loops[output_ld_idx].first % fact.first)
-      target_idx = static_cast<decltype(target_idx)>(output_ld_idx);
-    else if (0 == loops[input_ld_idx].first % fact.first)
-      target_idx = static_cast<decltype(target_idx)>(input_ld_idx);
-
-    if (-1 != target_idx)
-      while (fact.second > 0 and cmp(loops[target_idx].first, fact.first)) {
-        loops[target_idx].first /= fact.first;
-        loops[target_idx].second *= fact.first;
-        --fact.second;
-      }
   }
-}
 
+  // Check if there are still available threads left
+  auto set_strategy = [this, &loops] () -> void {
+    // Write parallelization strategy to template descriptor
+    for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx)
+      this->descriptor_.parallel_strategy[loops[loop_idx].loop_idx]
+          = loops[loop_idx].th_num;
+  };
 
-template <typename ParamType,
-          TensorOrder ORDER>
-void PlanTransOptimizer<ParamType, ORDER>::init_parallel_evaluator_param_() {
-  this->penalty_factor_cl = 1.01;
-  this->penalty_factor_inld = 1.00010, this->penalty_factor_outld = 1.00015;
-  this->max_penalty_threads = 16;
+  if (rest_threads <= 1) {
+    set_strategy();
+    return;
+  }
+
+  // Parallelize non-leading order loops that CANNOT be exactly divided
+  // Reverse the fact map, tend to use larger prime factor first
+  std::reverse(fact_map.begin(), fact_map.end());
+  // Sort before parallelize, we tend to parallelize larger loops here
+  std::sort(loops + input_ld_idx + 1, loops + ORDER,
+      [] (auto &a, auto &b) -> bool { return a.size > b.size; });
+  // Used to record output leading order loop's new index
+  TensorOrder new_out_ld_idx = input_ld_idx, prod = 1;
+  for (auto loop_idx = input_ld_idx + 1;
+      loop_idx < ORDER and loops[loop_idx].size > 1; ++loop_idx) {
+    // Skip output leading order loop
+    if (output_ld_idx == loops[loop_idx].loop_idx) {
+      new_out_ld_idx = loop_idx;
+      continue;
+    }
+
+    // Number of thread to be assigned to this
+    prod = 1;
+    for (auto &fact : fact_map)
+      while (fact.second > 0 and loops[loop_idx].size > prod * fact.first)
+        prod *= fact.first, --fact.second;
+    loops[loop_idx].size /= prod;
+    loops[loop_idx].th_num *= prod;
+    rest_threads /= prod;
+  }
+
+  // Check if there are still available threads left
+  if (rest_threads <= 1) {
+    set_strategy();
+    return;
+  }
+
+  // Parallelize leading order loops that can be exactly divided
+  // Parallelize output leading order loop first
+  prod = 1;
+  for (auto &fact : fact_map)
+    while (fact.second > 0 and loops[new_out_ld_idx].size > prod * fact.first)
+      prod *= fact.first, --fact.second;
+  loops[new_out_ld_idx].size /= prod;
+  loops[new_out_ld_idx].th_num *= prod;
+  rest_threads /= prod;
+
+  // Check if there are still available threads left
+  if (rest_threads <= 1) {
+    set_strategy();
+    return;
+  }
+
+  // Then parallelize output leading order loop
+  prod = 1;
+  for (auto &fact : fact_map)
+    while (fact.second > 0 and loops[input_ld_idx].size > prod * fact.first)
+      prod *= fact.first, --fact.second;
+  loops[input_ld_idx].size /= prod;
+  loops[input_ld_idx].th_num *= prod;
+  rest_threads /= prod;
+
+  // Check if there are still available threads left
+  if (rest_threads <= 1) {
+    set_strategy();
+    return;
+  }
+
+  // If there are still available threads left, we have to reduce thread number
+  // Calculate available loop step number
+  GenNumType avail = 1;
+  std::for_each(loops, loops + ORDER,
+      [&avail] (auto &loop) -> void { avail *= loop.size; });
+  if (avail < rest_threads)
+    // Easier case, reduce rest threads number to available loop steps number
+    for (auto loop_idx = input_ld_idx; loop_idx < ORDER; ++loop_idx)
+      loops[loop_idx].th_num *= loops[loop_idx].size;
+  else {
+    // Dealing with large prime, need to be implemented later. It can be done
+    // by dynamic programming, inspired by "ugly number" problem
+  }
+
+  set_strategy();
 }
 
 
@@ -425,7 +525,7 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
   auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
       return a.first < b.first; };
 
-  // Create initialization loop order
+  // Create initial loop order
   LoopOrderTrans<ORDER> loop_order;
   for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
     loop_order[order_idx] = order_idx;
@@ -434,16 +534,17 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
 
   // Look for best
   const auto ld_idx = this->param_->begin_order_idx;
-  bool has_next = true;
   TensorIdx times = 0;
-  do {
+  for (bool has_next = true; has_next and (times < heur_num or heur_num < 0);
+      ++times, has_next = std::next_permutation(loop_order.begin() + ld_idx,
+          loop_order.end())) {
     // Skip stride-1 leading loop in common leading case
-    if (this->param_->is_common_leading() and ld_idx == loop_order[0]) {
-      has_next = std::next_permutation(
-          loop_order.begin() + this->param_->begin_order_idx, loop_order.end());
-      continue;
-    }
+    while (ld_idx == loop_order[0] and (has_next = std::next_permutation(
+          loop_order.begin() + ld_idx, loop_order.end())));
+    if (not has_next)
+      break;
 
+    // Update best heap
     auto new_cost = this->heur_loop_evaluator_(loop_order);
     if (tune_num < 0 or tune_num > best_heap.size())
       best_heap.push(OrderDes(new_cost, loop_order));
@@ -451,9 +552,7 @@ PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
         best_heap.pop();
         best_heap.push(OrderDes(new_cost, loop_order));
     }
-    has_next = std::next_permutation(
-        loop_order.begin() + this->param_->begin_order_idx, loop_order.end());
-  } while (has_next and (times < heur_num or heur_num < 0));
+  }
 
   // Create result
   std::vector<LoopOrderTrans<ORDER>> result;
@@ -520,12 +619,43 @@ PlanTransOptimizer<ParamType, ORDER>::heur_parallel_explorer_(
   auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
       return a.first < b.first; };
 
+  // Create initial parallelization strategy
   ParaStrategyTrans<ORDER> parallel_strategy;
   parallel_strategy.fill(1);
   std::priority_queue<ParaDes, std::vector<ParaDes>, decltype(heap_cmp)>
       best_heap(heap_cmp);
 
+  // Look for best
+  /*const auto ld_idx = this->param_->begin_order_idx;
+  TensorIdx times = 0;
+  for (bool has_next = true; has_next and (times < heur_num or heur_num < 0);
+      ++times, has_next = std::next_permutation(parallel_strategy)) {
+    // Skip stride-1 leading loop in common leading case
+    while (ld_idx == loop_order[0] and (has_next = std::next_permutation(
+            parallel_strategy)));
+    if (not has_next)
+      break;
+
+    // Update best heap
+    auto new_cost = this->heur_parallel_evaluator_(parallel_strategy);
+    if (tune_num < 0 or tune_num > best_heap.size())
+      best_heap.push(OrderDes(new_cost, parallel_strategy));
+    else if (best_heap.top().first > new_cost) {
+        best_heap.pop();
+        best_heap.push(ParaDes(new_cost, parallel_strategy));
+    }
+  }*/
+
+  // Create result
+  std::vector<ParaStrategyTrans<ORDER>> result;
+  result.reserve(best_heap.size());
+  while (not best_heap.empty()) {
+    result.push_back(best_heap.top().second);
+    best_heap.pop();
+  }
+
   return { this->descriptor_.parallel_strategy };
+  //return result;
 }
 
 
@@ -540,30 +670,22 @@ double PlanTransOptimizer<ParamType, ORDER>::heur_parallel_evaluator_(
   const auto &target_loop = this->descriptor_.description[0][kn_idx];
   const auto begin_idx = this->param_->begin_order_idx;
 
-  // Create a vector storing available parallelism at every loop level
-  std::vector<GenNumType> avail_parallelism(ORDER, 1);
-  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx)
-    avail_parallelism[loop_idx]
-        = (target_loop.loop_end[loop_idx] - target_loop.loop_begin[loop_idx])
-            / target_loop.loop_step[loop_idx];
-
   // Calculate costs
   double cost = 1.0;
   for (auto loop_idx = begin_idx; loop_idx < ORDER; ++loop_idx) {
     if (target_para[loop_idx] <= 1)
       continue;
 
-    // Calculate number of steps assigned to each thread and step length
+    // Calculate number of steps assigned to each thread
     GenNumType steps_per_thread
-        = (avail_parallelism[loop_idx] + target_para[loop_idx] - 1)
+        = (this->avail_parallel_[loop_idx] + target_para[loop_idx] - 1)
             / target_para[loop_idx];
-    const auto step_len = target_loop.loop_step[loop_idx];
 
     // Calculate load for loop at level loop_idx given certain number of threads
-    const auto load = steps_per_thread * step_len * target_para[loop_idx];
+    const auto load = steps_per_thread * target_para[loop_idx];
 
     // Update cost
-    cost *= static_cast<double>(load) / this->param_->input_tensor[loop_idx];
+    cost *= static_cast<double>(load) / this->avail_parallel_[loop_idx];
   }
 
   // Strongly penalize parallelization at stride-1 loop in common leading case

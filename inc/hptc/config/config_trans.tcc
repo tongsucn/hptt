@@ -7,9 +7,7 @@
  */
 template <TensorOrder ORDER>
 LoopParamTrans<ORDER>::LoopParamTrans() {
-  std::fill(this->loop_begin, this->loop_begin + ORDER, 0);
-  std::fill(this->loop_end, this->loop_end + ORDER, 0);
-  std::fill(this->loop_step, this->loop_step + ORDER, 0);
+  this->set_disable();
 }
 
 

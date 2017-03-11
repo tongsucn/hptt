@@ -33,28 +33,28 @@ public:
       TensorIdx tune_para_num) const;
 
 private:
-  using Loop_ = std::array<std::pair<TensorIdx, GenNumType>, ORDER>;
   using Factor_ = std::vector<std::pair<GenNumType, GenNumType>>;
 
   void init_();
+  void init_config_();
+  void init_loop_evaluator_param_();
+  void init_parallel_evaluator_param_();
+
   void init_thread_num_();
+
   void init_vec_();
   void init_vec_kernels_(LoopParamTrans<ORDER> &loop,
       const GenNumType kn_cont_len, const GenNumType kn_ncont_len,
       TensorOrder &cont_rest, TensorOrder &ncont_rest, bool is_sv = false);
-  void init_vec_cl_();
-  void init_vec_kernels_cl_(LoopParamTrans<ORDER> &loop,
+
+  void init_vec_common_leading_();
+  void init_vec_kernels_common_leading_(LoopParamTrans<ORDER> &loop,
       const GenNumType kn_len, const TensorOrder input_leading,
       TensorOrder &cont_rest);
+  void init_vec_common_leading_memcpy_();
 
   void init_loop_();
-  void init_loop_evaluator_param_();
   void init_parallel_();
-  template <typename Cmp>
-  void init_parallel_loop_(Loop_ &loops, Factor_ &fact_map,
-      const TensorOrder input_ld_idx, const TensorOrder output_ld_idx,
-      Cmp cmp) const;
-  void init_parallel_evaluator_param_();
 
   std::vector<LoopOrderTrans<ORDER>> heur_loop_explorer_(
       const TensorIdx heur_num, const TensorIdx tune_num) const;
@@ -77,6 +77,7 @@ private:
 
   CGraphTransDescriptor<ORDER> descriptor_;
   Factor_ th_fact_map_;
+  std::array<TensorIdx, ORDER> avail_parallel_;
 
   // Parameters for loop order heuristics
   double penalty_begin, penalty_step;
