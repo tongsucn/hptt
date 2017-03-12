@@ -55,12 +55,12 @@ private:
   void init_parallel_();
 
   std::vector<LoopOrderTrans<ORDER>> heur_loop_explorer_(
-      const TensorIdx heur_num, const TensorIdx tune_num) const;
+      const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_loop_evaluator_(
       const LoopOrderTrans<ORDER> &target_loop_order) const;
 
   std::vector<ParaStrategyTrans<ORDER>> heur_parallel_explorer_(
-      const TensorIdx heur_num, const TensorIdx tune_num) const;
+      const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_parallel_evaluator_(
       const ParaStrategyTrans<ORDER> &target_para) const;
 

@@ -492,9 +492,10 @@ template <typename ParamType,
           TensorOrder ORDER>
 std::vector<LoopOrderTrans<ORDER>>
 PlanTransOptimizer<ParamType, ORDER>::heur_loop_explorer_(
-    const TensorIdx heur_num, const TensorIdx tune_num) const {
+    const TensorIdx heur_num, TensorIdx tune_num) const {
   if (0 == heur_num)
     return { this->descriptor_.loop_order };
+  tune_num = 0 == tune_num ? 1 : tune_num;
 
   // Create best heap to store auto tuning candidates
   // "Cost-Order" pair: (cost, loop order)
@@ -586,9 +587,10 @@ template <typename ParamType,
           TensorOrder ORDER>
 std::vector<ParaStrategyTrans<ORDER>>
 PlanTransOptimizer<ParamType, ORDER>::heur_parallel_explorer_(
-    const TensorIdx heur_num, const TensorIdx tune_num) const {
+    const TensorIdx heur_num, TensorIdx tune_num) const {
   if (0 == heur_num)
     return { this->descriptor_.parallel_strategy };
+  tune_num = 0 == tune_num ? 1 : tune_num;
 
   // Create best heap to store auto tuning candidates
   // "Cost-Parallel" pair: (cost, parallelization strategy)
