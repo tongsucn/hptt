@@ -8,6 +8,7 @@
 #include <utility>
 #include <cmath>
 #include <algorithm>
+#include <initializer_list>
 
 #include <hptc/types.h>
 #include <hptc/util.h>
@@ -31,6 +32,9 @@ public:
 
   CGraphTrans<ParamType, ORDER> *get_graph(TensorIdx heur_num = 0,
       TensorIdx tune_num = 0, GenNumType tune_times = 10);
+  CGraphTrans<ParamType, ORDER> *get_graph(
+      std::initializer_list<TensorIdx> loop_param,
+      std::initializer_list<TensorIdx> parallel_param);
 
 private:
   using Graph = CGraphTrans<ParamType, ORDER>;

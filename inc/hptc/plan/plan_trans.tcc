@@ -40,6 +40,26 @@ CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::get_graph(
 
 template <typename ParamType,
           TensorOrder ORDER>
+CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::get_graph(
+    std::initializer_list<TensorIdx> loop_param,
+    std::initializer_list<TensorIdx> parallel_param) {
+  // Get heuristic number and tuning number
+  auto heur_loop_num = *loop_param.begin(),
+      heur_para_num = *parallel_param.begin();
+  auto tune_loop_num = *(loop_param.begin() + 1),
+       tune_para_num = *(parallel_param.begin() + 1);
+
+  // Construct graph descriptor
+  auto descriptors = this->optimizer_.get_optimal(heur_loop_num, heur_para_num,
+      tune_loop_num, tune_para_num);
+
+  // Return tuned result
+  return this->tuning_(descriptors, tune_times);
+}
+
+
+template <typename ParamType,
+          TensorOrder ORDER>
 CGraphTrans<ParamType, ORDER> *PlanTrans<ParamType, ORDER>::tuning_(
     const std::vector<CGraphTransDescriptor<ORDER>> &descriptors,
     GenNumType tune_times) {
