@@ -72,4 +72,6 @@ ttc --perm=3,2,5,1,0,4 --size=32,5,15,112,15,15 --alpha=2.3 --beta=4.2 --compile
 ttc --perm=5,4,3,2,1,0 --size=32,15,15,15,15,32 --alpha=2.3 --beta=4.2 --compiler=icpc --ignoreDatabase --numThreads=$GEN_THREAD_NUM
 ttc --perm=5,4,3,2,1,0 --size=112,5,15,15,15,32 --alpha=2.3 --beta=4.2 --compiler=icpc --ignoreDatabase --numThreads=$GEN_THREAD_NUM
 ttc --perm=5,4,3,2,1,0 --size=32,5,15,15,15,112 --alpha=2.3 --beta=4.2 --compiler=icpc --ignoreDatabase --numThreads=$GEN_THREAD_NUM
+
+rm log.txt
 mv ./ttc_transpositions ./ttc_implementations

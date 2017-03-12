@@ -45,70 +45,14 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
     const typename KernelFunc::FLOAT * RESTRICT input_data,
     typename KernelFunc::FLOAT * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride) {
-  this->ncont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(),
-      input_data, output_data, input_stride, output_stride);
-}
-
-
-template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-template <GenNumType CONT,
-         GenNumType NCONT>
-void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, NCONT>,
-    const typename KernelFunc::FLOAT * RESTRICT input_data,
-    typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
-  this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
-      input_stride, output_stride);
-  this->cont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
-      input_stride, output_stride);
-}
-
-
-template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-template <GenNumType CONT>
-void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, 0>,
-    const typename KernelFunc::FLOAT * RESTRICT input_data,
-    typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
-}
-
-
-template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-template <GenNumType CONT,
-         GenNumType NCONT>
-void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<CONT, NCONT>,
-    const typename KernelFunc::FLOAT * RESTRICT input_data,
-    typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
-  this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
-      input_stride, output_stride);
-  this->kernel_(
-      input_data + CONT * this->kn_wd_ + NCONT * this->kn_wd_ * input_stride,
-      output_data + NCONT * this->kn_wd_ + CONT * this->kn_wd_ * output_stride,
-      input_stride, output_stride);
-}
-
-
-template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-template <GenNumType NCONT>
-void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<0, NCONT>,
-    const typename KernelFunc::FLOAT * RESTRICT input_data,
-    typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
-  this->kernel_(input_data + NCONT * this->kn_wd_ * input_stride,
-      output_data + NCONT * this->kn_wd_, input_stride, output_stride);
+  const auto kn_wd = this->kn_wd_;
+#pragma unroll_and_jam(NCONT_LEN)
+  for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
+#pragma unroll_and_jam(CONT_LEN)
+    for (GenNumType cont = 0; cont < CONT_LEN; ++cont)
+      this->kernel_(input_data + cont * kn_wd + ncont * kn_wd * input_stride,
+          output_data + ncont * kn_wd + cont * kn_wd * output_stride,
+          input_stride, output_stride);
 }
 
 

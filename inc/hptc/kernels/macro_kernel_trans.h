@@ -30,30 +30,8 @@ public:
       const TensorIdx output_stride);
 
 private:
-  template <GenNumType CONT,
-            GenNumType NCONT>
-  void ncont_tiler_(DualCounter<CONT, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride);
-
-  template <GenNumType CONT>
-  void ncont_tiler_(DualCounter<CONT, 0>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride);
-
-  template <GenNumType CONT,
-            GenNumType NCONT>
-  void cont_tiler_(DualCounter<CONT, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride);
-
-  template <GenNumType NCONT>
-  void cont_tiler_(DualCounter<0, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride);
-
   KernelFunc kernel_;
-  GenNumType kn_wd_;    // Kernel width, number of elements in one register
+  const GenNumType kn_wd_;    // Kernel width, number of elements in a register
 };
 
 
