@@ -25,25 +25,21 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 GenNumType KernelTransAvxBase<FloatType, TYPE>::get_kernel_width() {
   constexpr GenNumType width = REG_SIZE_BYTE_AVX / sizeof(FloatType);
-  if (TYPE == KernelTypeTrans::KERNEL_HALF)
-    return width / 2;
-  else
-    return width;
+  return TYPE == KernelTypeTrans::KERNEL_HALF ? width / 2 : width;
 }
 
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
 GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
-  return TYPE == KernelTypeTrans::KERNEL_LINE ? 1 : this->get_kernel_width();
+  return this->get_kernel_width();
 }
 
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
 template <KernelTypeTrans KERNEL,
-          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-              KERNEL == KernelTypeTrans::KERNEL_LINE> *>
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
 DeducedRegType<float, KERNEL>
 KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
   return _mm256_set1_ps(coef);
@@ -53,8 +49,7 @@ KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
 template <typename FloatType,
           KernelTypeTrans TYPE>
 template <KernelTypeTrans KERNEL,
-          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-              KERNEL == KernelTypeTrans::KERNEL_LINE> *>
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
 DeducedRegType<double, KERNEL>
 KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
   return _mm256_set1_pd(coef);
@@ -98,16 +93,12 @@ KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
  */
 template struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
 
 
 /*
@@ -641,150 +632,6 @@ operator()(const DoubleComplex * RESTRICT input_data,
 }
 
 
-template <CoefUsageTrans USAGE>
-KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_LINE>::
-KernelTransAvx(float coef_alpha, float coef_beta)
-  : KernelTransAvxBase<float, KernelTypeTrans::KERNEL_LINE>(
-      coef_alpha, coef_beta) {
-}
-
-template <CoefUsageTrans USAGE>
-void KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_LINE>::
-operator()(const float * RESTRICT input_data,
-    float * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
-  // Load input data into registers
-  auto reg_input = _mm256_loadu_ps(input_data);
-
-  // Rescale transposed input data
-  constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_ALPHA == USAGE;
-  if (need_rescale)
-    reg_input = _mm256_mul_ps(reg_input, this->reg_alpha);
-
-  // Update output data
-  constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_BETA == USAGE;
-  if (need_update) {
-    auto reg_output = _mm256_loadu_ps(output_data);
-    reg_output = _mm256_mul_ps(reg_output, this->reg_beta);
-    reg_input = _mm256_add_ps(reg_output, reg_input);
-  }
-
-  // Write data back to memory
-  _mm256_storeu_ps(output_data, reg_input);
-}
-
-
-template <CoefUsageTrans USAGE>
-KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_LINE>::
-KernelTransAvx(double coef_alpha, double coef_beta)
-  : KernelTransAvxBase<double, KernelTypeTrans::KERNEL_LINE>(
-      coef_alpha, coef_beta) {
-}
-
-template <CoefUsageTrans USAGE>
-void KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_LINE>::
-operator()(const double * RESTRICT input_data,
-    double * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
-  // Load input data into registers
-  auto reg_input = _mm256_loadu_pd(input_data);
-
-  // Rescale transposed input data
-  constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_ALPHA == USAGE;
-  if (need_rescale)
-    reg_input = _mm256_mul_pd(reg_input, this->reg_alpha);
-
-  // Update output data
-  constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_BETA == USAGE;
-  if (need_update) {
-    auto reg_output = _mm256_loadu_pd(output_data);
-    reg_output = _mm256_mul_pd(reg_output, this->reg_beta);
-    reg_input = _mm256_add_pd(reg_output, reg_input);
-  }
-
-  // Write data back to memory
-  _mm256_storeu_pd(output_data, reg_input);
-}
-
-
-template <CoefUsageTrans USAGE>
-KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_LINE>::
-KernelTransAvx(float coef_alpha, float coef_beta)
-  : KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_LINE>(
-      coef_alpha, coef_beta) {
-}
-
-template <CoefUsageTrans USAGE>
-void KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_LINE>::
-operator()(const FloatComplex * RESTRICT input_data,
-    FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
-  // Load input data into registers
-  auto reg_input = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(input_data));
-
-  // Rescale transposed input data
-  constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_ALPHA == USAGE;
-  if (need_rescale)
-    reg_input = _mm256_mul_ps(reg_input, this->reg_alpha);
-
-  // Update output data
-  constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_BETA == USAGE;
-  if (need_update) {
-    auto reg_output = _mm256_loadu_ps(
-        reinterpret_cast<float *>(output_data));
-    reg_output = _mm256_mul_ps(reg_output, this->reg_beta);
-    reg_input = _mm256_add_ps(reg_output, reg_input);
-  }
-
-  // Write data back to memory
-  _mm256_storeu_ps(reinterpret_cast<float *>(output_data), reg_input);
-}
-
-
-template <CoefUsageTrans USAGE>
-KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_LINE>::
-KernelTransAvx(double coef_alpha, double coef_beta)
-  : KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_LINE>(
-      coef_alpha, coef_beta) {
-}
-
-template <CoefUsageTrans USAGE>
-void KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_LINE>::
-operator()(const DoubleComplex * RESTRICT input_data,
-    DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
-  // Load input data into registers
-  auto reg_input = _mm256_loadu_pd(
-      reinterpret_cast<const double *>(input_data));
-
-  // Rescale transposed input data
-  constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_ALPHA == USAGE;
-  if (need_rescale)
-    reg_input = _mm256_mul_pd(reg_input, this->reg_alpha);
-
-  // Update output data
-  constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
-      CoefUsageTrans::USE_BETA == USAGE;
-  if (need_update) {
-    auto reg_output = _mm256_loadu_pd(
-        reinterpret_cast<double *>(output_data));
-    reg_output = _mm256_mul_pd(reg_output, this->reg_beta);
-    reg_input = _mm256_add_pd(reg_output, reg_input);
-  }
-
-  // Write data back to memory
-  _mm256_storeu_pd(reinterpret_cast<double *>(output_data), reg_input);
-}
-
-
 /*
  * Explicit instantiation for struct KernelTransAvx
  */
@@ -792,97 +639,65 @@ template struct KernelTransAvx<float, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<float, CoefUsageTrans::USE_NONE,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<float, CoefUsageTrans::USE_ALPHA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<float, CoefUsageTrans::USE_BETA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<float, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<float, CoefUsageTrans::USE_BOTH,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<double, CoefUsageTrans::USE_NONE,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<double, CoefUsageTrans::USE_ALPHA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<double, CoefUsageTrans::USE_BETA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<double, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<double, CoefUsageTrans::USE_BOTH,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_NONE,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_ALPHA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BETA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<FloatComplex, CoefUsageTrans::USE_BOTH,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_NONE,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_NONE,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_ALPHA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_ALPHA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BETA,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BETA,
-         KernelTypeTrans::KERNEL_LINE>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_FULL>;
 template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BOTH,
          KernelTypeTrans::KERNEL_HALF>;
-template struct KernelTransAvx<DoubleComplex, CoefUsageTrans::USE_BOTH,
-         KernelTypeTrans::KERNEL_LINE>;
 
 }

@@ -29,12 +29,6 @@ template <typename FloatType,
 using KernelTransHalf = KernelTrans<FloatType, USAGE,
     KernelTypeTrans::KERNEL_HALF>;
 
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using KernelTransLinear = KernelTrans<FloatType, USAGE,
-    KernelTypeTrans::KERNEL_LINE>;
-
 }
 
 #endif // HPTC_KERNELS_KERNEL_TRANS_H_

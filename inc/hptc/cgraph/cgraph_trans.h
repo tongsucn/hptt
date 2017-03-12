@@ -50,7 +50,6 @@ protected:
 
   INLINE void exec_general_();
   INLINE void exec_common_leading_();
-  INLINE void exec_common_leading_noncoef_();
 
 
   std::shared_ptr<ParamType> param_;

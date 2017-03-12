@@ -21,8 +21,7 @@ template <typename FloatType,
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, float>::value or
             std::is_same<FloatType, FloatComplex>::value) and
-        (TYPE == KernelTypeTrans::KERNEL_FULL or
-            TYPE == KernelTypeTrans::KERNEL_LINE)>> {
+        TYPE == KernelTypeTrans::KERNEL_FULL>> {
   using type = __m256;
 };
 
@@ -31,8 +30,7 @@ template <typename FloatType,
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, double>::value or
             std::is_same<FloatType, DoubleComplex>::value) and
-        (TYPE == KernelTypeTrans::KERNEL_FULL or
-            TYPE == KernelTypeTrans::KERNEL_LINE)>> {
+        TYPE == KernelTypeTrans::KERNEL_FULL>> {
   using type = __m256d;
 };
 
@@ -57,7 +55,7 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
-            TYPE == KernelTypeTrans::KERNEL_HALF>> {
+        TYPE == KernelTypeTrans::KERNEL_HALF>> {
   using type = double;
 };
 
@@ -74,13 +72,13 @@ struct KernelTransAvxBase {
   GenNumType get_reg_num();
 
   template <KernelTypeTrans KERNEL = TYPE,
-            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
+            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
+                = nullptr>
   DeducedRegType<float, KERNEL> reg_coef(float coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
-            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
-                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
+            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
+                = nullptr>
   DeducedRegType<double, KERNEL> reg_coef(double coef);
 
   template <KernelTypeTrans KERNEL = TYPE,
@@ -98,7 +96,8 @@ struct KernelTransAvxBase {
                 KERNEL == KernelTypeTrans::KERNEL_HALF> * = nullptr>
   DeducedRegType<DoubleComplex, KERNEL> reg_coef(double coef);
 
-  RegType reg_alpha, reg_beta;
+  const RegType reg_alpha;
+  const RegType reg_beta;
 };
 
 

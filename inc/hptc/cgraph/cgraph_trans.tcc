@@ -19,10 +19,10 @@ CGraphTrans<ParamType, ORDER>::~CGraphTrans() {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void CGraphTrans<ParamType, ORDER>::operator()() {
-  if (this->param_->is_common_leading())
-    this->exec_common_leading_();
-  else
+  if (not this->param_->is_common_leading())
     this->exec_general_();
+  else
+    this->exec_common_leading_();
 }
 
 
@@ -81,7 +81,7 @@ void CGraphTrans<ParamType, ORDER>::release_operations_() {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void CGraphTrans<ParamType, ORDER>::exec_general_() {
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
     auto task = this->operations_ + idx;
     (*task)(this->param_->kn_fb, this->param_->input_tensor,
@@ -119,14 +119,12 @@ INLINE void CGraphTrans<ParamType, ORDER>::exec_general_() {
         this->param_->output_stride);
 
     task = task->next;
-    (*task)(this->param_->kn_sc, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(this->param_->kn_ln, this->param_->input_tensor,
+        this->param_->output_tensor, 1, 0);
 
     task = task->next;
-    (*task)(this->param_->kn_sc, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(this->param_->kn_ln, this->param_->input_tensor,
+        this->param_->output_tensor, 1, 0);
   }
 }
 
@@ -134,44 +132,13 @@ INLINE void CGraphTrans<ParamType, ORDER>::exec_general_() {
 template <typename ParamType,
           TensorOrder ORDER>
 INLINE void CGraphTrans<ParamType, ORDER>::exec_common_leading_() {
-#pragma omp parallel for
-  for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
-    auto task = this->operations_ + idx;
-    (*task)(this->param_->kn_lb, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+  // Get leading length
+  const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
 
-    task = task->next;
-    (*task)(this->param_->kn_lm, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
-
-    task = task->next;
-    (*task)(this->param_->kn_ls, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
-
-    task = task->next;
-    (*task)(this->param_->kn_ln, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
-
-    task = task->next;
-    (*task)(this->param_->kn_sc, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
-  }
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
-INLINE void CGraphTrans<ParamType, ORDER>::exec_common_leading_noncoef_() {
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
   for (TensorOrder idx = 0; idx < this->threads_; ++idx)
-    this->operations_[idx](this->param_->kn_mc, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    this->operations_[idx](this->param_->kn_ln, this->param_->input_tensor,
+        this->param_->output_tensor, ld_len, 0);
 }
 
 #endif // HPTC_CGRAPH_CGRAPH_TRANS_TCC_

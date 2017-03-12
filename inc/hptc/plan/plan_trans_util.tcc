@@ -49,15 +49,9 @@ void PlanTransOptimizer<ParamType, ORDER>::init_() {
   this->init_thread_num_();
 
   // Check input and output leading and initialize vectorization
-  if (this->param_->is_common_leading()) {
+  if (this->param_->is_common_leading())
     // Input and output tensor's leading order ARE the same.
-    if (this->param_->COEF_USAGE == CoefUsageTrans::USE_NONE)
-      // Transpose does NOT use coefficient
-      this->init_vec_common_leading_memcpy_();
-    else
-      // Transpose use coefficient
-      this->init_vec_common_leading_();
-  }
+    this->init_vec_common_leading_();
   else
     // Input and output tensor's leading order ARE NOT the same.
     this->init_vec_();
@@ -250,31 +244,18 @@ template <typename ParamType,
           TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_vec_common_leading_() {
   // Get parameters
-  const auto input_leading = this->param_->get_leading().first;
-  auto cont_rest = input_leading;
-  auto &oper = this->descriptor_.description[0];
-  TensorIdx oper_idx = 0;
+  const auto begin_idx = this->param_->begin_order_idx;
+  auto &loop = this->descriptor_.description[0][0];
 
-  // Vectorize single thread version
-  // Linear big kernel (8 cont macro kernels)
-  this->init_vec_kernels_common_leading_(oper[oper_idx++],
-      this->param_->kn_lb.get_cont_len(), input_leading, cont_rest);
+  // Skip merged orders
+  loop.set_pass(begin_idx + 1);
 
-  // Linear middle kernel (4 cont macro kernels)
-  this->init_vec_kernels_common_leading_(oper[oper_idx++],
-      this->param_->kn_lm.get_cont_len(), input_leading, cont_rest);
-
-  // Linear small kernel (2 cont macro kernels)
-  this->init_vec_kernels_common_leading_(oper[oper_idx++],
-      this->param_->kn_ls.get_cont_len(), input_leading, cont_rest);
-
-  // Linear nano kernel (1 cont macro kernel)
-  this->init_vec_kernels_common_leading_(oper[oper_idx++],
-      this->param_->kn_ln.get_cont_len(), input_leading, cont_rest);
-
-  // Scalar kernel (1 scalar kernel)
-  this->init_vec_kernels_common_leading_(oper[oper_idx], 1, input_leading,
-      cont_rest);
+  // Set loops for other orders
+  for (auto loop_idx = begin_idx + 1; loop_idx < ORDER; ++loop_idx) {
+    loop.loop_begin[loop_idx] = 0;
+    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+    loop.loop_step[loop_idx] = 1;
+  }
 }
 
 
@@ -313,50 +294,31 @@ void PlanTransOptimizer<ParamType, ORDER>::init_vec_kernels_common_leading_(
 
 template <typename ParamType,
           TensorOrder ORDER>
-void PlanTransOptimizer<ParamType, ORDER>::init_vec_common_leading_memcpy_() {
-  // Get parameters
-  const auto begin_idx = this->param_->begin_order_idx;
-  auto &loop = this->descriptor_.description[0][0];
-
-  // Skip merged orders
-  loop.set_pass(begin_idx + 1);
-
-  // Set loops for other orders
-  for (auto loop_idx = begin_idx + 1; loop_idx < ORDER; ++loop_idx) {
-    loop.loop_begin[loop_idx] = 0;
-    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
-    loop.loop_step[loop_idx] = 1;
-  }
-}
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
 void PlanTransOptimizer<ParamType, ORDER>::init_loop_() {
   // Data structure for describing loop, first is loop's size,
   // second is the order a loop stands for
   using Loop = std::pair<TensorIdx, TensorOrder>;
 
   // Locate loop re-order position (first loop that need to be re-ordered)
-  const auto begin_idx = this->param_->begin_order_idx;
-  const auto end_idx = ORDER - 2 + this->param_->is_common_leading() ? 1 : 0;
-  const auto output_ld_idx = this->param_->perm[begin_idx] + begin_idx;
+  const auto input_ld_idx = this->param_->begin_order_idx;
+  const auto output_ld_idx = this->param_->perm[input_ld_idx] + input_ld_idx;
 
   // Create and initialize loop description array
   std::vector<Loop> loops;
   const auto &size_obj = this->param_->input_tensor.get_size();
   for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx)
-    if (begin_idx != loop_idx and output_ld_idx != loop_idx)
+    if (input_ld_idx != loop_idx and output_ld_idx != loop_idx)
       loops.push_back(Loop(size_obj[loop_idx], loop_idx));
 
-  loops.push_back(Loop(size_obj[begin_idx], begin_idx));
+  loops.push_back(Loop(size_obj[input_ld_idx], input_ld_idx));
   if (not this->param_->is_common_leading())
     loops.push_back(Loop(size_obj[output_ld_idx], output_ld_idx));
 
 
   // Sort non-leading orders according to the sizes, for loop with smallest size
   // will be put at outer most for loop
-  std::sort(loops.begin() + begin_idx, loops.begin() + end_idx,
+  const auto cl = this->param_->is_common_leading() ? 1 : 0;
+  std::sort(loops.begin() + input_ld_idx, loops.end() - 2 + cl,
       [] (const auto &a, const auto &b) -> bool { return a.first < b.first; });
 
   // Set loop order

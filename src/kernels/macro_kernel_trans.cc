@@ -113,29 +113,11 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
 
 
 /*
- * Implementation for class MacroTransMemcpy
- */
-template <typename FloatType>
-MacroTransMemcpy<FloatType>::MacroTransMemcpy(DeducedFloatType<FloatType> alpha,
-    DeducedFloatType<FloatType> beta)
-    : alpha(alpha), beta(beta) {
-}
-
-
-template <typename FloatType>
-void MacroTransMemcpy<FloatType>::operator()(
-    const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
-  std::copy(input_data, input_data + input_stride, output_data);
-}
-
-
-/*
- * Implementation for class MacroTransScalar
+ * Implementation for class MacroTransLinear
  */
 template <typename FloatType,
           CoefUsageTrans USAGE>
-MacroTransScalar<FloatType, USAGE>::MacroTransScalar(
+MacroTransLinear<FloatType, USAGE>::MacroTransLinear(
     DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
     : alpha(alpha), beta(beta) {
 }
@@ -143,17 +125,24 @@ MacroTransScalar<FloatType, USAGE>::MacroTransScalar(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-void MacroTransScalar<FloatType, USAGE>::operator()(
+void MacroTransLinear<FloatType, USAGE>::operator()(
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride) {
   if (USAGE == CoefUsageTrans::USE_NONE)
-    *output_data = *input_data;
+    std::copy(input_data, input_data + input_stride, output_data);
   else if (USAGE == CoefUsageTrans::USE_ALPHA)
-    *output_data = this->alpha * (*input_data);
+#pragma omp simd
+    for (TensorIdx idx = 0; idx < input_stride; ++idx)
+      output_data[idx] = this->alpha * input_data[idx];
   else if (USAGE == CoefUsageTrans::USE_BETA)
-    *output_data = *input_data + this->beta * (*output_data);
+#pragma omp simd
+    for (TensorIdx idx = 0; idx < input_stride; ++idx)
+      output_data[idx] = input_data[idx] + this->beta * output_data[idx];
   else
-    *output_data = this->alpha * (*input_data) + this->beta * (*output_data);
+#pragma omp simd
+    for (TensorIdx idx = 0; idx < input_stride; ++idx)
+      output_data[idx] = this->alpha * input_data[idx]
+          + this->beta * output_data[idx];
 }
 
 
@@ -386,163 +375,25 @@ template class MacroTransVec<
 template class MacroTransVec<
     KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
 
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_NONE>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_ALPHA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BETA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BOTH>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_NONE>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_ALPHA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BETA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BOTH>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_NONE>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_ALPHA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BETA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BOTH>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_NONE>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BETA>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BOTH>, 8, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_NONE>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_ALPHA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BETA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BOTH>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_NONE>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_ALPHA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BETA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BOTH>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_NONE>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_ALPHA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BETA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BOTH>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_NONE>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_ALPHA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BETA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BOTH>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_NONE>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BETA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<float, CoefUsageTrans::USE_BOTH>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_NONE>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BETA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<double, CoefUsageTrans::USE_BOTH>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
-template class MacroTransVec<
-    KernelTransLinear<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
-
 
 /*
- * Explicit template instantiation for class MacroTransMemcpy
+ * Explicit template instantiation for class MacroTransLinear
  */
-template class MacroTransMemcpy<float>;
-template class MacroTransMemcpy<double>;
-template class MacroTransMemcpy<FloatComplex>;
-template class MacroTransMemcpy<DoubleComplex>;
-
-
-/*
- * Explicit template instantiation for class MacroTransScalar
- */
-template class MacroTransScalar<float, CoefUsageTrans::USE_NONE>;
-template class MacroTransScalar<float, CoefUsageTrans::USE_ALPHA>;
-template class MacroTransScalar<float, CoefUsageTrans::USE_BETA>;
-template class MacroTransScalar<float, CoefUsageTrans::USE_BOTH>;
-template class MacroTransScalar<double, CoefUsageTrans::USE_NONE>;
-template class MacroTransScalar<double, CoefUsageTrans::USE_ALPHA>;
-template class MacroTransScalar<double, CoefUsageTrans::USE_BETA>;
-template class MacroTransScalar<double, CoefUsageTrans::USE_BOTH>;
-template class MacroTransScalar<FloatComplex, CoefUsageTrans::USE_NONE>;
-template class MacroTransScalar<FloatComplex, CoefUsageTrans::USE_ALPHA>;
-template class MacroTransScalar<FloatComplex, CoefUsageTrans::USE_BETA>;
-template class MacroTransScalar<FloatComplex, CoefUsageTrans::USE_BOTH>;
-template class MacroTransScalar<DoubleComplex, CoefUsageTrans::USE_NONE>;
-template class MacroTransScalar<DoubleComplex, CoefUsageTrans::USE_ALPHA>;
-template class MacroTransScalar<DoubleComplex, CoefUsageTrans::USE_BETA>;
-template class MacroTransScalar<DoubleComplex, CoefUsageTrans::USE_BOTH>;
+template class MacroTransLinear<float, CoefUsageTrans::USE_NONE>;
+template class MacroTransLinear<float, CoefUsageTrans::USE_ALPHA>;
+template class MacroTransLinear<float, CoefUsageTrans::USE_BETA>;
+template class MacroTransLinear<float, CoefUsageTrans::USE_BOTH>;
+template class MacroTransLinear<double, CoefUsageTrans::USE_NONE>;
+template class MacroTransLinear<double, CoefUsageTrans::USE_ALPHA>;
+template class MacroTransLinear<double, CoefUsageTrans::USE_BETA>;
+template class MacroTransLinear<double, CoefUsageTrans::USE_BOTH>;
+template class MacroTransLinear<FloatComplex, CoefUsageTrans::USE_NONE>;
+template class MacroTransLinear<FloatComplex, CoefUsageTrans::USE_ALPHA>;
+template class MacroTransLinear<FloatComplex, CoefUsageTrans::USE_BETA>;
+template class MacroTransLinear<FloatComplex, CoefUsageTrans::USE_BOTH>;
+template class MacroTransLinear<DoubleComplex, CoefUsageTrans::USE_NONE>;
+template class MacroTransLinear<DoubleComplex, CoefUsageTrans::USE_ALPHA>;
+template class MacroTransLinear<DoubleComplex, CoefUsageTrans::USE_BETA>;
+template class MacroTransLinear<DoubleComplex, CoefUsageTrans::USE_BOTH>;
 
 }

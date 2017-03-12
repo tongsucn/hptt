@@ -57,32 +57,18 @@ private:
 };
 
 
-template <typename FloatType>
-class MacroTransMemcpy {
-public:
-  MacroTransMemcpy(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta);
-  void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
-
-private:
-  DeducedFloatType<FloatType> alpha, beta;
-};
-
-
 template <typename FloatType,
           CoefUsageTrans USAGE>
-class MacroTransScalar {
+class MacroTransLinear {
 public:
-  MacroTransScalar(DeducedFloatType<FloatType> alpha,
+  MacroTransLinear(DeducedFloatType<FloatType> alpha,
       DeducedFloatType<FloatType> beta);
   void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
       const TensorIdx output_stride);
 
 private:
-  DeducedFloatType<FloatType> alpha, beta;
+  const DeducedFloatType<FloatType> alpha, beta;
 };
 
 
@@ -103,13 +89,6 @@ template <typename FloatType,
           GenNumType NCONT_LEN>
 using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
       CONT_LEN, NCONT_LEN>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE,
-          GenNumType LEN>
-using MacroTransLinear = MacroTransVec<KernelTransLinear<FloatType, USAGE>,
-      LEN, 1>;
 
 
 template <typename FloatType,
@@ -145,26 +124,6 @@ using MacroTransVecHalfHorizontal = MacroTransVecHalf<FloatType, USAGE, 2, 1>;
 template <typename FloatType,
           CoefUsageTrans USAGE>
 using MacroTransVecHalfSmall = MacroTransVecHalf<FloatType, USAGE, 1, 1>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransLinBig = MacroTransLinear<FloatType, USAGE, 8>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransLinMid = MacroTransLinear<FloatType, USAGE, 4>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransLinSmall = MacroTransLinear<FloatType, USAGE, 2>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransLinNano = MacroTransLinear<FloatType, USAGE, 1>;
 
 
 /*

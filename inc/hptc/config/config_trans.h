@@ -19,8 +19,7 @@ enum class CoefUsageTrans : GenNumType {
 
 enum class KernelTypeTrans : GenNumType {
   KERNEL_FULL = 0,
-  KERNEL_HALF = 1,
-  KERNEL_LINE = 2
+  KERNEL_HALF = 1
 };
 
 

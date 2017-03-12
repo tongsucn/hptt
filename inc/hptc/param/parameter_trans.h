@@ -73,14 +73,7 @@ struct ParamTrans {
   MacroTransVecHalfSmall<FloatType, USAGE>          kn_hs;
 
   // Linear kernels
-  MacroTransLinBig<FloatType, USAGE>                kn_lb;
-  MacroTransLinMid<FloatType, USAGE>                kn_lm;
-  MacroTransLinSmall<FloatType, USAGE>              kn_ls;
-  MacroTransLinNano<FloatType, USAGE>               kn_ln;
-
-  // Special kernels
-  MacroTransMemcpy<FloatType>                       kn_mc;
-  MacroTransScalar<FloatType, USAGE>                kn_sc;
+  MacroTransLinear<FloatType, USAGE>                kn_ln;
 
 private:
   void merge_idx_(const std::array<TensorOrder, ORDER> &perm);

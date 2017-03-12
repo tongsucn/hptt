@@ -34,8 +34,6 @@ public:
       TensorIdx tune_para_num) const;
 
 private:
-  using Factor_ = std::vector<std::pair<GenNumType, GenNumType>>;
-
   void init_();
   void init_config_();
   void init_loop_evaluator_param_();
@@ -52,7 +50,6 @@ private:
   void init_vec_kernels_common_leading_(LoopParamTrans<ORDER> &loop,
       const GenNumType kn_len, const TensorOrder input_leading,
       TensorOrder &cont_rest);
-  void init_vec_common_leading_memcpy_();
 
   void init_loop_();
   void init_parallel_();
@@ -77,7 +74,7 @@ private:
   GenNumType threads_;
 
   CGraphTransDescriptor<ORDER> descriptor_;
-  Factor_ th_fact_map_;
+  std::vector<std::pair<GenNumType, GenNumType>> th_fact_map_;
   std::array<TensorIdx, ORDER> avail_parallel_;
 
   // Parameters for loop order heuristics

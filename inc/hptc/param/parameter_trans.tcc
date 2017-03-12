@@ -112,9 +112,7 @@ ParamTrans<TensorType, USAGE>::ParamTrans(TensorType &input_tensor,
       merged_order(ORDER), begin_order_idx(0),
       kn_fb(alpha, beta), kn_fv(alpha, beta), kn_fh(alpha, beta),
       kn_fs(alpha, beta), kn_hv(alpha, beta), kn_hh(alpha, beta),
-      kn_hs(alpha, beta), kn_lb(alpha, beta), kn_lm(alpha, beta),
-      kn_ls(alpha, beta), kn_ln(alpha, beta), kn_mc(alpha, beta),
-      kn_sc(alpha, beta) {
+      kn_hs(alpha, beta), kn_ln(alpha, beta) {
   // Initialize permutation array, do not need to transform its format when
   // tensor layout is not column major
   std::copy(perm.begin(), perm.end(), this->perm);
@@ -128,11 +126,6 @@ ParamTrans<TensorType, USAGE>::ParamTrans(TensorType &input_tensor,
   // Merge index in tensor wrapper and Initialize merged permutation array
   this->merge_idx_(perm);
   this->begin_order_idx = ORDER - this->merged_order;
-
-  // Set input_stride to the length of common leading order in common leading
-  // and CoefUsageTrans::USE_NONE case
-  if (USAGE == CoefUsageTrans::USE_NONE and this->is_common_leading())
-    this->input_stride = this->get_leading().first;
 }
 
 
