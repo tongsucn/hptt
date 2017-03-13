@@ -59,6 +59,10 @@ private:
 };
 
 
+std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
+    const GenNumType target);
+
+
 /*
  * Import implementation
  */
