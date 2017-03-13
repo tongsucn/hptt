@@ -3,233 +3,836 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
 
 /*
+ * Implementation for class MacroTransVec
+ */
+template <typename KernelFunc>
+class MacroTransVec<KernelFunc, 0, 0> {
+};
+
+
+template <typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::MacroTransVec(
+    DeducedFloatType<typename KernelFunc::FLOAT> alpha,
+    DeducedFloatType<typename KernelFunc::FLOAT> beta)
+    : kernel_(alpha, beta),
+      kn_wd_(this->kernel_.get_kernel_width()) {
+}
+
+
+template <typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() {
+  return CONT_LEN * this->kn_wd_;
+}
+
+
+template <typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() {
+  return NCONT_LEN * this->kn_wd_;
+}
+
+
+template <typename KernelFunc,
+          GenNumType CONT_LEN,
+          GenNumType NCONT_LEN>
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
+    const typename KernelFunc::FLOAT * RESTRICT input_data,
+    typename KernelFunc::FLOAT * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) {
+  const auto kn_wd = this->kn_wd_;
+#pragma unroll_and_jam(NCONT_LEN)
+  for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
+#pragma unroll_and_jam(CONT_LEN)
+    for (GenNumType cont = 0; cont < CONT_LEN; ++cont)
+      this->kernel_(input_data + cont * kn_wd + ncont * kn_wd * input_stride,
+          output_data + ncont * kn_wd + cont * kn_wd * output_stride,
+          input_stride, output_stride);
+}
+
+
+/*
  * Avoid template instantiation for class MacroTransVec
  */
 extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 4>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 4, 4>;
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 3>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_BETA>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<double, CoefUsageTrans::USE_NONE>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<double, CoefUsageTrans::USE_BETA>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
 extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 2>;
+extern template class MacroTransVec<
     KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 2>;
 extern template class MacroTransVec<
     KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
 extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 3, 4>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_NONE>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 3, 3>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 3, 2>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BETA>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 3, 1>;
 extern template class MacroTransVec<
-    KernelTransFull<float, CoefUsageTrans::USE_BOTH>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 4>;
 extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_NONE>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 3>;
 extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 2>;
 extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BETA>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
 extern template class MacroTransVec<
-    KernelTransFull<double, CoefUsageTrans::USE_BOTH>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
 extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 3>;
 extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransFull<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
 extern template class MacroTransVec<
     KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 3, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 3, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 3, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 2>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
 extern template class MacroTransVec<
     KernelTransFull<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
 
+
 extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 1>;
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 4, 1>;
 extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
-extern template class MacroTransVec<
-    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<float, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<double, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<FloatComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
+
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_NONE>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_ALPHA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 3, 1>;
 extern template class MacroTransVec<
     KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 2, 1>;
 extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BETA>, 1, 1>;
+
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 4, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 3, 1>;
+extern template class MacroTransVec<
     KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 2, 1>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 4>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 3>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 2>;
+extern template class MacroTransVec<
+    KernelTransHalf<DoubleComplex, CoefUsageTrans::USE_BOTH>, 1, 1>;
+
 
 /*
  * Avoid template instantiation for class MacroTransLinear
