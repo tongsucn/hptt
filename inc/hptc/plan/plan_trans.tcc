@@ -30,6 +30,14 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph(
   // Construct graph descriptor
   auto descriptors = this->optimizer_.get_optimal(heur_loop_num, heur_para_num,
       tune_loop_num, tune_para_num);
+  std::cout << "Loop order: ";
+  for (auto l : descriptors[0].loop_order)
+    std::cout << l << " ";
+  std::cout << std::endl;
+  std::cout << "Parallel strategy: ";
+  for (auto l : descriptors[0].parallel_strategy)
+    std::cout << l << " ";
+  std::cout << std::endl;
 
   // Return tuned result
   return this->tuning_(descriptors, tune_times);;

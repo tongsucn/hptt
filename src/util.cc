@@ -1,7 +1,6 @@
 #include <hptc/util.h>
 
 #include <vector>
-#include <list>
 #include <random>
 #include <numeric>
 #include <functional>
@@ -177,12 +176,22 @@ std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
 
 
 std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target) {
-  // Key is a prime factor, value is its times
+  // Key is a prime factor, value is its frequency
   std::unordered_map<GenNumType, GenNumType> result;
   for (GenNumType num = 2; target > 1; ++num)
     if (0 == target % num)
       for (result[num] = 0; 0 == target % num; target /= num)
         ++result[num];
+  return result;
+}
+
+
+std::vector<GenNumType> flat_map(
+    const std::unordered_map<GenNumType, GenNumType> &input_map) {
+  std::vector<GenNumType> result;
+  for (auto kv : input_map)
+    for (auto freq = 0; freq < kv.second; ++freq)
+      result.push_back(kv.first);
   return result;
 }
 

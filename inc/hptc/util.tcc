@@ -31,21 +31,28 @@ INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
 }
 
 
+/*
+ * Implementation for struct ModCmp
+ */
+template <typename ValType>
+INLINE bool ModCmp<ValType>::operator()(const ValType &first,
+    const ValType &second) {
+  return 0 == first % second;
+}
+
+
 template <typename TargetFunc>
 std::vector<GenNumType> assign_factor(
-    std::unordered_set<GenNumType> &drain_factors,
     std::unordered_map<GenNumType, GenNumType> &fact_map, GenNumType &target,
-    GenNumType &account, TargetFunc cmp) {
+    GenNumType &accumulate, TargetFunc cmp) {
   std::vector<GenNumType> assigned;
   for (auto &factor : fact_map) {
     while (factor.second > 0 and cmp(target, factor.first)) {
       target /= factor.first;
-      account *= factor.first;
+      accumulate *= factor.first;
       --factor.second;
       assigned.push_back(factor.first);
     }
-    if (0 == factor.second)
-      drain_factors.insert(factor.first);
   }
   return assigned;
 }

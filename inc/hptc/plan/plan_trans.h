@@ -20,13 +20,6 @@
 namespace hptc {
 
 template <typename ParamType>
-using Graph = CGraphTrans<ParamType>;
-
-template <typename ParamType>
-using Descriptor = typename Graph<ParamType>::CGraphTransDescriptor;
-
-
-template <typename ParamType>
 class PlanTrans {
 public:
   static constexpr auto ORDER = ParamType::ORDER;

@@ -5,8 +5,6 @@
 #include <vector>
 #include <random>
 #include <chrono>
-#include <utility>
-#include <unordered_set>
 #include <unordered_map>
 
 #include <hptc/types.h>
@@ -61,6 +59,12 @@ private:
 };
 
 
+template <typename ValType>
+struct ModCmp {
+  INLINE bool operator()(const ValType &first, const ValType &second);
+};
+
+
 std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
     const GenNumType target);
 
@@ -70,9 +74,12 @@ std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target);
 
 template <typename TargetFunc>
 std::vector<GenNumType> assign_factor(
-    std::unordered_set<GenNumType> &drain_factors,
     std::unordered_map<GenNumType, GenNumType> &fact_map, GenNumType &target,
-    GenNumType &account);
+    GenNumType &accumulate, TargetFunc cmp);
+
+
+std::vector<GenNumType> flat_map(
+    const std::unordered_map<GenNumType, GenNumType> &input_map);
 
 
 /*
