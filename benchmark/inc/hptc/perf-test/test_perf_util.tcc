@@ -39,7 +39,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
 
   // 4. Create plan and generate computational graph
-  PlanTrans<Param, ORDER> plan(param);
+  PlanTrans<Param> plan(param);
   auto graph = plan.get_graph();
 
   // Execute computational graph

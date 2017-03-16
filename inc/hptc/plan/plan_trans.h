@@ -19,31 +19,37 @@
 
 namespace hptc {
 
-template <typename ParamType,
-          TensorOrder ORDER>
+template <typename ParamType>
+using Graph = CGraphTrans<ParamType>;
+
+template <typename ParamType>
+using Descriptor = typename Graph<ParamType>::CGraphTransDescriptor;
+
+
+template <typename ParamType>
 class PlanTrans {
 public:
+  static constexpr auto ORDER = ParamType::ORDER;
+
   PlanTrans(const std::shared_ptr<ParamType> &param, GenNumType thread_num = 0);
 
   PlanTrans(const PlanTrans &plan) = delete;
-  PlanTrans<ParamType, ORDER> &operator=(const PlanTrans &plan) = delete;
+  PlanTrans<ParamType> &operator=(const PlanTrans &plan) = delete;
 
   ~PlanTrans() = default;
 
-  CGraphTrans<ParamType, ORDER> *get_graph(TensorIdx heur_num = 0,
-      TensorIdx tune_num = 0, GenNumType tune_times = 10);
-  CGraphTrans<ParamType, ORDER> *get_graph(
-      std::initializer_list<TensorIdx> loop_param,
+  Graph<ParamType> *get_graph(TensorIdx heur_num = 0, TensorIdx tune_num = 0,
+      GenNumType tune_times = 10);
+  Graph<ParamType> *get_graph(std::initializer_list<TensorIdx> loop_param,
       std::initializer_list<TensorIdx> parallel_param);
 
 private:
-  using Graph = CGraphTrans<ParamType, ORDER>;
-
-  Graph *tuning_(const std::vector<CGraphTransDescriptor<ORDER>> &descriptors,
+  Graph<ParamType> *tuning_(
+      const std::vector<Descriptor<ParamType>> &descriptors,
       GenNumType tune_times);
 
   std::shared_ptr<ParamType> param_;
-  PlanTransOptimizer<ParamType, ORDER> optimizer_;
+  PlanTransOptimizer<ParamType> optimizer_;
 };
 
 

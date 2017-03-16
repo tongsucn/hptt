@@ -23,7 +23,7 @@ template <CoefUsageTrans USAGE>
 void KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF>::
 operator()(const float * RESTRICT input_data,
     float * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    const TensorIdx output_stride) const {
   // Load input data into registers
   __m128 reg_input[4];
   reg_input[0] = _mm_loadu_ps(input_data);
@@ -94,7 +94,7 @@ template <CoefUsageTrans USAGE>
 void KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF>::
 operator()(const double * RESTRICT input_data,
     double * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    const TensorIdx output_stride) const {
   // Load input data into registers
   __m128d reg_input[2];
   reg_input[0] = _mm_loadu_pd(input_data);
@@ -147,7 +147,7 @@ template <CoefUsageTrans USAGE>
 void KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF>::
 operator()(const FloatComplex * RESTRICT input_data,
     FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    const TensorIdx output_stride) const {
   // Load input data into registers
   __m128 reg_input[2];
   reg_input[0] = _mm_loadu_ps(reinterpret_cast<const float *>(input_data));
@@ -203,7 +203,7 @@ template <CoefUsageTrans USAGE>
 void KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_HALF>::
 operator()(const DoubleComplex * RESTRICT input_data,
     DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    const TensorIdx output_stride) const {
   if (CoefUsageTrans::USE_NONE == USAGE)
     *output_data = *input_data;
   else if (CoefUsageTrans::USE_ALPHA == USAGE)

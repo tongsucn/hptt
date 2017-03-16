@@ -6,6 +6,8 @@
 #include <random>
 #include <chrono>
 #include <utility>
+#include <unordered_set>
+#include <unordered_map>
 
 #include <hptc/types.h>
 
@@ -61,6 +63,16 @@ private:
 
 std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
     const GenNumType target);
+
+
+std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target);
+
+
+template <typename TargetFunc>
+std::vector<GenNumType> assign_factor(
+    std::unordered_set<GenNumType> &drain_factors,
+    std::unordered_map<GenNumType, GenNumType> &fact_map, GenNumType &target,
+    GenNumType &account);
 
 
 /*

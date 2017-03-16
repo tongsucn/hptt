@@ -12,7 +12,7 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
   KernelTransAvx(float coef_alpha, float coef_beta);
   void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -22,7 +22,7 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
   KernelTransAvx(double coef_alpha, double coef_beta);
   void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -32,7 +32,7 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
   KernelTransAvx(float coef_alpha, float coef_beta);
   void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -42,7 +42,7 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
   KernelTransAvx(double coef_alpha, double coef_beta);
   void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -52,7 +52,7 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
   KernelTransAvx(float coef_alpha, float coef_beta);
   void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -62,7 +62,7 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
   KernelTransAvx(double coef_alpha, double coef_beta);
   void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -72,7 +72,7 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
   KernelTransAvx(float coef_alpha, float coef_beta);
   void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 template <CoefUsageTrans USAGE>
@@ -82,7 +82,7 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
   KernelTransAvx(double coef_alpha, double coef_beta);
   void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 

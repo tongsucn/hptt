@@ -25,7 +25,7 @@ KernelTransAvxBase<FloatType, TYPE>::KernelTransAvxBase(Deduced coef_alpha,
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
-GenNumType KernelTransAvxBase<FloatType, TYPE>::get_kernel_width() {
+GenNumType KernelTransAvxBase<FloatType, TYPE>::get_kernel_width() const {
   constexpr GenNumType width = REG_SIZE_BYTE_AVX / sizeof(FloatType);
   return TYPE == KernelTypeTrans::KERNEL_HALF ? width / 2 : width;
 }
@@ -33,7 +33,7 @@ GenNumType KernelTransAvxBase<FloatType, TYPE>::get_kernel_width() {
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
-GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() {
+GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() const {
   return this->get_kernel_width();
 }
 
@@ -43,7 +43,7 @@ template <typename FloatType,
 template <KernelTypeTrans KERNEL,
           std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
 DeducedRegType<float, KERNEL>
-KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) const {
   return _mm256_set1_ps(coef);
 }
 
@@ -53,7 +53,7 @@ template <typename FloatType,
 template <KernelTypeTrans KERNEL,
           std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
 DeducedRegType<double, KERNEL>
-KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) const {
   return _mm256_set1_pd(coef);
 }
 
@@ -63,7 +63,7 @@ template <typename FloatType,
 template <KernelTypeTrans KERNEL,
           std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_HALF> *>
 DeducedRegType<float, KERNEL>
-KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) {
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) const {
   return _mm_set1_ps(coef);
 }
 
@@ -74,7 +74,7 @@ template <KernelTypeTrans KERNEL,
           std::enable_if_t<std::is_same<FloatType, double>::value and
               KERNEL == KernelTypeTrans::KERNEL_HALF> *>
 DeducedRegType<double, KERNEL>
-KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) const {
   return _mm_set1_pd(coef);
 }
 
@@ -85,7 +85,7 @@ template <KernelTypeTrans KERNEL,
           std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
               KERNEL == KernelTypeTrans::KERNEL_HALF> *>
 DeducedRegType<DoubleComplex, KERNEL>
-KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) {
+KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) const {
   return coef;
 }
 

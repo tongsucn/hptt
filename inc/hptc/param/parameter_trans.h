@@ -11,7 +11,7 @@
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 #include <hptc/config/config_trans.h>
-#include <hptc/kernels/macro_kernel_trans.h>
+#include <hptc/kernels/kernel_trans.h>
 
 
 namespace hptc {
@@ -44,15 +44,13 @@ struct ParamTrans {
   using FloatType = typename TensorType::FLOAT;
   using Deduced = DeducedFloatType<FloatType>;
   constexpr static auto ORDER = TensorType::TENSOR_ORDER;
+  constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   ParamTrans(TensorType &input_tensor, TensorType &output_tensor,
       const std::array<TensorOrder, ORDER> &perm, Deduced alpha, Deduced beta);
 
   INLINE bool is_common_leading();
   INLINE std::pair<TensorOrder, TensorOrder> get_leading();
-
-
-  constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   TensorMergedWrapper<FloatType, ORDER> input_tensor, output_tensor;
   Deduced alpha, beta;
@@ -63,17 +61,7 @@ struct ParamTrans {
   TensorOrder begin_order_idx;
 
   // Kernels
-  // Non-linear kernels
-  MacroTransVecFullBig<FloatType, USAGE>            kn_fb;
-  MacroTransVecFullVertical<FloatType, USAGE>       kn_fv;
-  MacroTransVecFullHorizontal<FloatType, USAGE>     kn_fh;
-  MacroTransVecFullSmall<FloatType, USAGE>          kn_fs;
-  MacroTransVecHalfVertical<FloatType, USAGE>       kn_hv;
-  MacroTransVecHalfHorizontal<FloatType, USAGE>     kn_hh;
-  MacroTransVecHalfSmall<FloatType, USAGE>          kn_hs;
-
-  // Linear kernels
-  MacroTransLinear<FloatType, USAGE>                kn_ln;
+  KernelPackTrans<FloatType, USAGE> kn;
 
 private:
   void merge_idx_(const std::array<TensorOrder, ORDER> &perm);

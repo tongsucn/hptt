@@ -109,10 +109,7 @@ ParamTrans<TensorType, USAGE>::ParamTrans(TensorType &input_tensor,
     DeducedFloatType<typename TensorType::FLOAT> beta)
     : input_tensor(input_tensor), output_tensor(output_tensor),
       alpha(alpha), beta(beta), input_stride(1), output_stride(1),
-      merged_order(ORDER), begin_order_idx(0),
-      kn_fb(alpha, beta), kn_fv(alpha, beta), kn_fh(alpha, beta),
-      kn_fs(alpha, beta), kn_hv(alpha, beta), kn_hh(alpha, beta),
-      kn_hs(alpha, beta), kn_ln(alpha, beta) {
+      merged_order(ORDER), begin_order_idx(0), kn(alpha, beta) {
   // Initialize permutation array, do not need to transform its format when
   // tensor layout is not column major
   std::copy(perm.begin(), perm.end(), this->perm);

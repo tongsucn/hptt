@@ -7,7 +7,7 @@
 #include <hptc/util.h>
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
-#include <hptc/kernels/kernel_trans.h>
+#include <hptc/kernels/micro_kernel_trans.h>
 
 
 namespace hptc {
@@ -22,12 +22,12 @@ public:
 
   MacroTransVec(Deduced alpha, Deduced beta);
 
-  GenNumType get_cont_len();
-  GenNumType get_ncont_len();
+  GenNumType get_cont_len() const;
+  GenNumType get_ncont_len() const;
 
   void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 
 private:
   KernelFunc kernel_;
@@ -43,7 +43,7 @@ public:
       DeducedFloatType<FloatType> beta);
   void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 
 private:
   const DeducedFloatType<FloatType> alpha, beta;

@@ -6,6 +6,8 @@
 #include <hptc/config/config_trans.h>
 
 
+#include <iostream>
+
 namespace hptc {
 
 /*
@@ -23,7 +25,7 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 void MacroTransLinear<FloatType, USAGE>::operator()(
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   if (USAGE == CoefUsageTrans::USE_NONE)
     std::copy(input_data, input_data + input_stride, output_data);
   else if (USAGE == CoefUsageTrans::USE_ALPHA)

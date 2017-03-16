@@ -7,6 +7,7 @@
 #include <functional>
 #include <algorithm>
 #include <utility>
+#include <unordered_map>
 
 
 namespace hptc {
@@ -172,6 +173,17 @@ std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
 
   // Algorithm tends to return result with smaller length
   return best_cand.second;
+}
+
+
+std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target) {
+  // Key is a prime factor, value is its times
+  std::unordered_map<GenNumType, GenNumType> result;
+  for (GenNumType num = 2; target > 1; ++num)
+    if (0 == target % num)
+      for (result[num] = 0; 0 == target % num; target /= num)
+        ++result[num];
+  return result;
 }
 
 

@@ -9,6 +9,9 @@
 
 namespace hptc {
 
+/*
+ * Transpose coefficients types
+ */
 enum class CoefUsageTrans : GenNumType {
   USE_NONE  = 0x0,
   USE_ALPHA = 0x1,
@@ -17,9 +20,13 @@ enum class CoefUsageTrans : GenNumType {
 };
 
 
+/*
+ * Transpose kernel types
+ */
 enum class KernelTypeTrans : GenNumType {
   KERNEL_FULL = 0,
-  KERNEL_HALF = 1
+  KERNEL_HALF = 1,
+  KERNEL_LINE = 2
 };
 
 
@@ -55,10 +62,6 @@ using LoopOrderTrans = std::array<TensorOrder, ORDER>;
 
 template <TensorOrder ORDER>
 using ParaStrategyTrans = std::array<GenNumType, ORDER>;
-
-
-template <TensorOrder ORDER>
-using LoopGroupTrans = std::array<LoopParamTrans<ORDER>, 9>;
 
 
 /*

@@ -68,33 +68,33 @@ struct KernelTransAvxBase {
 
   KernelTransAvxBase(Deduced coef_alpha, Deduced coef_beta);
 
-  GenNumType get_kernel_width();
-  GenNumType get_reg_num();
+  GenNumType get_kernel_width() const;
+  GenNumType get_reg_num() const;
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
                 = nullptr>
-  DeducedRegType<float, KERNEL> reg_coef(float coef);
+  DeducedRegType<float, KERNEL> reg_coef(float coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
                 = nullptr>
-  DeducedRegType<double, KERNEL> reg_coef(double coef);
+  DeducedRegType<double, KERNEL> reg_coef(double coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_HALF> *
                 = nullptr>
-  DeducedRegType<float, KERNEL> reg_coef(float coef);
+  DeducedRegType<float, KERNEL> reg_coef(float coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<std::is_same<FloatType, double>::value and
                 KERNEL == KernelTypeTrans::KERNEL_HALF> * = nullptr>
-  DeducedRegType<double, KERNEL> reg_coef(double coef);
+  DeducedRegType<double, KERNEL> reg_coef(double coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,
             std::enable_if_t<std::is_same<FloatType, DoubleComplex>::value and
                 KERNEL == KernelTypeTrans::KERNEL_HALF> * = nullptr>
-  DeducedRegType<DoubleComplex, KERNEL> reg_coef(double coef);
+  DeducedRegType<DoubleComplex, KERNEL> reg_coef(double coef) const;
 
   const RegType reg_alpha;
   const RegType reg_beta;
@@ -112,7 +112,7 @@ struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
 
   void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride);
+      const TensorIdx output_stride) const;
 };
 
 

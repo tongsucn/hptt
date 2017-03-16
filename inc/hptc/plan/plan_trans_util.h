@@ -4,12 +4,15 @@
 
 #include <cmath>
 #include <vector>
+#include <stack>
 #include <queue>
+#include <deque>
 #include <memory>
 #include <utility>
 #include <numeric>
-#include <stack>
 #include <algorithm>
+#include <functional>
+#include <unordered_set>
 
 #include <omp.h>
 
@@ -22,14 +25,22 @@
 
 namespace hptc {
 
-template <typename ParamType,
-          TensorOrder ORDER>
+template <typename ParamType>
+using Graph = CGraphTrans<ParamType>;
+
+template <typename ParamType>
+using Descriptor = typename Graph<ParamType>::CGraphTransDescriptor;
+
+
+template <typename ParamType>
 class PlanTransOptimizer {
 public:
+  static constexpr auto ORDER = ParamType::ORDER;
+
   PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
       GenNumType thread_num = 0);
 
-  std::vector<CGraphTransDescriptor<ORDER>> get_optimal(TensorIdx heur_loop_num,
+  std::vector<Descriptor<ParamType>> get_optimal(TensorIdx heur_loop_num,
       TensorIdx heur_para_num, TensorIdx tune_loop_num,
       TensorIdx tune_para_num) const;
 
@@ -39,48 +50,48 @@ private:
   void init_loop_evaluator_param_();
   void init_parallel_evaluator_param_();
 
-  void init_thread_num_();
+  void init_threads_();
 
   void init_vec_();
-  void init_vec_kernels_(LoopParamTrans<ORDER> &loop,
-      const GenNumType kn_cont_len, const GenNumType kn_ncont_len,
-      TensorOrder &cont_rest, TensorOrder &ncont_rest, bool is_sv = false);
-
+  void init_vec_deploy_kernels_(const KernelTypeTrans kn_type,
+      const GenNumType kn_cont_size, const GenNumType kn_ncont_size,
+      const TensorOrder cont_begin_pos, const TensorOrder ncont_begin_pos,
+      const TensorOrder cont_offset_size, const TensorOrder ncont_offset_size,
+      const bool is_linh = false);
   void init_vec_common_leading_();
-  void init_vec_kernels_common_leading_(LoopParamTrans<ORDER> &loop,
-      const GenNumType kn_len, const TensorOrder input_leading,
-      TensorOrder &cont_rest);
 
   void init_loop_();
   void init_parallel_();
 
-  std::vector<LoopOrderTrans<ORDER>> heur_loop_explorer_(
+  std::vector<LoopOrderTrans<ParamType::ORDER>> heur_loop_explorer_(
       const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_loop_evaluator_(
       const LoopOrderTrans<ORDER> &target_loop_order) const;
 
-  std::vector<ParaStrategyTrans<ORDER>> heur_parallel_explorer_(
+  std::vector<ParaStrategyTrans<ParamType::ORDER>> heur_parallel_explorer_(
       const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_parallel_evaluator_(
       const ParaStrategyTrans<ORDER> &target_para) const;
 
-  std::vector<CGraphTransDescriptor<ORDER>> gen_candidates_(
+  std::vector<Descriptor<ParamType>> gen_candidates_(
       const std::vector<LoopOrderTrans<ORDER>> &loop_orders,
       const std::vector<ParaStrategyTrans<ORDER>> &parallel_strategies) const;
-  void parallelize_(CGraphTransDescriptor<ORDER> &descriptor) const;
+  void parallelize_(Descriptor<ParamType> &descriptor) const;
 
 
   std::shared_ptr<ParamType> param_;
   GenNumType threads_;
 
-  CGraphTransDescriptor<ORDER> descriptor_;
-  std::vector<std::pair<GenNumType, GenNumType>> th_fact_map_;
-  std::array<TensorIdx, ORDER> avail_parallel_;
+  Descriptor<ParamType> descriptor_;
+  std::unordered_map<GenNumType, GenNumType> th_fact_map_;
+  std::array<GenNumType, ORDER> avail_parallel_;
+  ParaStrategyTrans<ORDER> parallel_template_;
 
   // Parameters for loop order heuristics
   double penalty_begin, penalty_step;
   double importance_begin, importance_scale;
   double input_penalty_factor, output_penalty_factor;
+  double in_ld_award, out_ld_award;
 
   // Parameters for parallelization heuristics
   double penalty_factor_cl, penalty_factor_inld, penalty_factor_outld;

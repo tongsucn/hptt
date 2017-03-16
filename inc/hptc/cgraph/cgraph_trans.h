@@ -7,45 +7,49 @@
 #include <memory>
 
 #include <hptc/types.h>
+#include <hptc/kernels/kernel_trans.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/operations/operation_trans.h>
 
 
 namespace hptc {
 
-template <TensorOrder ORDER>
-struct CGraphTransDescriptor {
-  CGraphTransDescriptor();
-
-  LoopOrderTrans<ORDER> loop_order;
-  ParaStrategyTrans<ORDER> parallel_strategy;
-  std::vector<LoopGroupTrans<ORDER>> description;
-};
-
-
-template <typename ParamType,
-          TensorOrder ORDER>
+template <typename ParamType>
 class CGraphTrans {
 public:
+  static constexpr auto ORDER = ParamType::ORDER;
+
+  struct CGraphTransDescriptor {
+    using KernelPack
+        = KernelPackTrans<typename ParamType::FloatType, ParamType::COEF_USAGE>;
+    CGraphTransDescriptor();
+
+    LoopOrderTrans<ORDER> loop_order;
+    ParaStrategyTrans<ORDER> parallel_strategy;
+    std::vector<std::array<LoopParamTrans<ORDER>, KernelPack::KERNEL_NUM>>
+        description;
+  };
+
   CGraphTrans(const CGraphTrans &graph) = delete;
-  CGraphTrans<ParamType, ORDER> &operator=(const CGraphTrans &graph) = delete;
+  CGraphTrans<ParamType> &operator=(const CGraphTrans &graph) = delete;
 
   ~CGraphTrans();
 
   INLINE void operator()();
+  INLINE CGraphTransDescriptor get_descriptor() const;
 
 protected:
-  // Friend class
-  template <typename ParamType,
-            TensorOrder ORDER>
+  // Friend classes
+  template <typename ParamType>
   friend class PlanTrans;
+  template <typename ParamType>
+  friend class PlanTransOptimizer;
 
   using For_ = OpForTrans<ORDER>;
 
   CGraphTrans(const std::shared_ptr<ParamType> &param,
-      const CGraphTransDescriptor<ORDER> &descriptor);
+      const CGraphTransDescriptor &descriptor);
 
-  void init_();
   void release_operations_();
 
   INLINE void exec_general_();
@@ -53,7 +57,7 @@ protected:
 
 
   std::shared_ptr<ParamType> param_;
-  CGraphTransDescriptor<ORDER> descriptor_;
+  CGraphTransDescriptor descriptor_;
   GenNumType threads_;
   For_ *operations_;
 };

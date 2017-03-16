@@ -24,7 +24,8 @@ MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::MacroTransVec(
 template <typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() {
+GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len(
+    ) const {
   return CONT_LEN * this->kn_wd_;
 }
 
@@ -32,7 +33,8 @@ GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() {
 template <typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() {
+GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len(
+    ) const {
   return NCONT_LEN * this->kn_wd_;
 }
 
@@ -43,7 +45,7 @@ template <typename KernelFunc,
 void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
     const typename KernelFunc::FLOAT * RESTRICT input_data,
     typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   const auto kn_wd = this->kn_wd_;
 #pragma unroll_and_jam(NCONT_LEN)
   for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
