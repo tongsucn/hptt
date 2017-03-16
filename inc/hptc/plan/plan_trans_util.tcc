@@ -47,38 +47,18 @@ void PlanTransOptimizer<ParamType>::init_() {
   // Initialize thread number
   this->init_threads_();
 
-  // Check input and output leading and initialize vectorization
-  if (this->param_->is_common_leading())
-    // Input and output tensor's leading order ARE the same.
+  // Check input and output leading and initialize vectorization, loop and
+  // parallelization
+  if (this->param_->is_common_leading()) {
     this->init_vec_common_leading_();
-  else
-    // Input and output tensor's leading order ARE NOT the same.
+    this->init_loop_();
+    this->init_parallel_common_leading_();
+  }
+  else {
     this->init_vec_();
-/*
-  std::cout << "Descriptor:" << std::endl;
-  for (auto d : this->descriptor_.description[0]) {
-    if (d.is_disabled())
-      continue;
-    std::cout << "====" << std::endl;
-    std::cout << "  Begin: ";
-    for (auto i = 0; i < ORDER; ++i)
-      std::cout << d.loop_begin[i] << " ";
-    std::cout << std::endl;
-    std::cout << "  End: ";
-    for (auto i = 0; i < ORDER; ++i)
-      std::cout << d.loop_end[i] << " ";
-    std::cout << std::endl;
-    std::cout << "  Step: ";
-    for (auto i = 0; i < ORDER; ++i)
-      std::cout << d.loop_step[i] << " ";
-    std::cout << std::endl;
-  }*/
-
-  // Initialize default loop order
-  this->init_loop_();
-
-  // Initialize parallelization (expand descriptor)
-  this->init_parallel_();
+    this->init_loop_();
+    this->init_parallel_();
+  }
 }
 
 
@@ -127,7 +107,6 @@ void PlanTransOptimizer<ParamType>::init_threads_() {
   // initialize available parallelism at every loop
   const auto in_ld_idx = this->param_->begin_order_idx;
   const auto out_ld_idx = this->param_->perm[in_ld_idx] + in_ld_idx;
-  std::unordered_set<GenNumType> drain_factors;
   for (auto loop_idx = in_ld_idx + 1; loop_idx < ORDER; ++loop_idx) {
     // Set available parallelism at loop level loop_idx
     this->avail_parallel_[loop_idx]
@@ -137,15 +116,9 @@ void PlanTransOptimizer<ParamType>::init_threads_() {
       continue;
 
     // Try to parallelize current non-leading order loop
-    hptc::assign_factor(drain_factors, this->th_fact_map_,
-        this->avail_parallel_[loop_idx],
-        this->parallel_template_[loop_idx],
-        [] (const auto a, const auto b) -> bool { return 0 == a % b; });
+    hptc::assign_factor(this->th_fact_map_, this->avail_parallel_[loop_idx],
+        this->parallel_template_[loop_idx], hptc::ModCmp<GenNumType>());
   }
-
-  // Remove drained factors from map
-  for (auto factor : drain_factors)
-    this->th_fact_map_.erase(factor);
 }
 
 
@@ -235,10 +208,7 @@ void PlanTransOptimizer<ParamType>::init_vec_() {
         = this->param_->kn.knf_giant.get_ncont_len() / knf_basic_len;
 
     // Create rest thread number factors vector
-    std::vector<GenNumType> rest_factors;
-    for (auto kv : this->th_fact_map_)
-      for (auto times = 0; times < kv.second; ++times)
-        rest_factors.push_back(kv.first);
+    auto rest_factors = hptc::flat_map(this->th_fact_map_);
     auto fact_map = this->th_fact_map_;
 
     // Lambda for calculating core region vectorization
@@ -251,18 +221,9 @@ void PlanTransOptimizer<ParamType>::init_vec_() {
 
       if (assigned > 1) {
         // Assigned more than one threads on output leading order
-        std::vector<GenNumType> drain_factors;
-        for (auto factor : threads) {
+        for (auto factor : threads)
           --fact_map[factor];
-          if (0 == fact_map[factor])
-            drain_factors.push_back(factor);
-        }
-        for (auto factor : drain_factors)
-          fact_map.erase(factor);
-        rest_factors.clear();
-        for (auto kv : fact_map)
-          for (auto times = 0; times < kv.second; ++times)
-            rest_factors.push_back(kv.first);
+        rest_factors = hptc::flat_map(fact_map);
       }
 
       return assigned;
@@ -492,153 +453,112 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
     return;
   }
 
-  /*
-   * Create data structure storing parallelization information. It contains
-   * three members. The size ((end - begin) / step) of a loop, number of threads
-   * assigned to this loop, the original index of this loop.
-   */
-  struct LoopParaStategy {
-    LoopParaStategy(TensorOrder size, GenNumType th_num, TensorOrder loop_idx)
-        : size(size), th_num(th_num), loop_idx(loop_idx) {}
-    TensorOrder size;
-    GenNumType th_num;
-    TensorOrder loop_idx;
-  };
-
   const auto in_ld_idx = this->param_->begin_order_idx;
   const auto out_ld_idx = this->param_->perm[in_ld_idx] + in_ld_idx;
-  std::vector<LoopParaStategy> loop_nld;
-  for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx) {
-    if (in_ld_idx == loop_idx or out_ld_idx == loop_idx or
-        1 == this->avail_parallel_[loop_idx])
+  auto loop_in_ld = LoopParaStrategy_(this->avail_parallel_[in_ld_idx], 1,
+      in_ld_idx);
+  auto loop_out_ld = LoopParaStrategy_(this->avail_parallel_[out_ld_idx], 1,
+      out_ld_idx);
+  std::vector<LoopParaStrategy_> loop_strategies;
+  for (TensorOrder loop_idx = in_ld_idx + 1; loop_idx < ORDER; ++loop_idx) {
+    if (out_ld_idx == loop_idx or 1 == this->avail_parallel_[loop_idx])
       continue;
-    loop_nld.emplace_back(this->avail_parallel_[loop_idx], 1, loop_idx);
+    loop_strategies.emplace_back(this->avail_parallel_[loop_idx], 1, loop_idx);
   }
-  LoopParaStategy loop_in_ld = {
-          this->avail_parallel_[in_ld_idx], 1, in_ld_idx },
-      loop_out_ld = {
-          this->avail_parallel_[out_ld_idx], 1, out_ld_idx };
 
   // Assign rest threads' prime factors to leading orders
   const bool out_ld_large
       = this->param_->get_leading().first <= this->param_->get_leading().second;
   auto &larger_loop = out_ld_large ? loop_out_ld : loop_in_ld;
-  auto &smaller_loop = this->param_->is_common_leading()
-      ? larger_loop : (out_ld_large ? loop_in_ld : loop_out_ld);
+  auto &smaller_loop = out_ld_large ? loop_in_ld : loop_out_ld;
 
-  auto fact_map = this->th_fact_map_;
-  std::unordered_set<GenNumType> drain_factors;
-  auto cmp_mod = [] (const auto a, const auto b) -> bool { return 0 == a % b; };
-  auto larger_assigned = hptc::assign_factor(drain_factors, fact_map,
-      larger_loop.size, larger_loop.th_num, cmp_mod);
-  auto smaller_assigned = hptc::assign_factor(drain_factors, fact_map,
-      smaller_loop.size, smaller_loop.th_num, cmp_mod);
-  for (auto drained : drain_factors)
-    fact_map.erase(drained);
-  drain_factors.clear();
+  std::unordered_map<GenNumType, GenNumType> fact_map;
+  for (auto kv : this->th_fact_map_)
+    if (kv.second > 0)
+      fact_map[kv.first] = kv.second;
+  auto larger_assigned = hptc::assign_factor(fact_map, larger_loop.size,
+      larger_loop.th_num, hptc::ModCmp<GenNumType>());
+  auto smaller_assigned = hptc::assign_factor(fact_map, smaller_loop.size,
+      smaller_loop.th_num, hptc::ModCmp<GenNumType>());
 
   // Sort non-leading loops by their available parallelism and order
-  std::sort(loop_nld.begin(), loop_nld.end(),
+  std::sort(loop_strategies.begin(), loop_strategies.end(),
       [] (const auto &a, const auto &b) -> bool { return a.size > b.size or
           (a.size == a.size and a.loop_idx > b.loop_idx); });
 
   // Assign rest threads to non-leading loops
-  for (auto &loop : loop_nld)
-    hptc::assign_factor(drain_factors, fact_map, loop.size, loop.th_num,
-        std::greater<GenNumType>());
-  for (auto drained : drain_factors)
-    fact_map.erase(drained);
-  drain_factors.clear();
-
-  // Rests in the map should be large thread prime factors
-  std::vector<GenNumType> large_primes;
-  for (auto &fact : fact_map)
-    for (; fact.second > 0; --fact.second)
-      large_primes.push_back(fact.first);
-  fact_map.clear();
-
-  // Sort the non-leading loops again
-  std::sort(loop_nld.begin(), loop_nld.end(),
-      [] (const auto &a, const auto &b) -> bool { return a.size > b.size or
-          (a.size == a.size and a.loop_idx > b.loop_idx); });
+  for (auto &loop : loop_strategies)
+    hptc::assign_factor(fact_map, loop.size, loop.th_num,
+        std::greater_equal<GenNumType>());
 
   // Assign assigned leading order threads to non-leading order loops
-  if (not this->param_->is_common_leading()) {
-    larger_assigned.reserve(larger_assigned.size() + smaller_assigned.size());
-    larger_assigned.insert(larger_assigned.end(), smaller_assigned.begin(),
-        smaller_assigned.end());
-    smaller_loop.size *= smaller_loop.th_num, smaller_loop.th_num = 1;
-  }
-  larger_loop.size *= larger_loop.th_num, larger_loop.th_num = 1;
+  if (loop_strategies.size() > 0) {
+    // Create heap on loop parallel strategy
+    auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
+      return a.size < b.size or (a.size == a.size and a.loop_idx < b.loop_idx);
+    };
+    std::make_heap(loop_strategies.begin(), loop_strategies.end(), heap_cmp);
 
-  for (auto factor : larger_assigned) {
-    if (factor <= 1)
-      continue;
-    if (1 == fact_map.count(factor))
-      ++fact_map[factor];
-    else
-      fact_map[factor] = 1;
-  }
-  for (auto &loop : loop_nld)
-    hptc::assign_factor(drain_factors, fact_map, loop.size, loop.th_num,
-        std::greater<GenNumType>());
+    larger_loop.size *= larger_loop.th_num;
+    smaller_loop.size *= smaller_loop.th_num;
+    larger_loop.th_num = smaller_loop.th_num = 1;
+    smaller_assigned.insert(smaller_assigned.end(), larger_assigned.begin(),
+        larger_assigned.end());
 
-  // Assign rest threads back to leading order loops
-  hptc::assign_factor(drain_factors, fact_map, larger_loop.size,
-      larger_loop.th_num, cmp_mod);
-  hptc::assign_factor(drain_factors, fact_map, smaller_loop.size,
-      smaller_loop.th_num, cmp_mod);
-  fact_map.clear();
-  drain_factors.clear();
-
-  // Handle large prime factors
-  if (large_primes.size() > 0) {
-    const GenNumType rest_threads = std::accumulate(large_primes.begin(),
-        large_primes.end(), 1, std::multiplies<GenNumType>());
-    GenNumType rest_avail = 1;
-    for (auto &loop : loop_nld)
-      rest_avail *= loop.size;
-    rest_avail *= larger_loop.size;
-    if (not this->param_->is_common_leading())
-      rest_avail *= smaller_loop.size;
-
-    if (rest_avail <= rest_threads) {
-      for (auto &loop : loop_nld) {
-        loop.th_num *= loop.size;
-        loop.size = 1;
+    for (auto factor : smaller_assigned) {
+      const bool larger_div = 0 == larger_loop.size % factor;
+      const bool smaller_div = 0 == smaller_loop.size % factor;
+      auto &top_loop = loop_strategies[0];
+      auto &selected_loop = larger_div and smaller_div
+        ? (larger_loop.size >= smaller_loop.size ? larger_loop : smaller_loop)
+        : (larger_div ? larger_loop : smaller_loop);
+      if (selected_loop.size > top_loop.size) {
+        selected_loop.size /= factor;
+        selected_loop.th_num *= factor;
       }
-      larger_loop.th_num *= larger_loop.size;
-      larger_loop.size = 1;
-      smaller_loop.th_num *= smaller_loop.size;
-      smaller_loop.size = 1;
-    }
-    else {
-      auto avail_map = hptc::factorize(rest_avail);
-      std::vector<GenNumType> avail_list;
-      for (auto kv : avail_map)
-        for (auto times = 0; times < kv.second; ++times)
-          avail_list.push_back(kv.first);
-      std::sort(avail_list.begin(), avail_list.end());
-
-      auto compromise_factors = hptc::approx_prod(avail_list, rest_threads);
-      fact_map.clear();
-      for (auto factor : compromise_factors) {
-        if (factor <= 1)
-          continue;
-        if (1 == fact_map.count(factor))
-          ++fact_map[factor];
-        else
-          fact_map[factor] = 1;
+      else {
+        top_loop.size /= factor;
+        top_loop.th_num *= factor;
       }
-
-      for (auto &loop : loop_nld)
-        hptc::assign_factor(drain_factors, fact_map, loop.size, loop.th_num,
-            cmp_mod);
-      hptc::assign_factor(drain_factors, fact_map, larger_loop.size,
-          larger_loop.th_num, cmp_mod);
-      hptc::assign_factor(drain_factors, fact_map, smaller_loop.size,
-          smaller_loop.th_num, cmp_mod);
+      std::make_heap(loop_strategies.begin(), loop_strategies.end(), heap_cmp);
     }
+  }
+
+  // Dealing with large prime factors
+  GenNumType rest_threads = 1, rest_avail = 1;
+  for (auto kv : fact_map)
+    for (auto freq = 0; freq < kv.second; ++freq)
+      rest_threads *= kv.first;
+  for (auto &loop : loop_strategies)
+    rest_avail *= loop.size;
+  rest_avail *= larger_loop.size;
+  rest_avail *= smaller_loop.size;
+
+  if (rest_threads >= rest_avail) {
+    for (auto &loop : loop_strategies) {
+      loop.th_num *= loop.size;
+      loop.size = 1;
+    }
+  }
+  else if (rest_threads > 1) {
+    auto rest_avail_vec = hptc::flat_map(hptc::factorize(rest_avail));
+    std::sort(rest_avail_vec.begin(), rest_avail_vec.end());
+    auto assigned_factors = hptc::approx_prod(rest_avail_vec, rest_threads);
+    fact_map.clear();
+    for (auto factor : assigned_factors) {
+      if (1 == fact_map.count(factor))
+        ++fact_map[factor];
+      else
+        fact_map[factor] = 1;
+    }
+
+    for (auto &loop : loop_strategies)
+      hptc::assign_factor(fact_map, loop.size, loop.th_num,
+          hptc::ModCmp<GenNumType>());
+    hptc::assign_factor(fact_map, larger_loop.size, larger_loop.th_num,
+        hptc::ModCmp<GenNumType>());
+    hptc::assign_factor(fact_map, smaller_loop.size, smaller_loop.th_num,
+        hptc::ModCmp<GenNumType>());
   }
 
   // Parallelize the default strategy
@@ -646,7 +566,77 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
       this->descriptor_.parallel_strategy.begin());
   this->descriptor_.parallel_strategy[in_ld_idx] *= loop_in_ld.th_num;
   this->descriptor_.parallel_strategy[out_ld_idx] *= loop_out_ld.th_num;
-  for (auto &loop : loop_nld)
+  for (auto &loop : loop_strategies)
+    this->descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
+
+  // Update thread number
+  this->threads_ = std::accumulate(this->descriptor_.parallel_strategy.begin(),
+      this->descriptor_.parallel_strategy.end(), 1,
+      std::multiplies<GenNumType>());
+}
+
+
+template <typename ParamType>
+void PlanTransOptimizer<ParamType>::init_parallel_common_leading_() {
+  // Check rest thread resource, return if no threads left
+  if (1 == this->threads_ or this->th_fact_map_.empty()) {
+    std::copy(this->parallel_template_.begin(), this->parallel_template_.end(),
+        this->descriptor_.parallel_strategy.begin());
+    return;
+  }
+
+  const auto ld_idx = this->param_->begin_order_idx;
+  std::vector<LoopParaStrategy_> loop_strategies;
+  for (auto loop_idx = ld_idx; loop_idx < ORDER; ++loop_idx)
+    loop_strategies.emplace_back(this->avail_parallel_[loop_idx],
+        this->parallel_template_[loop_idx], loop_idx);
+
+  // Sort loop strategies by their available parallelism
+  std::sort(loop_strategies.begin(), loop_strategies.end(),
+      [] (const auto &a, const auto &b) -> bool { return a.size > b.size or
+          (a.size == b.size and a.loop_idx > b.loop_idx); });
+
+  // Assign rest threads and compute rest available parallelism
+  auto fact_map = this->th_fact_map_;
+  GenNumType rest_avail = 1;
+  for (auto &loop : loop_strategies) {
+    hptc::assign_factor(fact_map, loop.size, loop.th_num,
+        std::greater_equal<GenNumType>());
+    rest_avail *= loop.size;
+  }
+
+  // Dealing with large prime factors
+  GenNumType rest_threads = 1;
+  for (auto kv : fact_map)
+    for (auto freq = 0; freq < kv.second; ++freq)
+      rest_threads *= kv.first;
+
+  if (rest_threads >= rest_avail) {
+    for (auto &loop : loop_strategies) {
+      loop.th_num *= loop.size;
+      loop.size = 1;
+    }
+  }
+  else if (rest_threads > 1) {
+    //auto factorized_avail = hptc::factorize(rest_avail);
+    auto rest_avail_vec = hptc::flat_map(hptc::factorize(rest_avail));
+    std::sort(rest_avail_vec.begin(), rest_avail_vec.end());
+    auto assigned_factors = hptc::approx_prod(rest_avail_vec, rest_threads);
+    fact_map.clear();
+    for (auto factor : assigned_factors) {
+      if (1 == fact_map.count(factor))
+        ++fact_map[factor];
+      else
+        fact_map[factor] = 1;
+    }
+
+    for (auto &loop : loop_strategies)
+      hptc::assign_factor(fact_map, loop.size, loop.th_num,
+          hptc::ModCmp<GenNumType>());
+  }
+
+  // Parallelize the default strategy
+  for (auto &loop : loop_strategies)
     this->descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
 
   // Update thread number

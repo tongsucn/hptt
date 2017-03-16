@@ -45,6 +45,14 @@ public:
       TensorIdx tune_para_num) const;
 
 private:
+  struct LoopParaStrategy_ {
+    LoopParaStrategy_(TensorOrder size, GenNumType th_num, TensorOrder loop_idx)
+        : size(size), th_num(th_num), loop_idx(loop_idx) {}
+    TensorOrder size;
+    GenNumType th_num;
+    TensorOrder loop_idx;
+  };
+
   void init_();
   void init_config_();
   void init_loop_evaluator_param_();
@@ -62,6 +70,7 @@ private:
 
   void init_loop_();
   void init_parallel_();
+  void init_parallel_common_leading_();
 
   std::vector<LoopOrderTrans<ParamType::ORDER>> heur_loop_explorer_(
       const TensorIdx heur_num, TensorIdx tune_num) const;
@@ -84,7 +93,7 @@ private:
 
   Descriptor<ParamType> descriptor_;
   std::unordered_map<GenNumType, GenNumType> th_fact_map_;
-  std::array<GenNumType, ORDER> avail_parallel_;
+  ParaStrategyTrans<ORDER> avail_parallel_;
   ParaStrategyTrans<ORDER> parallel_template_;
 
   // Parameters for loop order heuristics
