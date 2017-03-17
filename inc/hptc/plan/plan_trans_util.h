@@ -58,6 +58,7 @@ private:
   void init_loop_evaluator_param_();
   void init_parallel_evaluator_param_();
 
+  void init_loop_();
   void init_threads_();
 
   void init_vec_();
@@ -68,7 +69,6 @@ private:
       const bool is_linh = false);
   void init_vec_common_leading_();
 
-  void init_loop_();
   void init_parallel_();
   void init_parallel_common_leading_();
 
@@ -95,6 +95,8 @@ private:
   std::unordered_map<GenNumType, GenNumType> th_fact_map_;
   ParaStrategyTrans<ORDER> avail_parallel_;
   ParaStrategyTrans<ORDER> parallel_template_;
+
+  const TensorOrder in_ld_idx_, out_ld_idx_;
 
   // Parameters for loop order heuristics
   double penalty_begin, penalty_step;
