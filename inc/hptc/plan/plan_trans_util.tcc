@@ -107,12 +107,12 @@ void PlanTransOptimizer<ParamType>::init_threads_() {
   // initialize available parallelism at every loop
   const auto in_ld_idx = this->param_->begin_order_idx;
   const auto out_ld_idx = this->param_->perm[in_ld_idx] + in_ld_idx;
-  for (auto loop_idx = in_ld_idx + 1; loop_idx < ORDER; ++loop_idx) {
+  for (auto loop_idx = in_ld_idx; loop_idx < ORDER; ++loop_idx) {
     // Set available parallelism at loop level loop_idx
     this->avail_parallel_[loop_idx]
         = this->param_->input_tensor.get_size()[loop_idx];
     // Skip leading orders
-    if (out_ld_idx == loop_idx)
+    if (in_ld_idx == loop_idx or out_ld_idx == loop_idx)
       continue;
 
     // Try to parallelize current non-leading order loop
@@ -208,38 +208,58 @@ void PlanTransOptimizer<ParamType>::init_vec_() {
         = this->param_->kn.knf_giant.get_ncont_len() / knf_basic_len;
 
     // Create rest thread number factors vector
-    auto rest_factors = hptc::flat_map(this->th_fact_map_);
-    auto fact_map = this->th_fact_map_;
+    auto factor_map = this->th_fact_map_;
 
-    // Lambda for calculating core region vectorization
-    auto vec_core = [&rest_factors, &fact_map] (const GenNumType kn_size) {
-      // Get thread number prime factors that can be assigned on output leading
-      std::sort(rest_factors.begin(), rest_factors.end());
-      auto threads = hptc::approx_prod(rest_factors, kn_size);
-      auto assigned = std::accumulate(threads.begin(), threads.end(), 1,
-          std::multiplies<GenNumType>());
+    // Assign threads factors to all loops as many as possible, large prime
+    // factors may not be taken into account here
+    auto non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
+        this->avail_parallel_.end(), 1, std::multiplies<GenNumType>());
+    auto rest_factors = hptc::flat_map(factor_map);
+    std::sort(rest_factors.begin(), rest_factors.end());
+    rest_factors = hptc::approx_prod(rest_factors, non_ld_avail);
 
-      if (assigned > 1) {
-        // Assigned more than one threads on output leading order
-        for (auto factor : threads)
-          --fact_map[factor];
-        rest_factors = hptc::flat_map(fact_map);
-      }
-
-      return assigned;
-    };
-
-    // Vectorize the larger leading order first
+    // Get available product of non leading order loops' parallelism
+    non_ld_avail /= this->avail_parallel_[in_ld_idx];
+    non_ld_avail /= this->avail_parallel_[out_ld_idx];
     const GenNumType knf_ncont_size = ncont_len / knf_basic_len,
         knf_cont_size = cont_len / knf_basic_len;
-    GenNumType ncont_assigned, cont_assigned;
-    if (knf_ncont_size >= knf_cont_size) {
-      ncont_assigned = vec_core(knf_ncont_size);
-      cont_assigned = vec_core(knf_cont_size);
+    std::vector<LoopParaStrategy_> loops{
+        { knf_cont_size, 1, in_ld_idx }, { knf_ncont_size, 1, out_ld_idx },
+        { non_ld_avail, 1, ORDER } };
+
+    // Assign threads to leading loops and non-leading loops
+    for (auto factor : rest_factors) {
+      // Sort in descending order of available parallelism, if two loops have
+      // the same parallelism, put the non-leading loop or the output leading
+      // loop on the left
+      std::sort(loops.begin(), loops.end(),
+          [out_ld_idx] (const auto &a, const auto &b) {
+              return a.size > b.size or (a.size == b.size and
+              (ORDER == a.loop_idx or out_ld_idx == a.loop_idx)); });
+
+      if (0 == loops[0].size % factor or loops[0].size / factor > loops[1].size)
+        // The largest loop can be exactly divided by the factor or after force
+        // dividing, it's still larger than the second largest
+        loops[0].size /= factor, loops[0].th_num *= factor;
+      else if (0 == loops[1].size % factor or
+          loops[1].size / factor > loops[2].size)
+        // The second largest loop can be exactly divided by the factor or
+        // after force dividing, it's still larger than the third largest
+        loops[1].size /= factor, loops[1].th_num *= factor;
+      else if (0 == loops[2].size % factor)
+        // The second largest loop can be exactly divided by the factor
+        loops[2].size /= factor, loops[2].th_num *= factor;
+      else
+        // None of the above conditions is satisfied, pick up the largest loop
+        loops[0].size /= factor, loops[0].th_num *= factor;
     }
-    else {
-      cont_assigned = vec_core(knf_cont_size);
-      ncont_assigned = vec_core(knf_ncont_size);
+
+    GenNumType cont_assigned, ncont_assigned;
+    for (auto &loop : loops) {
+      if (in_ld_idx == loop.loop_idx)
+        cont_assigned = loop.th_num;
+      else if (out_ld_idx == loop.loop_idx)
+        ncont_assigned = loop.th_num;
     }
 
     // Vectorization on core region
@@ -410,7 +430,7 @@ void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_loop_() {
-  // Data structure for describing loop, first is the order a loop stands for
+  // Data structure for describing loop, first is a loop's index,
   // second is loop's score
   using LoopScore = std::pair<TensorOrder, double>;
 
@@ -419,8 +439,7 @@ void PlanTransOptimizer<ParamType>::init_loop_() {
   const auto out_ld_idx = this->param_->perm[in_ld_idx] + in_ld_idx;
 
   // Create and initialize loop description array
-  std::array<LoopScore, ORDER> scores;
-  scores.fill(LoopScore(0, 0.0));
+  std::vector<LoopScore> scores(ORDER, LoopScore(0, 0.0));
   for (TensorOrder loop_idx = in_ld_idx; loop_idx < ORDER; ++loop_idx) {
     auto curr_score = static_cast<double>(loop_idx - in_ld_idx);
     scores[loop_idx].first = loop_idx;
@@ -435,7 +454,7 @@ void PlanTransOptimizer<ParamType>::init_loop_() {
   // they will be sorted by their available parallelism
   std::sort(scores.begin() + in_ld_idx, scores.end(),
       [this] (auto &a, auto &b) { return a.second > b.second or
-        (a.second == b.second and
+          (a.second == b.second and
           this->avail_parallel_[a.first] < this->avail_parallel_[b.first]); });
 
   // Set loop order
@@ -466,7 +485,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
     loop_strategies.emplace_back(this->avail_parallel_[loop_idx], 1, loop_idx);
   }
 
-  // Assign rest threads' prime factors to leading orders
+  // Assign rest threads' prime factors that can be exactly divided to leadings
   const bool out_ld_large
       = this->param_->get_leading().first <= this->param_->get_leading().second;
   auto &larger_loop = out_ld_large ? loop_out_ld : loop_in_ld;
@@ -491,7 +510,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
     hptc::assign_factor(fact_map, loop.size, loop.th_num,
         std::greater_equal<GenNumType>());
 
-  // Assign assigned leading order threads to non-leading order loops
+  // Give assigned leading order threads back to non-leading orders if necessary
   if (loop_strategies.size() > 0) {
     // Create heap on loop parallel strategy
     auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
@@ -512,14 +531,10 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
       auto &selected_loop = larger_div and smaller_div
         ? (larger_loop.size >= smaller_loop.size ? larger_loop : smaller_loop)
         : (larger_div ? larger_loop : smaller_loop);
-      if (selected_loop.size > top_loop.size) {
-        selected_loop.size /= factor;
-        selected_loop.th_num *= factor;
-      }
-      else {
-        top_loop.size /= factor;
-        top_loop.th_num *= factor;
-      }
+      if (top_loop.size / factor > selected_loop.size)
+        top_loop.size /= factor, top_loop.th_num *= factor;
+      else
+        selected_loop.size /= factor, selected_loop.th_num *= factor;
       std::make_heap(loop_strategies.begin(), loop_strategies.end(), heap_cmp);
     }
   }
