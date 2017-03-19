@@ -118,14 +118,9 @@ INLINE void OpForTrans<ORDER>::unroller_(GenCounter<0>, MacroType &macro_kernel,
 
 
 /*
- * Avoid template instantiation for class OpForTrans
+ * Avoid template instantiation for class OpForTrans, import generated extern
+ * template declaration.
  */
-extern template class OpForTrans<2>;
-extern template class OpForTrans<3>;
-extern template class OpForTrans<4>;
-extern template class OpForTrans<5>;
-extern template class OpForTrans<6>;
-extern template class OpForTrans<7>;
-extern template class OpForTrans<8>;
+#include "operation_trans_gen.tcc"
 
 #endif // HPTC_OPERATIONS_OPERATION_TRANS_TCC_

@@ -978,4 +978,11 @@ void PlanTransOptimizer<ParamType>::parallelize_(
   }
 }
 
+
+/*
+ * Avoid template instantiation for class PlanTransOptimizer, import generated
+ * extern template descalration.
+ */
+#include "plan_trans_util_gen.tcc"
+
 #endif // HPTC_PLAN_PLAN_TRANS_UTIL_TCC_

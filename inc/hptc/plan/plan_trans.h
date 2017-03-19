@@ -34,7 +34,8 @@ public:
   Graph<ParamType> *get_graph(TensorIdx heur_num = 0, TensorIdx tune_num = 0,
       GenNumType tune_times = 10);
   Graph<ParamType> *get_graph(std::initializer_list<TensorIdx> loop_param,
-      std::initializer_list<TensorIdx> parallel_param);
+      std::initializer_list<TensorIdx> parallel_param,
+      GenNumType tune_times = 10);
 
 private:
   Graph<ParamType> *tuning_(

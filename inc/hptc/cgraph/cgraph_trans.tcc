@@ -215,4 +215,11 @@ INLINE void CGraphTrans<ParamType>::exec_common_leading_() {
         this->param_->output_tensor, ld_len, 0);
 }
 
+
+/*
+ * Avoid template instantiation for class CGraphTrans, import generated extern
+ * template declaration.
+ */
+#include "cgraph_trans_gen.tcc"
+
 #endif // HPTC_CGRAPH_CGRAPH_TRANS_TCC_

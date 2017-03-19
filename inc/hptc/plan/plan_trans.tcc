@@ -39,7 +39,7 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph(
 template <typename ParamType>
 CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph(
     std::initializer_list<TensorIdx> loop_param,
-    std::initializer_list<TensorIdx> parallel_param) {
+    std::initializer_list<TensorIdx> parallel_param, GenNumType tune_times) {
   // Get heuristic number and tuning number
   auto heur_loop_num = *loop_param.begin(),
       heur_para_num = *parallel_param.begin();
@@ -103,5 +103,12 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::tuning_(
 
   return new Graph<ParamType>(this->param_, descriptors[best_cand_idx]);
 }
+
+
+/*
+ * Avoid template instantiation for class PlanTransOptimizer, import generated
+ * extern template declaration.
+ */
+#include "plan_trans_gen.tcc"
 
 #endif // HPTC_PLAN_PLAN_TRANS_TCC_

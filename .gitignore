@@ -31,9 +31,15 @@
 *.out
 *.app
 
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Build directory
 build/
 
 # Project related files
 benchmark/inc/hptc/benchmark/trans/avx/ttc_implementations
+inc/hptc/gen
 src/gen

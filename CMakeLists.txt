@@ -8,40 +8,47 @@
 cmake_minimum_required (VERSION 3.4)
 project (HPTC)
 
-
-# ----------------------------------------------------------------------------
-# Build options
-# ----------------------------------------------------------------------------
-# Options
-option(BUILD_TEST "Generate executable test program.")
-option(BUILD_DOC "Create the HTML based API documentation (requires doxygen)."
-  ${DOXYGEN_FOUND})
-option(BUILD_TEST "Generate executable test program (requires Google Test)."
-  ${GTEST_FOUND})
-set(BUILD_DEBUG OFF CACHE BOOL "Build debug version of library.")
+# Include macros and functions
+include(cmake/hptc_config.cmake)
+include(cmake/hptc_code_gen.cmake)
 
 # Find dependencies
 find_package(Doxygen)
 find_package(GTest)
 
-
 # ----------------------------------------------------------------------------
-# Compiler options
+# Build options
 # ----------------------------------------------------------------------------
-set(TENSOR_CXX_FLAG "-Wall -Werror -std=c++14 -xhost -qopenmp")
-set(TENSOR_DEBUG_FLAG "-O0 -g")
-set(TENSOR_RELEASE_FLAG "-O3 -DNDEBUG")
+option(HPTC_BUILD_DOC
+  "Create the HTML based API documentation (requires doxygen)."
+  ${DOXYGEN_FOUND})
+option(HPTC_BUILD_DEBUG
+  "Generate executable test program (requires Google Test)." OFF)
+option(HPTC_BUILD_BENCHMARK
+  "Generate benchmark executable." OFF)
+option(HPTC_BUILD_TEST
+  "Generate executable test program (requires Google Test)." OFF)
 
-if (BUILD_TYPE STREQUAL "DEBUG")
-  # Use debug configurations.
-  string(CONCAT TENSOR_CXX_FLAG ${TENSOR_CXX_FLAG} " " ${TENSOR_DEBUG_FLAG})
-else ()
-  # Use release configuration.
-  string(CONCAT TENSOR_CXX_FLAG ${TENSOR_CXX_FLAG} " " ${TENSOR_RELEASE_FLAG})
-endif ()
+set(HPTC_CODE_GEN_TRANS_ORDER_MIN 2 CACHE STRING
+  ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MIN})
+set(HPTC_CODE_GEN_TRANS_ORDER_MAX 7 CACHE STRING
+  ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MAX})
+set(HPTC_CODE_GEN_TRANS_DTYPE "s,d,c,z" CACHE STRING
+  ${HPTC_MSG_CODE_GEN_TRANS_DTYPE})
+set(HPTC_CODE_GEN_TRANS_COEF "alpha,beta,both,none" CACHE STRING
+  ${HPTC_MSG_CODE_GEN_TRANS_COEF})
+set(HPTC_CODE_GEN_TARGET_DIR_PREFIX ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
+  ${HPTC_MSG_CODE_GEN_TARGET_DIR_PREFIX})
 
-string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " " ${TENSOR_CXX_FLAG})
+string(CONCAT HPTC_CODE_GEN_TARGET_DIR ${HPTC_CODE_GEN_TARGET_DIR_PREFIX} "/"
+  ${HPTC_CODE_GEN_TARGET_DIR})
 
+
+# Setting compiler options
+hptc_set_compiler_option()
+
+# Call code generation script
+hptc_code_gen_all(${HPTC_CODE_GEN_TARGET_DIR_PREFIX})
 
 # ----------------------------------------------------------------------------
 # Directory setting
@@ -49,18 +56,19 @@ string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " " ${TENSOR_CXX_FLAG})
 # Add include files' directory
 include_directories(inc)
 
+# Add generated include files' directory
+include_directories(${HPTC_CODE_GEN_TARGET_DIR})
+
 # Add source directory
 add_subdirectory(src)
 
-# ----------------------------------------------------------------------------
-# Tests and benchmarks
-# ----------------------------------------------------------------------------
-if (BUILD_TEST AND GTEST_FOUND)
+# Add test and benchmark directory if necessary
+if (${HPTC_BUILD_TEST} AND ${GTEST_FOUND})
   add_subdirectory(test)
 endif ()
 
-if (BUILD_BENCHMARK)
-  if (NOT BUILD_TEST)
+if (${HPTC_BUILD_BENCHMARK})
+  if (NOT ${HPTC_BUILD_TEST})
     add_subdirectory(test)
   endif ()
 
