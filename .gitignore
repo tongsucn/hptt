@@ -36,3 +36,4 @@ build/
 
 # Project related files
 benchmark/inc/hptc/benchmark/trans/avx/ttc_implementations
+src/gen
