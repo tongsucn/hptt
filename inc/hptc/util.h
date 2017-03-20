@@ -5,6 +5,8 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <utility>
+#include <type_traits>
 #include <unordered_map>
 
 #include <hptc/types.h>
@@ -21,6 +23,11 @@ template <GenNumType ROWS,
           GenNumType COLS>
 struct DualCounter {
 };
+
+
+template <bool COND,
+          typename Type = void>
+using Enable = typename std::enable_if<COND, Type>::type;
 
 
 template <typename FloatType>

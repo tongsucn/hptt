@@ -2,6 +2,9 @@
 #ifndef HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 #define HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 
+/*
+ * Implementation for class CGraphTrans::CGraphTransDescriptor
+ */
 template <typename ParamType>
 CGraphTrans<ParamType>::CGraphTransDescriptor::CGraphTransDescriptor()
     : description(1) {
@@ -12,6 +15,9 @@ CGraphTrans<ParamType>::CGraphTransDescriptor::CGraphTransDescriptor()
 }
 
 
+/*
+ * Implementation for class CGraphTrans
+ */
 template <typename ParamType>
 CGraphTrans<ParamType>::~CGraphTrans() {
   this->release_operations_();
@@ -78,130 +84,119 @@ void CGraphTrans<ParamType>::release_operations_() {
 
 template <typename ParamType>
 INLINE void CGraphTrans<ParamType>::exec_general_() {
+  const auto &kn = this->param_->kn;
+  auto &input_tensor = this->param_->input_tensor;
+  auto &output_tensor = this->param_->output_tensor;
+  const auto input_stride = this->param_->input_stride;
+  const auto output_stride = this->param_->output_stride;
+  const auto &reg_alpha_full = this->param_->reg_alpha_full;
+  const auto &reg_beta_full = this->param_->reg_beta_full;
+  const auto &reg_alpha_half = this->param_->reg_alpha_half;
+  const auto &reg_beta_half = this->param_->reg_beta_half;
+  const auto &reg_alpha_linear = this->param_->reg_alpha_linear;
+  const auto &reg_beta_linear = this->param_->reg_beta_linear;
+
 #pragma omp parallel for schedule(static)
   for (TensorOrder idx = 0; idx < this->threads_; ++idx) {
     auto task = this->operations_ + idx;
-    (*task)(this->param_->kn.knf_1x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_1x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_1x2, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_1x2, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_1x3, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_1x3, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_1x4, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_1x4, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_2x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_2x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_2x2, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_2x2, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_2x3, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_2x3, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_2x4, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_2x4, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_3x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_3x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_3x2, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_3x2, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_3x3, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_3x3, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_3x4, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_3x4, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_4x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_4x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_4x2, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_4x2, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_4x3, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_4x3, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knf_4x4, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knf_4x4, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_full, reg_beta_full);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_1x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_1x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_1x2, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_1x2, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_1x3, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_1x3, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_1x4, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_1x4, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_2x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_2x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_3x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_3x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.knh_4x1, this->param_->input_tensor,
-        this->param_->output_tensor, this->param_->input_stride,
-        this->param_->output_stride);
+    (*task)(kn.knh_4x1, input_tensor, output_tensor, input_stride,
+        output_stride, reg_alpha_half, reg_beta_half);
 
     task = task->next;
-    (*task)(this->param_->kn.kn_lin, this->param_->input_tensor,
-        this->param_->output_tensor, 1, 0);
+    (*task)(kn.kn_lin, input_tensor, output_tensor, 1, 0,
+        reg_alpha_linear, reg_beta_linear);
 
     task = task->next;
-    (*task)(this->param_->kn.kn_lin, this->param_->input_tensor,
-        this->param_->output_tensor, 1, 0);
+    (*task)(kn.kn_lin, input_tensor, output_tensor, 1, 0,
+        reg_alpha_linear, reg_beta_linear);
   }
 }
 
@@ -209,16 +204,19 @@ INLINE void CGraphTrans<ParamType>::exec_general_() {
 template <typename ParamType>
 INLINE void CGraphTrans<ParamType>::exec_common_leading_() {
   const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
+  const auto &kn = this->param_->kn;
+
 #pragma omp parallel for schedule(static)
   for (TensorOrder idx = 0; idx < this->threads_; ++idx)
-    this->operations_[idx](this->param_->kn.kn_lin, this->param_->input_tensor,
-        this->param_->output_tensor, ld_len, 0);
+    this->operations_[idx](kn.kn_lin, this->param_->input_tensor,
+        this->param_->output_tensor, ld_len, 0, this->param_->reg_alpha_linear,
+        this->param_->reg_beta_linear);
 }
 
 
 /*
- * Avoid template instantiation for class CGraphTrans, import generated extern
- * template declaration.
+ * Import explicit instantiation declaration for class CGraphTrans, this file
+ * should be generated by cmake script.
  */
 #include "cgraph_trans_gen.tcc"
 

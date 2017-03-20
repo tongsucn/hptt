@@ -15,9 +15,10 @@ namespace hptc {
  */
 template <typename FloatType,
           CoefUsageTrans USAGE>
-MacroTransLinear<FloatType, USAGE>::MacroTransLinear(
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : alpha(alpha), beta(beta) {
+DeducedRegType<FloatType, KernelTypeTrans::KERNEL_LINE>
+MacroTransLinear<FloatType, USAGE>::reg_coef(
+    const DeducedFloatType<FloatType> coef) {
+  return coef;
 }
 
 
@@ -25,22 +26,22 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 void MacroTransLinear<FloatType, USAGE>::operator()(
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &alpha, const RegType &beta) const {
   if (USAGE == CoefUsageTrans::USE_NONE)
     std::copy(input_data, input_data + input_stride, output_data);
   else if (USAGE == CoefUsageTrans::USE_ALPHA)
 #pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
-      output_data[idx] = this->alpha * input_data[idx];
+      output_data[idx] = alpha * input_data[idx];
   else if (USAGE == CoefUsageTrans::USE_BETA)
 #pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
-      output_data[idx] = input_data[idx] + this->beta * output_data[idx];
+      output_data[idx] = input_data[idx] + beta * output_data[idx];
   else
 #pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
-      output_data[idx] = this->alpha * input_data[idx]
-          + this->beta * output_data[idx];
+      output_data[idx] = alpha * input_data[idx] + beta * output_data[idx];
 }
 
 

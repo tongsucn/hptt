@@ -2,6 +2,9 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_TCC_
 #define HPTC_PLAN_PLAN_TRANS_TCC_
 
+/*
+ * Implementation for class PlanTrans
+ */
 template <typename ParamType>
 PlanTrans<ParamType>::PlanTrans(
     const std::shared_ptr<ParamType> &param, GenNumType thread_num)
@@ -103,12 +106,5 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::tuning_(
 
   return new Graph<ParamType>(this->param_, descriptors[best_cand_idx]);
 }
-
-
-/*
- * Avoid template instantiation for class PlanTransOptimizer, import generated
- * extern template declaration.
- */
-#include "plan_trans_gen.tcc"
 
 #endif // HPTC_PLAN_PLAN_TRANS_TCC_

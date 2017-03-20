@@ -59,7 +59,7 @@ std::vector<GenNumType> assign_factor(
 
 
 /*
- * Avoid template instantiation for class DataWrapper
+ * Explicit instantiation declaration for class DataWrapper
  */
 extern template class DataWrapper<float>;
 extern template class DataWrapper<double>;

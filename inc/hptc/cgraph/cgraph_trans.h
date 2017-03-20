@@ -7,9 +7,9 @@
 #include <memory>
 
 #include <hptc/types.h>
-#include <hptc/kernels/kernel_trans.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/operations/operation_trans.h>
+#include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {
@@ -20,8 +20,7 @@ public:
   static constexpr auto ORDER = ParamType::ORDER;
 
   struct CGraphTransDescriptor {
-    using KernelPack
-        = KernelPackTrans<typename ParamType::FloatType, ParamType::COEF_USAGE>;
+    using KernelPack = typename ParamType::KernelPack;
     CGraphTransDescriptor();
 
     LoopOrderTrans<ORDER> loop_order;

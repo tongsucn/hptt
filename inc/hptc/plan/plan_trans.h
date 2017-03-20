@@ -2,12 +2,10 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_H_
 #define HPTC_PLAN_PLAN_TRANS_H_
 
-#include <array>
 #include <vector>
 #include <memory>
 #include <utility>
 #include <cmath>
-#include <algorithm>
 #include <initializer_list>
 
 #include <hptc/types.h>

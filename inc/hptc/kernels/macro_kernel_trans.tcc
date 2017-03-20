@@ -3,7 +3,7 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_
 
 /*
- * Implementation for class MacroTransVec
+ * Specialization and implementation for class MacroTransVec
  */
 template <typename KernelFunc>
 class MacroTransVec<KernelFunc, 0, 0> {
@@ -13,29 +13,28 @@ class MacroTransVec<KernelFunc, 0, 0> {
 template <typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::MacroTransVec(
-    DeducedFloatType<typename KernelFunc::FLOAT> alpha,
-    DeducedFloatType<typename KernelFunc::FLOAT> beta)
-    : kernel_(alpha, beta),
-      kn_wd_(this->kernel_.get_kernel_width()) {
+typename KernelFunc::RegType
+MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::reg_coef(
+    const DeducedFloatType<typename KernelFunc::FLOAT> coef) {
+  return KernelFunc::reg_coef(coef);
 }
 
 
 template <typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len(
-    ) const {
-  return CONT_LEN * this->kn_wd_;
+constexpr GenNumType
+MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() const {
+  return CONT_LEN * KernelFunc::kn_width;
 }
 
 
 template <typename KernelFunc,
           GenNumType CONT_LEN,
           GenNumType NCONT_LEN>
-GenNumType MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len(
-    ) const {
-  return NCONT_LEN * this->kn_wd_;
+constexpr GenNumType
+MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
+  return NCONT_LEN * KernelFunc::kn_width;
 }
 
 
@@ -45,20 +44,22 @@ template <typename KernelFunc,
 void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
     const typename KernelFunc::FLOAT * RESTRICT input_data,
     typename KernelFunc::FLOAT * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
-  const auto kn_wd = this->kn_wd_;
-#pragma unroll_and_jam(NCONT_LEN)
-  for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const typename KernelFunc::RegType &reg_alpha,
+    const typename KernelFunc::RegType &reg_beta) const {
+  constexpr auto kn_wd = KernelFunc::kn_width;
 #pragma unroll_and_jam(CONT_LEN)
-    for (GenNumType cont = 0; cont < CONT_LEN; ++cont)
+  for (GenNumType cont = 0; cont < CONT_LEN; ++cont)
+#pragma unroll_and_jam(NCONT_LEN)
+    for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
       this->kernel_(input_data + cont * kn_wd + ncont * kn_wd * input_stride,
           output_data + ncont * kn_wd + cont * kn_wd * output_stride,
-          input_stride, output_stride);
+          input_stride, output_stride, reg_alpha, reg_beta);
 }
 
 
 /*
- * Avoid template instantiation for class MacroTransVec
+ * Explicit instantiation declaration for class MacroTransVec
  */
 extern template class MacroTransVec<
     KernelTransFull<float, CoefUsageTrans::USE_NONE>, 4, 4>;

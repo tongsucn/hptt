@@ -3,13 +3,11 @@
 #define HPTC_OPERATIONS_OPERATION_TRANS_H_
 
 #include <array>
-#include <memory>
 #include <algorithm>
 
 #include <hptc/types.h>
 #include <hptc/util.h>
 #include <hptc/config/config_trans.h>
-#include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {
@@ -20,20 +18,22 @@ public:
   OpForTrans();
   OpForTrans(const LoopOrderTrans<ORDER> &loop_order,
       const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-      const TensorOrder *perm);
+      const std::array<TensorOrder, ORDER> &perm);
 
   OpForTrans(const OpForTrans &loop_data) = delete;
   OpForTrans<ORDER> &operator=(const OpForTrans &loop_data) = delete;
 
   INLINE void init(const LoopOrderTrans<ORDER> &loop_order,
       const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-      const TensorOrder *perm);
+      const std::array<TensorOrder, ORDER> &perm);
 
   template <typename MacroType,
-            typename TensorType>
+            typename TensorType,
+            typename RegType>
   INLINE void operator()(MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx input_stride, const TensorIdx output_stride,
+      const RegType &reg_alpha, const RegType &reg_beta);
 
   OpForTrans<ORDER> *next;
 
@@ -44,15 +44,19 @@ private:
 
   template <typename MacroType,
             typename TensorType,
+            typename RegType,
             GenNumType UNROLL_NUM>
   INLINE void unroller_(GenCounter<UNROLL_NUM>, MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx input_stride, const TensorIdx output_stride,
+      const RegType &reg_alpha, const RegType &reg_beta);
   template <typename MacroType,
-            typename TensorType>
+            typename TensorType,
+            typename RegType>
   INLINE void unroller_(GenCounter<0>, MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx input_stride, const TensorIdx output_stride,
+      const RegType &reg_alpha, const RegType &reg_beta);
 
   TensorIdx loop_idx_[ORDER];
   TensorIdx *loop_perm_idx_[ORDER];

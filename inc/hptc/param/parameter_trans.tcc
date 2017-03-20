@@ -99,30 +99,36 @@ void TensorMergedWrapper<FloatType, ORDER>::merge_idx(
 
 
 /*
- * Implementation for class ParamTrans
+ * Implementation for struct ParamTrans
  */
 template <typename TensorType,
           CoefUsageTrans USAGE>
 ParamTrans<TensorType, USAGE>::ParamTrans(TensorType &input_tensor,
     TensorType &output_tensor, const std::array<TensorOrder, ORDER> &perm,
-    DeducedFloatType<typename TensorType::FLOAT> alpha,
-    DeducedFloatType<typename TensorType::FLOAT> beta)
-    : input_tensor(input_tensor), output_tensor(output_tensor),
-      alpha(alpha), beta(beta), input_stride(1), output_stride(1),
-      merged_order(ORDER), begin_order_idx(0), kn(alpha, beta) {
-  // Initialize permutation array, do not need to transform its format when
-  // tensor layout is not column major
-  std::copy(perm.begin(), perm.end(), this->perm);
+    const DeducedFloatType<typename TensorType::FLOAT> alpha,
+    const DeducedFloatType<typename TensorType::FLOAT> beta)
+    : input_tensor(input_tensor), output_tensor(output_tensor), perm(perm),
+      alpha(alpha), beta(beta),
+      input_stride(1), output_stride(1),
+      merged_order(this->merge_idx_(perm)),
+      begin_order_idx(ORDER - this->merged_order),
+      kn(KernelPackTrans<FloatType, USAGE>::get_package()) {
+  // Initialize registers
+  using FloatType = typename TensorType::FLOAT;
+  using KernelPack = KernelPackTrans<FloatType, USAGE>;
+
+  this->reg_alpha_full = KernelPack::reg_coef_full(this->alpha);
+  this->reg_beta_full = KernelPack::reg_coef_full(this->beta);
+  this->reg_alpha_half = KernelPack::reg_coef_half(this->alpha);
+  this->reg_beta_half = KernelPack::reg_coef_half(this->beta);
+  this->reg_alpha_linear = KernelPack::reg_coef_linear(this->alpha);
+  this->reg_beta_linear = KernelPack::reg_coef_linear(this->beta);
 
   // Initialize access strides
   for (TensorIdx idx = 0; idx < perm[0]; ++idx)
     this->input_stride *= input_tensor.get_outer_size()[idx];
   for (TensorIdx idx = 0; 0 != perm[idx]; ++idx)
     this->output_stride *= output_tensor.get_outer_size()[idx];
-
-  // Merge index in tensor wrapper and Initialize merged permutation array
-  this->merge_idx_(perm);
-  this->begin_order_idx = ORDER - this->merged_order;
 }
 
 
@@ -150,10 +156,28 @@ ParamTrans<TensorType, USAGE>::get_leading() {
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-void ParamTrans<TensorType, USAGE>::merge_idx_(
+INLINE void ParamTrans<TensorType, USAGE>::set_coef(
+    const DeducedFloatType<typename TensorType::FLOAT> alpha,
+    const DeducedFloatType<typename TensorType::FLOAT> beta) {
+  using FloatType = typename TensorType::FLOAT;
+  using KernelPack = KernelPackTrans<FloatType, USAGE>;
+
+  this->alpha = alpha, this->beta = beta;
+  this->reg_alpha_full = KernelPack::reg_coef_full(this->alpha);
+  this->reg_beta_full = KernelPack::reg_coef_full(this->beta);
+  this->reg_alpha_half = KernelPack::reg_coef_half(this->alpha);
+  this->reg_beta_half = KernelPack::reg_coef_half(this->beta);
+  this->reg_alpha_linear = KernelPack::reg_coef_linear(this->alpha);
+  this->reg_beta_linear = KernelPack::reg_coef_linear(this->beta);
+}
+
+
+template <typename TensorType,
+          CoefUsageTrans USAGE>
+TensorOrder ParamTrans<TensorType, USAGE>::merge_idx_(
     const std::array<TensorOrder, ORDER> &perm) {
   if (ORDER <= 1)
-    return;
+    return ORDER;
 
   const auto &input_size = this->input_tensor.get_size();
   const auto &input_outer_size = this->input_tensor.get_outer_size();
@@ -177,20 +201,20 @@ void ParamTrans<TensorType, USAGE>::merge_idx_(
   output_perm_set.insert(ORDER - 1);
 
   // Set merged order
-  this->merged_order = static_cast<TensorOrder>(input_perm_set.size());
-  if (ORDER == this->merged_order)
-    return;
+  auto merged = static_cast<TensorOrder>(input_perm_set.size());
+  if (ORDER == merged)
+    return ORDER;
 
   // Update permutation array
   // Create an array for storing sorted keys in input_perm_set,
   TensorOrder sorted_perm_arr[ORDER];
   std::copy(input_perm_set.begin(), input_perm_set.end(), sorted_perm_arr);
-  std::sort(sorted_perm_arr, sorted_perm_arr + this->merged_order);
+  std::sort(sorted_perm_arr, sorted_perm_arr + merged);
 
   // Create an unordered map to store the mapping from original order ID to
   // updated order ID.
   std::unordered_map<TensorOrder, TensorOrder> perm_map;
-  for (TensorIdx idx = 0; idx < this->merged_order; ++idx)
+  for (TensorIdx idx = 0; idx < merged; ++idx)
     perm_map[sorted_perm_arr[idx]] = idx;
 
   // Update permutation array
@@ -201,17 +225,19 @@ void ParamTrans<TensorType, USAGE>::merge_idx_(
     }
   }
   // Fill unused part of the permutation array
-  std::fill(this->perm, this->perm + this->begin_order_idx, 0);
+  std::fill(this->perm.begin(), this->perm.begin() + this->begin_order_idx, 0);
 
   // Execute merge
   this->input_tensor.merge_idx(input_perm_set);
   this->output_tensor.merge_idx(output_perm_set);
+
+  return merged;
 }
 
 
 /*
- * Avoid template instantiation for stract ParamTrans, import generated extern
- * template declaration.
+ * Import explicit instantiation declaration for stract ParamTrans, this file
+ * should be generated by cmake script.
  */
 #include "parameter_trans_gen.tcc"
 

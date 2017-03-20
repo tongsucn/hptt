@@ -2,9 +2,6 @@
 #ifndef HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
-#include <algorithm>
-
-#include <hptc/util.h>
 #include <hptc/types.h>
 #include <hptc/config/config_trans.h>
 #include <hptc/kernels/micro_kernel_trans.h>
@@ -17,21 +14,20 @@ template <typename KernelFunc,
           GenNumType NCONT_LEN>
 class MacroTransVec {
 public:
-  using FloatType = typename KernelFunc::FLOAT;
-  using Deduced = DeducedFloatType<FloatType>;
+  using FLOAT = typename KernelFunc::FLOAT;
+  using RegType = typename KernelFunc::RegType;
 
-  MacroTransVec(Deduced alpha, Deduced beta);
+  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  constexpr GenNumType get_cont_len() const;
+  constexpr GenNumType get_ncont_len() const;
 
-  GenNumType get_cont_len() const;
-  GenNumType get_ncont_len() const;
-
-  void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  void operator()(const FLOAT * RESTRICT input_data,
+      FLOAT * RESTRICT output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride, const RegType &reg_alpha,
+      const RegType &reg_beta) const;
 
 private:
   KernelFunc kernel_;
-  const GenNumType kn_wd_;    // Kernel width, number of elements in a register
 };
 
 
@@ -39,19 +35,18 @@ template <typename FloatType,
           CoefUsageTrans USAGE>
 class MacroTransLinear {
 public:
-  MacroTransLinear(DeducedFloatType<FloatType> alpha,
-      DeducedFloatType<FloatType> beta);
+  using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_LINE>;
+
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
   void operator()(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
-
-private:
-  const DeducedFloatType<FloatType> alpha, beta;
+      const TensorIdx output_stride, const RegType &alpha,
+      const RegType &beta) const;
 };
 
 
 /*
- * Alias and instantiation of vectorized macro kernels
+ * Alias of macro kernels
  */
 template <typename FloatType,
           CoefUsageTrans USAGE,
@@ -70,7 +65,7 @@ using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
 
 
 /*
- * Import explicit template instantiation declaration
+ * Import explicit instantiation declaration
  */
 #include "macro_kernel_trans.tcc"
 

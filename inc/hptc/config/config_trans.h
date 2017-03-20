@@ -3,6 +3,7 @@
 #define HPTC_CONFIG_CONFIG_TRANS_H_
 
 #include <array>
+#include <algorithm>
 
 #include <hptc/types.h>
 

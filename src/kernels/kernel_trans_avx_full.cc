@@ -9,21 +9,25 @@
 
 namespace hptc {
 
+template <typename FloatType>
+using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_FULL>;
+
+
 /*
  * Implementation for class KernelTransAvx
  */
 template <CoefUsageTrans USAGE>
-KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::
-KernelTransAvx(float coef_alpha, float coef_beta)
-  : KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
-      coef_beta) {
+RegType<float> KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::
+reg_coef(const DeducedFloatType<float> coef) {
+  return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
 void KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::
 operator()(const float * RESTRICT input_data,
     float * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+    const TensorIdx output_stride, const RegType &reg_alpha,
+    const RegType &reg_beta) const {
   // Load input data into registers
   __m256 reg_input[8];
   reg_input[0] = _mm256_loadu_ps(input_data);
@@ -68,14 +72,14 @@ operator()(const float * RESTRICT input_data,
   constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
     CoefUsageTrans::USE_ALPHA == USAGE;
   if (need_rescale) {
-    reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha);
-    reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha);
-    reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha);
-    reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha);
-    reg_input[4] = _mm256_mul_ps(reg_input[4], this->reg_alpha);
-    reg_input[5] = _mm256_mul_ps(reg_input[5], this->reg_alpha);
-    reg_input[6] = _mm256_mul_ps(reg_input[6], this->reg_alpha);
-    reg_input[7] = _mm256_mul_ps(reg_input[7], this->reg_alpha);
+    reg_input[0] = _mm256_mul_ps(reg_input[0], reg_alpha);
+    reg_input[1] = _mm256_mul_ps(reg_input[1], reg_alpha);
+    reg_input[2] = _mm256_mul_ps(reg_input[2], reg_alpha);
+    reg_input[3] = _mm256_mul_ps(reg_input[3], reg_alpha);
+    reg_input[4] = _mm256_mul_ps(reg_input[4], reg_alpha);
+    reg_input[5] = _mm256_mul_ps(reg_input[5], reg_alpha);
+    reg_input[6] = _mm256_mul_ps(reg_input[6], reg_alpha);
+    reg_input[7] = _mm256_mul_ps(reg_input[7], reg_alpha);
   }
 
   constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -93,14 +97,14 @@ operator()(const float * RESTRICT input_data,
     reg_output[7] = _mm256_loadu_ps(output_data + 7 * output_stride);
 
     // Update output data
-    reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta);
-    reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta);
-    reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta);
-    reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta);
-    reg_output[4] = _mm256_mul_ps(reg_output[4], this->reg_beta);
-    reg_output[5] = _mm256_mul_ps(reg_output[5], this->reg_beta);
-    reg_output[6] = _mm256_mul_ps(reg_output[6], this->reg_beta);
-    reg_output[7] = _mm256_mul_ps(reg_output[7], this->reg_beta);
+    reg_output[0] = _mm256_mul_ps(reg_output[0], reg_beta);
+    reg_output[1] = _mm256_mul_ps(reg_output[1], reg_beta);
+    reg_output[2] = _mm256_mul_ps(reg_output[2], reg_beta);
+    reg_output[3] = _mm256_mul_ps(reg_output[3], reg_beta);
+    reg_output[4] = _mm256_mul_ps(reg_output[4], reg_beta);
+    reg_output[5] = _mm256_mul_ps(reg_output[5], reg_beta);
+    reg_output[6] = _mm256_mul_ps(reg_output[6], reg_beta);
+    reg_output[7] = _mm256_mul_ps(reg_output[7], reg_beta);
 
     // Add updated result into input registers
     reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -126,17 +130,17 @@ operator()(const float * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
-KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::
-KernelTransAvx(double coef_alpha, double coef_beta)
-  : KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
-      coef_beta) {
+RegType<double> KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::
+reg_coef(const DeducedFloatType<double> coef) {
+  return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
 void KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::
 operator()(const double * RESTRICT input_data,
     double * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+    const TensorIdx output_stride, const RegType &reg_alpha,
+    const RegType &reg_beta) const {
   // Load input data into registers
   __m256d reg_input[4];
   reg_input[0] = _mm256_loadu_pd(input_data);
@@ -159,10 +163,10 @@ operator()(const double * RESTRICT input_data,
   constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
     CoefUsageTrans::USE_ALPHA == USAGE;
   if (need_rescale) {
-    reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha);
-    reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha);
-    reg_input[2] = _mm256_mul_pd(reg_input[2], this->reg_alpha);
-    reg_input[3] = _mm256_mul_pd(reg_input[3], this->reg_alpha);
+    reg_input[0] = _mm256_mul_pd(reg_input[0], reg_alpha);
+    reg_input[1] = _mm256_mul_pd(reg_input[1], reg_alpha);
+    reg_input[2] = _mm256_mul_pd(reg_input[2], reg_alpha);
+    reg_input[3] = _mm256_mul_pd(reg_input[3], reg_alpha);
   }
 
   constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -176,10 +180,10 @@ operator()(const double * RESTRICT input_data,
     reg_output[3] = _mm256_loadu_pd(output_data + 3 * output_stride);
 
     // Update output data
-    reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta);
-    reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta);
-    reg_output[2] = _mm256_mul_pd(reg_output[2], this->reg_beta);
-    reg_output[3] = _mm256_mul_pd(reg_output[3], this->reg_beta);
+    reg_output[0] = _mm256_mul_pd(reg_output[0], reg_beta);
+    reg_output[1] = _mm256_mul_pd(reg_output[1], reg_beta);
+    reg_output[2] = _mm256_mul_pd(reg_output[2], reg_beta);
+    reg_output[3] = _mm256_mul_pd(reg_output[3], reg_beta);
 
     // Add updated result into input registers
     reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);
@@ -197,17 +201,18 @@ operator()(const double * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
+RegType<FloatComplex>
 KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-KernelTransAvx(float coef_alpha, float coef_beta)
-  : KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL>(coef_alpha,
-      coef_beta) {
+reg_coef(const DeducedFloatType<FloatComplex> coef) {
+  return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
 void KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
 operator()(const FloatComplex * RESTRICT input_data,
     FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+    const TensorIdx output_stride, const RegType &reg_alpha,
+    const RegType &reg_beta) const {
   // Load input data into registers
   __m256 reg_input[4];
   reg_input[0] = _mm256_loadu_ps(reinterpret_cast<const float *>(input_data));
@@ -233,10 +238,10 @@ operator()(const FloatComplex * RESTRICT input_data,
   constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
     CoefUsageTrans::USE_ALPHA == USAGE;
   if (need_rescale) {
-    reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha);
-    reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha);
-    reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha);
-    reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha);
+    reg_input[0] = _mm256_mul_ps(reg_input[0], reg_alpha);
+    reg_input[1] = _mm256_mul_ps(reg_input[1], reg_alpha);
+    reg_input[2] = _mm256_mul_ps(reg_input[2], reg_alpha);
+    reg_input[3] = _mm256_mul_ps(reg_input[3], reg_alpha);
   }
 
   constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -254,10 +259,10 @@ operator()(const FloatComplex * RESTRICT input_data,
         reinterpret_cast<const float *>(output_data + 3 * output_stride));
 
     // Update output data
-    reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta);
-    reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta);
-    reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta);
-    reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta);
+    reg_output[0] = _mm256_mul_ps(reg_output[0], reg_beta);
+    reg_output[1] = _mm256_mul_ps(reg_output[1], reg_beta);
+    reg_output[2] = _mm256_mul_ps(reg_output[2], reg_beta);
+    reg_output[3] = _mm256_mul_ps(reg_output[3], reg_beta);
 
     // Add updated result into input registers
     reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -278,17 +283,18 @@ operator()(const FloatComplex * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
+RegType<DoubleComplex>
 KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-KernelTransAvx(double coef_alpha, double coef_beta)
-  : KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL>(
-      coef_alpha, coef_beta) {
+reg_coef(const DeducedFloatType<DoubleComplex> coef) {
+  return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
 void KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
 operator()(const DoubleComplex * RESTRICT input_data,
     DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+    const TensorIdx output_stride, const RegType &reg_alpha,
+    const RegType &reg_beta) const {
   // Load input data into registers
   __m256d reg_input[2];
   reg_input[0] = _mm256_loadu_pd(reinterpret_cast<const double *>(input_data));
@@ -306,8 +312,8 @@ operator()(const DoubleComplex * RESTRICT input_data,
   constexpr bool need_rescale = CoefUsageTrans::USE_BOTH == USAGE or
     CoefUsageTrans::USE_ALPHA == USAGE;
   if (need_rescale) {
-    reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha);
-    reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha);
+    reg_input[0] = _mm256_mul_pd(reg_input[0], reg_alpha);
+    reg_input[1] = _mm256_mul_pd(reg_input[1], reg_alpha);
   }
 
   constexpr bool need_update = CoefUsageTrans::USE_BOTH == USAGE or
@@ -321,8 +327,8 @@ operator()(const DoubleComplex * RESTRICT input_data,
         reinterpret_cast<const double *>(output_data + output_stride));
 
     // Update output data
-    reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta);
-    reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta);
+    reg_output[0] = _mm256_mul_pd(reg_output[0], reg_beta);
+    reg_output[1] = _mm256_mul_pd(reg_output[1], reg_beta);
 
     // Add updated result into input registers
     reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);

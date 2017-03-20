@@ -43,28 +43,39 @@ template <typename TensorType,
 struct ParamTrans {
   using FloatType = typename TensorType::FLOAT;
   using Deduced = DeducedFloatType<FloatType>;
+  using KernelPack = KernelPackTrans<FloatType, USAGE>;
+  using RegTypeFull = typename KernelPack::RegTypeFull;
+  using RegTypeHalf = typename KernelPack::RegTypeHalf;
+  using RegTypeLinear = typename KernelPack::RegTypeLinear;
+
   constexpr static auto ORDER = TensorType::TENSOR_ORDER;
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   ParamTrans(TensorType &input_tensor, TensorType &output_tensor,
-      const std::array<TensorOrder, ORDER> &perm, Deduced alpha, Deduced beta);
+      const std::array<TensorOrder, ORDER> &perm, const Deduced alpha,
+      const Deduced beta);
 
   INLINE bool is_common_leading();
   INLINE std::pair<TensorOrder, TensorOrder> get_leading();
+  INLINE void set_coef(const Deduced alpha, const Deduced beta);
+
 
   TensorMergedWrapper<FloatType, ORDER> input_tensor, output_tensor;
+  std::array<TensorOrder, ORDER> perm;
   Deduced alpha, beta;
+  RegTypeFull reg_alpha_full, reg_beta_full;
+  RegTypeHalf reg_alpha_half, reg_beta_half;
+  RegTypeLinear reg_alpha_linear, reg_beta_linear;
 
-  TensorOrder perm[ORDER];
   TensorIdx input_stride, output_stride;
   TensorOrder merged_order;
   TensorOrder begin_order_idx;
 
   // Kernels
-  KernelPackTrans<FloatType, USAGE> kn;
+  const KernelPack &kn;
 
 private:
-  void merge_idx_(const std::array<TensorOrder, ORDER> &perm);
+  TensorOrder merge_idx_(const std::array<TensorOrder, ORDER> &perm);
 };
 
 

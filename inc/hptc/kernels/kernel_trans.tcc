@@ -7,18 +7,37 @@
  */
 template <typename FloatType,
           CoefUsageTrans USAGE>
-KernelPackTrans<FloatType, USAGE>::KernelPackTrans(
-    DeducedFloatType<FloatType> alpha, DeducedFloatType<FloatType> beta)
-    : knf_1x1(alpha, beta), knf_1x2(alpha, beta), knf_1x3(alpha, beta),
-      knf_1x4(alpha, beta), knf_2x1(alpha, beta), knf_2x2(alpha, beta),
-      knf_2x3(alpha, beta), knf_2x4(alpha, beta), knf_3x1(alpha, beta),
-      knf_3x2(alpha, beta), knf_3x3(alpha, beta), knf_3x4(alpha, beta),
-      knf_4x1(alpha, beta), knf_4x2(alpha, beta), knf_4x3(alpha, beta),
-      knf_4x4(alpha, beta), knh_1x1(alpha, beta), knh_1x2(alpha, beta),
-      knh_1x3(alpha, beta), knh_1x4(alpha, beta), knh_2x1(alpha, beta),
-      knh_3x1(alpha, beta), knh_4x1(alpha, beta), kn_lin(alpha, beta),
-      knf_giant(knf_4x4), knf_basic(knf_1x1), knh_giant(knh_1x4),
-      knh_basic(knh_1x1) {
+KernelPackTrans<FloatType, USAGE> &
+KernelPackTrans<FloatType, USAGE>::get_package() {
+  static KernelPackTrans<FloatType, USAGE> package;
+  return package;
+}
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+typename MacroTransVecFull<FloatType, USAGE, 1, 1>::RegType
+KernelPackTrans<FloatType, USAGE>::reg_coef_full(
+    const DeducedFloatType<FloatType> coef) {
+  return MacroTransVecFull<FloatType, USAGE, 1, 1>::reg_coef(coef);
+}
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+typename MacroTransVecHalf<FloatType, USAGE, 1, 1>::RegType
+KernelPackTrans<FloatType, USAGE>::reg_coef_half(
+    const DeducedFloatType<FloatType> coef) {
+  return MacroTransVecHalf<FloatType, USAGE, 1, 1>::reg_coef(coef);
+}
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+typename MacroTransLinear<FloatType, USAGE>::RegType
+KernelPackTrans<FloatType, USAGE>::reg_coef_linear(
+    const DeducedFloatType<FloatType> coef) {
+  return MacroTransLinear<FloatType, USAGE>::reg_coef(coef);
 }
 
 
@@ -62,8 +81,16 @@ GenNumType KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
 }
 
 
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+KernelPackTrans<FloatType, USAGE>::KernelPackTrans()
+  : knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
+    knh_giant(this->knh_1x4), knh_basic(this->knh_1x1) {
+}
+
+
 /*
- * Avoid template instantiation for struct KernelPackTrans
+ * Explicit instantiation declaration for struct KernelPackTrans
  */
 extern template struct KernelPackTrans<float, CoefUsageTrans::USE_NONE>;
 extern template struct KernelPackTrans<float, CoefUsageTrans::USE_ALPHA>;
