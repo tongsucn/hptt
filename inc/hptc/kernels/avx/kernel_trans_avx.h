@@ -21,7 +21,8 @@ template <typename FloatType,
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, float>::value or
             std::is_same<FloatType, FloatComplex>::value) and
-        TYPE == KernelTypeTrans::KERNEL_FULL>> {
+        (TYPE == KernelTypeTrans::KERNEL_FULL
+            or TYPE == KernelTypeTrans::KERNEL_LINE)>> {
   using type = __m256;
 };
 
@@ -30,7 +31,8 @@ template <typename FloatType,
 struct RegTypeDeducer<FloatType, TYPE,
     std::enable_if_t<(std::is_same<FloatType, double>::value or
             std::is_same<FloatType, DoubleComplex>::value) and
-        TYPE == KernelTypeTrans::KERNEL_FULL>> {
+        (TYPE == KernelTypeTrans::KERNEL_FULL or
+            TYPE == KernelTypeTrans::KERNEL_LINE)>> {
   using type = __m256d;
 };
 
@@ -72,13 +74,13 @@ struct KernelTransAvxBase {
   GenNumType get_reg_num() const;
 
   template <KernelTypeTrans KERNEL = TYPE,
-            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
-                = nullptr>
+            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
   DeducedRegType<float, KERNEL> reg_coef(float coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,
-            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *
-                = nullptr>
+            std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+                KERNEL == KernelTypeTrans::KERNEL_LINE> * = nullptr>
   DeducedRegType<double, KERNEL> reg_coef(double coef) const;
 
   template <KernelTypeTrans KERNEL = TYPE,

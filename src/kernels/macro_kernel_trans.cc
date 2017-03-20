@@ -29,15 +29,15 @@ void MacroTransLinear<FloatType, USAGE>::operator()(
   if (USAGE == CoefUsageTrans::USE_NONE)
     std::copy(input_data, input_data + input_stride, output_data);
   else if (USAGE == CoefUsageTrans::USE_ALPHA)
-#pragma omp simd
+#pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = this->alpha * input_data[idx];
   else if (USAGE == CoefUsageTrans::USE_BETA)
-#pragma omp simd
+#pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = input_data[idx] + this->beta * output_data[idx];
   else
-#pragma omp simd
+#pragma simd vectorlengthfor(FloatType)
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = this->alpha * input_data[idx]
           + this->beta * output_data[idx];

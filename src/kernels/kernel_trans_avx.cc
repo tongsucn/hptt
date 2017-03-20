@@ -41,7 +41,8 @@ GenNumType KernelTransAvxBase<FloatType, TYPE>::get_reg_num() const {
 template <typename FloatType,
           KernelTypeTrans TYPE>
 template <KernelTypeTrans KERNEL,
-          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+              KERNEL == KernelTypeTrans::KERNEL_LINE> *>
 DeducedRegType<float, KERNEL>
 KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) const {
   return _mm256_set1_ps(coef);
@@ -51,7 +52,8 @@ KernelTransAvxBase<FloatType, TYPE>::reg_coef(float coef) const {
 template <typename FloatType,
           KernelTypeTrans TYPE>
 template <KernelTypeTrans KERNEL,
-          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL> *>
+          std::enable_if_t<KERNEL == KernelTypeTrans::KERNEL_FULL or
+              KERNEL == KernelTypeTrans::KERNEL_LINE> *>
 DeducedRegType<double, KERNEL>
 KernelTransAvxBase<FloatType, TYPE>::reg_coef(double coef) const {
   return _mm256_set1_pd(coef);
@@ -101,5 +103,9 @@ template struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF>;
 template struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF>;
 template struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
 template struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+template struct KernelTransAvxBase<float, KernelTypeTrans::KERNEL_LINE>;
+template struct KernelTransAvxBase<double, KernelTypeTrans::KERNEL_LINE>;
+template struct KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
+template struct KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
 
 }

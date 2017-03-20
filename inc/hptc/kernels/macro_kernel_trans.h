@@ -69,41 +69,6 @@ using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
       CONT_LEN, NCONT_LEN>;
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecFullBig = MacroTransVecFull<FloatType, USAGE, 4, 4>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecFullVertical = MacroTransVecFull<FloatType, USAGE, 1, 4>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecFullHorizontal = MacroTransVecFull<FloatType, USAGE, 4, 1>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecFullSmall = MacroTransVecFull<FloatType, USAGE, 1, 1>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecHalfVertical = MacroTransVecHalf<FloatType, USAGE, 1, 2>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecHalfHorizontal = MacroTransVecHalf<FloatType, USAGE, 2, 1>;
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-using MacroTransVecHalfSmall = MacroTransVecHalf<FloatType, USAGE, 1, 1>;
-
-
 /*
  * Import explicit template instantiation declaration
  */
