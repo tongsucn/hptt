@@ -40,6 +40,6 @@ __pycache__/
 build/
 
 # Project related files
-ttc_implementations
+ttc_implementations/
 inc/hptc/gen
 src/gen
