@@ -10,7 +10,7 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/util/util.h>
+#include <hptc/test_util.h>
 #include <hptc/tensor.h>
 #include <hptc/plan/plan_trans.h>
 #include <hptc/param/parameter_trans.h>

@@ -57,13 +57,4 @@ std::vector<GenNumType> assign_factor(
   return assigned;
 }
 
-
-/*
- * Explicit instantiation declaration for class DataWrapper
- */
-extern template class DataWrapper<float>;
-extern template class DataWrapper<double>;
-extern template class DataWrapper<FloatComplex>;
-extern template class DataWrapper<DoubleComplex>;
-
 #endif // HPTC_UTIL_UTIL_TCC_

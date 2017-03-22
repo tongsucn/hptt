@@ -2,7 +2,6 @@
 # Directory setting
 # ----------------------------------------------------------------------------
 include_directories(inc)
-include_directories(../test/inc)
 
 # ----------------------------------------------------------------------------
 # Add benchmark source files

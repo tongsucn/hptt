@@ -1,13 +1,19 @@
 # ----------------------------------------------------------------------------
 # Directory setting
 # ----------------------------------------------------------------------------
-include_directories(inc)
+if (${HPTC_BUILD_BENCHMARK} OR ${HPTC_BUILD_TEST})
+  include_directories(inc)
+endif ()
 
-# ----------------------------------------------------------------------------
-# Test executable target setting
-# ----------------------------------------------------------------------------
-add_executable(unit-test-common unit-test-common.cc)
-target_link_libraries(unit-test-common hptc ${GTEST_LIBRARIES} pthread)
+# Add test and benchmark directory if necessary
+if (${HPTC_BUILD_BENCHMARK})
+  add_subdirectory(benchmark)
+endif ()
 
-add_executable(unit-test-trans unit-test-trans.cc)
-target_link_libraries(unit-test-trans hptc ${GTEST_LIBRARIES} pthread)
+if (${HPTC_BUILD_TEST})
+  if (${GTEST_FOUND})
+    add_subdirectory(test)
+  else ()
+    message(FATAL_ERROR "To build test or benchmark, Google Test is required.")
+  endif ()
+endif ()

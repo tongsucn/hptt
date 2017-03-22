@@ -29,14 +29,22 @@ option(HPTC_BUILD_BENCHMARK
 option(HPTC_BUILD_TEST
   "Generate executable test program (requires Google Test)." OFF)
 
+# Minimum order number of transpose pre-compiled in shared/static library.
 set(HPTC_CODE_GEN_TRANS_ORDER_MIN 2 CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MIN})
+
+# Maximum order number of transpose pre-compiled in shared/static library.
 set(HPTC_CODE_GEN_TRANS_ORDER_MAX 7 CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MAX})
+
+# Data type of transpose pre-compiled in shared/static library.
 set(HPTC_CODE_GEN_TRANS_DTYPE "s,d,c,z" CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_DTYPE})
+
+# Coefficient usage type of transpose pre-compiled in shared/static library.
 set(HPTC_CODE_GEN_TRANS_COEF "alpha,beta,both,none" CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_COEF})
+
 set(HPTC_CODE_GEN_TARGET_DIR_PREFIX ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
   ${HPTC_MSG_CODE_GEN_TARGET_DIR_PREFIX})
 
@@ -63,18 +71,9 @@ include_directories(${HPTC_CODE_GEN_TARGET_DIR})
 add_subdirectory(src)
 
 # Add test and benchmark directory if necessary
-if (${HPTC_BUILD_BENCHMARK})
-  add_subdirectory(benchmark)
-endif ()
+add_subdirectory(test)
 
-if (${HPTC_BUILD_TEST})
-  if (${GTEST_FOUND})
-    add_subdirectory(test)
-  else ()
-    message(FATAL_ERROR "To build test or benchmark, Google Test is required.")
-  endif ()
-endif ()
-
+# Add documentation
 #if (BUILD_DOC)
 #  add_subdirectory(doc)
 #endif()

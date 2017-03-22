@@ -3,7 +3,6 @@
 #define HPTC_UTIL_UTIL_H_
 
 #include <vector>
-#include <random>
 #include <chrono>
 #include <utility>
 #include <type_traits>
@@ -28,33 +27,6 @@ struct DualCounter {
 template <bool COND,
           typename Type = void>
 using Enable = typename std::enable_if<COND, Type>::type;
-
-
-template <typename FloatType>
-class DataWrapper {
-public:
-  DataWrapper(const std::vector<TensorOrder> &size, bool randomize = false);
-  ~DataWrapper();
-
-  void reset_ref();
-  void reset_act();
-  static TensorIdx verify(const FloatType *ref_data, const FloatType *act_data,
-      TensorIdx data_len);
-  TensorIdx verify();
-
-  FloatType *org_in_data, *org_out_data, *ref_data, *act_data;
-
-protected:
-  using Deduced_ = DeducedFloatType<FloatType>;
-
-  constexpr static Deduced_ ele_lower_ = static_cast<Deduced_>(-50.0f);
-  constexpr static Deduced_ ele_upper_ = static_cast<Deduced_>(50.0f);
-  constexpr static GenNumType inner_ = sizeof(FloatType) / sizeof(Deduced_);
-
-  std::mt19937 gen_;
-  std::uniform_real_distribution<Deduced_> dist_;
-  const TensorIdx data_len_;
-};
 
 
 class TimerWrapper {
