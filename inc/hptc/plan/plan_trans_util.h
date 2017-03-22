@@ -25,23 +25,16 @@
 namespace hptc {
 
 template <typename ParamType>
-using Graph = CGraphTrans<ParamType>;
-
-template <typename ParamType>
-using Descriptor = typename Graph<ParamType>::CGraphTransDescriptor;
-
-
-template <typename ParamType>
 class PlanTransOptimizer {
 public:
+  using Descriptor = typename CGraphTrans<ParamType>::Descriptor;
   static constexpr auto ORDER = ParamType::ORDER;
 
   PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
-      GenNumType thread_num = 0);
+      TensorIdx tune_loop_num, TensorIdx tune_para_num, TensorIdx heur_loop_num,
+      TensorIdx heur_para_num, GenNumType thread_num);
 
-  std::vector<Descriptor<ParamType>> get_optimal(TensorIdx heur_loop_num,
-      TensorIdx heur_para_num, TensorIdx tune_loop_num,
-      TensorIdx tune_para_num) const;
+  std::vector<Descriptor> get_optimal() const;
 
 private:
   struct LoopParaStrategy_ {
@@ -52,15 +45,18 @@ private:
     TensorOrder loop_idx;
   };
 
-  void init_();
+  void init_(TensorIdx tune_loop_num, TensorIdx tune_para_num,
+      TensorIdx heur_loop_num, TensorIdx heur_para_num);
   void init_config_();
   void init_loop_evaluator_param_();
   void init_parallel_evaluator_param_();
 
-  void init_loop_();
+  void init_loop_rule_();
+  void init_loop_heur_(const TensorIdx tune_num, const TensorIdx heur_num);
+
   void init_threads_();
 
-  void init_vec_();
+  void init_vec_general_();
   void init_vec_deploy_kernels_(const KernelTypeTrans kn_type,
       const GenNumType kn_cont_size, const GenNumType kn_ncont_size,
       const TensorOrder cont_begin_pos, const TensorOrder ncont_begin_pos,
@@ -68,44 +64,38 @@ private:
       const bool is_linh = false);
   void init_vec_common_leading_();
 
-  void init_parallel_();
-  void init_parallel_common_leading_();
+  void init_parallel_rule_general_();
+  void init_parallel_rule_common_leading_();
+  void init_parallel_heur_(const TensorIdx tune_num, const TensorIdx heur_num);
 
-  std::vector<LoopOrderTrans<ParamType::ORDER>> heur_loop_explorer_(
-      const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_loop_evaluator_(
       const LoopOrderTrans<ORDER> &target_loop_order) const;
-
-  std::vector<ParaStrategyTrans<ParamType::ORDER>> heur_parallel_explorer_(
-      const TensorIdx heur_num, TensorIdx tune_num) const;
   double heur_parallel_evaluator_(
       const ParaStrategyTrans<ORDER> &target_para) const;
 
-  std::vector<Descriptor<ParamType>> gen_candidates_(
-      const std::vector<LoopOrderTrans<ORDER>> &loop_orders,
-      const std::vector<ParaStrategyTrans<ORDER>> &parallel_strategies) const;
-  void parallelize_(Descriptor<ParamType> &descriptor) const;
+  std::vector<Descriptor> gen_candidates_() const;
 
 
   std::shared_ptr<ParamType> param_;
   GenNumType threads_;
-
-  Descriptor<ParamType> descriptor_;
-  std::unordered_map<GenNumType, GenNumType> th_fact_map_;
-  ParaStrategyTrans<ORDER> avail_parallel_;
-  ParaStrategyTrans<ORDER> parallel_template_;
-
   const TensorOrder in_ld_idx_, out_ld_idx_;
+  std::unordered_map<GenNumType, GenNumType> th_factor_map_;
+  ParaStrategyTrans<ORDER> avail_parallel_;
+
+  std::vector<LoopOrderTrans<ORDER>> loop_order_candidates_;
+  std::vector<ParaStrategyTrans<ORDER>> parallel_strategy_candidates_;
+  Descriptor template_descriptor_;
 
   // Parameters for loop order heuristics
-  double penalty_begin, penalty_step;
-  double importance_begin, importance_scale;
-  double input_penalty_factor, output_penalty_factor;
-  double in_ld_award, out_ld_award;
+  double heur_loop_penalty_begin, heur_loop_penalty_step;
+  double heur_loop_importance_begin, heur_loop_importance_scale;
+  double heur_loop_input_penalty_factor, heur_loop_output_penalty_factor;
+  double heur_loop_in_ld_award, heur_loop_out_ld_award;
 
   // Parameters for parallelization heuristics
-  double penalty_factor_cl, penalty_factor_inld, penalty_factor_outld;
-  GenNumType max_penalty_threads;
+  double heur_para_penalty_factor_cl, heur_para_penalty_factor_inld,
+         heur_para_penalty_factor_outld, heur_para_cost_begin;
+  GenNumType heur_para_max_penalty_threads;
 };
 
 

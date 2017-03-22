@@ -19,9 +19,9 @@ class CGraphTrans {
 public:
   static constexpr auto ORDER = ParamType::ORDER;
 
-  struct CGraphTransDescriptor {
+  struct Descriptor {
     using KernelPack = typename ParamType::KernelPack;
-    CGraphTransDescriptor();
+    Descriptor();
 
     LoopOrderTrans<ORDER> loop_order;
     ParaStrategyTrans<ORDER> parallel_strategy;
@@ -35,7 +35,7 @@ public:
   ~CGraphTrans();
 
   INLINE void operator()();
-  INLINE CGraphTransDescriptor get_descriptor() const;
+  INLINE Descriptor get_descriptor() const;
 
 protected:
   // Friend classes
@@ -47,17 +47,19 @@ protected:
   using For_ = OpForTrans<ORDER>;
 
   CGraphTrans(const std::shared_ptr<ParamType> &param,
-      const CGraphTransDescriptor &descriptor);
+      const Descriptor &descriptor);
 
-  void release_operations_();
+  void init(const Descriptor &descriptor);
+
+  void release_();
 
   INLINE void exec_general_();
   INLINE void exec_common_leading_();
 
 
   std::shared_ptr<ParamType> param_;
-  CGraphTransDescriptor descriptor_;
   GenNumType threads_;
+  Descriptor descriptor_;
   For_ *operations_;
 };
 

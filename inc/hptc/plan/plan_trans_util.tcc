@@ -7,71 +7,82 @@
  */
 template <typename ParamType>
 PlanTransOptimizer<ParamType>::PlanTransOptimizer(
-    const std::shared_ptr<ParamType> &param, GenNumType thread_num)
+    const std::shared_ptr<ParamType> &param, TensorIdx tune_loop_num,
+    TensorIdx tune_para_num, TensorIdx heur_loop_num, TensorIdx heur_para_num,
+    GenNumType thread_num)
     : param_(param->merged_order <= 1 ? nullptr : param),
       threads_(thread_num),
-      descriptor_(),
-      th_fact_map_(),
-      avail_parallel_(),
-      parallel_template_(),
       in_ld_idx_(this->param_->begin_order_idx),
-      out_ld_idx_(this->param_->perm[this->in_ld_idx_] + this->in_ld_idx_) {
+      out_ld_idx_(this->param_->perm[this->in_ld_idx_] + this->in_ld_idx_),
+      th_factor_map_(), avail_parallel_(),
+      loop_order_candidates_(), parallel_strategy_candidates_(),
+      template_descriptor_() {
   if (nullptr == this->param_)
     return;
 
-  this->init_();
+  this->init_(tune_loop_num, tune_para_num, heur_loop_num, heur_para_num);
 }
 
 
 template <typename ParamType>
-std::vector<Descriptor<ParamType>>
-PlanTransOptimizer<ParamType>::get_optimal(TensorIdx heur_loop_num,
-    TensorIdx heur_para_num, TensorIdx tune_loop_num,
-    TensorIdx tune_para_num) const {
-  // Check plan status
+std::vector<typename CGraphTrans<ParamType>::Descriptor>
+PlanTransOptimizer<ParamType>::get_optimal() const {
+  // Check if parameter is nullptr
   if (nullptr == this->param_)
     return {};
-
-  // Heuristics of loop order
-  auto loop_orders = this->heur_loop_explorer_(heur_loop_num, tune_loop_num);
-
-  // Heuristics of parallelization
-  auto parallel_strategies = this->heur_parallel_explorer_(heur_para_num,
-      tune_para_num);
-
-  // Generate candidates
-  return this->gen_candidates_(loop_orders, parallel_strategies);
+  return this->gen_candidates_();
 }
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_() {
+void PlanTransOptimizer<ParamType>::init_(TensorIdx tune_loop_num,
+    TensorIdx tune_para_num, TensorIdx heur_loop_num, TensorIdx heur_para_num) {
   // Initialize all kinds of parameters and configurations
   this->init_config_();
 
   // Initialize loop order
-  this->init_loop_();
+  if (0 == heur_loop_num)
+    // Use default strategy
+    this->init_loop_rule_();
+  else {
+    // Use heuristic strategy
+    tune_loop_num = 0 == tune_loop_num ? 1 : tune_loop_num;
+    this->init_loop_heur_(tune_loop_num, heur_loop_num);
+  }
 
   // Initialize thread number
   this->init_threads_();
 
-  // Check input and output leading and initialize vectorization, loop and
-  // parallelization
-  if (this->param_->is_common_leading()) {
+  // Check input and output leading and initialize vectorization
+  if (this->param_->is_common_leading())
     this->init_vec_common_leading_();
-    this->init_parallel_common_leading_();
+  else
+    this->init_vec_general_();
+
+  // Initialize parallelization strategy
+  // Use heuristic strategy
+  if (0 != heur_para_num) {
+    tune_para_num = 0 == tune_para_num ? 1 : tune_para_num;
+    this->init_parallel_heur_(tune_para_num, heur_para_num);
   }
-  else {
-    this->init_vec_();
-    this->init_parallel_();
+
+  // Use default strategy or heuristic of parallelization failed
+  if (0 == heur_para_num or this->parallel_strategy_candidates_.empty()) {
+    if (this->param_->is_common_leading())
+      this->init_parallel_rule_common_leading_();
+    else
+      this->init_parallel_rule_general_();
+
+    // Push default strategy in candidate list
+    this->parallel_strategy_candidates_.emplace_back(
+        this->template_descriptor_.parallel_strategy);
   }
 }
 
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_config_() {
-  // Initialize internal member variables
-  // Initialize available parallelism at every loop
+  // Initialize available parallelism at every loop with input tensor size
   this->avail_parallel_.fill(1);
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
     this->avail_parallel_[loop_idx]
@@ -87,23 +98,29 @@ void PlanTransOptimizer<ParamType>::init_config_() {
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_loop_evaluator_param_() {
-  this->penalty_begin = 0.0, this->penalty_step = 20.0;
-  this->importance_begin = 1.0, this->importance_scale = 0.5;
-  this->input_penalty_factor = 1.0, this->output_penalty_factor = 1.01;
-  this->in_ld_award = 0.8, this->out_ld_award = 0.85;
+  this->heur_loop_penalty_begin = 0.0;
+  this->heur_loop_penalty_step = 20.0;
+  this->heur_loop_importance_begin = 1.0;
+  this->heur_loop_importance_scale = 0.5;
+  this->heur_loop_input_penalty_factor = 1.0;
+  this->heur_loop_output_penalty_factor = 1.01;
+  this->heur_loop_in_ld_award = 0.8;
+  this->heur_loop_out_ld_award = 0.85;
 }
 
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_parallel_evaluator_param_() {
-  this->penalty_factor_cl = 1.01;
-  this->penalty_factor_inld = 1.00010, this->penalty_factor_outld = 1.00015;
-  this->max_penalty_threads = 16;
+  this->heur_para_penalty_factor_cl = 1.01;
+  this->heur_para_penalty_factor_inld = 1.00010;
+  this->heur_para_penalty_factor_outld = 1.00015;
+  this->heur_para_max_penalty_threads = 16;
+  this->heur_para_cost_begin = 1.0;
 }
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_loop_() {
+void PlanTransOptimizer<ParamType>::init_loop_rule_() {
   // Data structure for describing loop, first is a loop's index,
   // second is loop's score
   using LoopScore = std::pair<TensorOrder, double>;
@@ -117,19 +134,63 @@ void PlanTransOptimizer<ParamType>::init_loop_() {
     auto perm_idx = this->param_->perm[loop_idx] + this->in_ld_idx_;
     scores[perm_idx].second += curr_score;
   }
-  scores[this->in_ld_idx_].second *= this->in_ld_award;
-  scores[this->out_ld_idx_].second *= this->out_ld_award;
+  scores[this->in_ld_idx_].second *= this->heur_loop_in_ld_award;
+  scores[this->out_ld_idx_].second *= this->heur_loop_out_ld_award;
 
   // Sort orders according to the scores, if two orders have same score, then
   // they will be sorted by their available parallelism
   std::sort(scores.begin() + this->in_ld_idx_, scores.end(),
-      [this] (auto &a, auto &b) { return a.second > b.second or
-          (a.second == b.second and
+      [this] (const LoopScore &a, const LoopScore &b) {
+          return a.second > b.second or (a.second == b.second and
           this->avail_parallel_[a.first] < this->avail_parallel_[b.first]); });
 
   // Set loop order
+  this->loop_order_candidates_.emplace_back();
   for (TensorOrder loop_idx = 0; loop_idx < ORDER; ++loop_idx)
-    this->descriptor_.loop_order[loop_idx] = scores[loop_idx].first;
+    this->loop_order_candidates_.back()[loop_idx] = scores[loop_idx].first;
+}
+
+
+template <typename ParamType>
+void PlanTransOptimizer<ParamType>::init_loop_heur_(
+    const TensorIdx tune_num, const TensorIdx heur_num) {
+  // Create best heap to store auto tuning candidates
+  // "Cost-Order" pair: (cost, loop order)
+  using OrderDes = std::pair<double, LoopOrderTrans<ORDER>>;
+  auto heap_cmp = [] (const OrderDes &a, const OrderDes &b) -> bool {
+      return a.first < b.first; };
+
+  // Create initial loop order
+  LoopOrderTrans<ORDER> loop_order;
+  for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
+    loop_order[order_idx] = order_idx;
+  std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
+      best_heap(heap_cmp);
+
+  // Skip stride-1 leading loop in common leading case
+  if (this->param_->is_common_leading())
+    std::swap(loop_order[this->in_ld_idx_], loop_order[this->in_ld_idx_ + 1]);
+
+  // Look for best
+  TensorIdx times = 0;
+  for (bool has_next = true; has_next and (heur_num < 0 or heur_num > times);
+      ++times, has_next = std::next_permutation(
+          loop_order.begin() + this->in_ld_idx_, loop_order.end())) {
+    // Update best heap
+    auto new_cost = this->heur_loop_evaluator_(loop_order);
+    if (tune_num < 0 or tune_num > best_heap.size())
+      best_heap.emplace(new_cost, loop_order);
+    else if (best_heap.top().first > new_cost) {
+        best_heap.pop();
+        best_heap.emplace(new_cost, loop_order);
+    }
+  }
+
+  // Store result
+  while (not best_heap.empty()) {
+    this->loop_order_candidates_.emplace_back(best_heap.top().second);
+    best_heap.pop();
+  }
 }
 
 
@@ -143,23 +204,31 @@ void PlanTransOptimizer<ParamType>::init_threads_() {
     this->threads_ = 1;
 
   // Integer factorization of thread number
-  this->th_fact_map_ = hptc::factorize(this->threads_);
-  this->parallel_template_.fill(1);
+  this->th_factor_map_ = hptc::factorize(this->threads_);
+  this->template_descriptor_.parallel_strategy.fill(1);
 
-  // Parallel non-leading order loops that can be exactly divided
+  // Parallel non-leading order loops that can be exactly divided, begin from
+  // outer most loop in the arranged loop order
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx) {
-    const auto target_idx = this->descriptor_.loop_order[loop_idx];
+    const auto target_idx = this->loop_order_candidates_.front()[loop_idx];
     if (this->in_ld_idx_ == target_idx or this->out_ld_idx_ == target_idx)
       continue;
     // Try to parallelize current non-leading order loop
-    hptc::assign_factor(this->th_fact_map_, this->avail_parallel_[target_idx],
-        this->parallel_template_[target_idx], hptc::ModCmp<GenNumType>());
+    hptc::assign_factor(this->th_factor_map_, this->avail_parallel_[target_idx],
+        this->template_descriptor_.parallel_strategy[target_idx],
+        hptc::ModCmp<GenNumType>());
   }
+
+  // Erase the zero-count factors
+  auto flatted_map = hptc::flat_map(this->th_factor_map_);
+  this->th_factor_map_ = hptc::factorize(
+      std::accumulate(flatted_map.begin(), flatted_map.end(), 1,
+          std::multiplies<GenNumType>()));
 }
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_vec_() {
+void PlanTransOptimizer<ParamType>::init_vec_general_() {
   /*
    * Concept explanation:
    *    input leading order (continuous in input tensor)
@@ -242,7 +311,7 @@ void PlanTransOptimizer<ParamType>::init_vec_() {
         = this->param_->kn.knf_giant.get_ncont_len() / knf_basic_len;
 
     // Create rest thread number factors vector
-    auto factor_map = this->th_fact_map_;
+    auto factor_map = this->th_factor_map_;
 
     // Assign threads factors to all loops as many as possible, large prime
     // factors may not be taken into account here
@@ -268,8 +337,8 @@ void PlanTransOptimizer<ParamType>::init_vec_() {
       // the same parallelism, put the non-leading loop or the output leading
       // loop on the left
       std::sort(loops.begin(), loops.end(),
-          [this] (const auto &a, const auto &b) { return a.size > b.size or
-          (a.size == b.size and
+          [this] (const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
+              return a.size > b.size or (a.size == b.size and
               (ORDER == a.loop_idx or this->out_ld_idx_ == a.loop_idx)); });
 
       if (0 == loops[0].size % factor or loops[0].size / factor > loops[1].size)
@@ -416,7 +485,7 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
     // Locate kernel's position
     const auto kernel_offset = this->param_->kn.kernel_offset(kn_type,
         kn_cont_size, kn_ncont_size, is_linh);
-    auto &oper = this->descriptor_.description[0][kernel_offset];
+    auto &oper = this->template_descriptor_.description[0][kernel_offset];
 
     // Set up all loops
     if (oper.is_disabled()) {
@@ -450,7 +519,7 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
-  auto &loop = this->descriptor_.description[0][0];
+  auto &loop = this->template_descriptor_.description[0][0];
   // Set loops for non-leading orders
   loop.set_pass(ORDER);
   this->avail_parallel_[this->in_ld_idx_] = 1;
@@ -460,13 +529,13 @@ void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_parallel_() {
-  // Check rest thread resource, return if no threads left
-  if (1 == this->threads_ or this->th_fact_map_.empty()) {
-    std::copy(this->parallel_template_.begin(), this->parallel_template_.end(),
-        this->descriptor_.parallel_strategy.begin());
+void PlanTransOptimizer<ParamType>::init_parallel_rule_general_() {
+  // If there's no more thread factors or available parallelism left, then
+  // return the current template version
+  if (1 == this->threads_ or this->th_factor_map_.empty() or
+      std::accumulate(this->avail_parallel_.begin(),
+          this->avail_parallel_.end(), 1, std::multiplies<GenNumType>()) <= 1)
     return;
-  }
 
   auto loop_in_ld = LoopParaStrategy_(this->avail_parallel_[this->in_ld_idx_],
       1, this->in_ld_idx_);
@@ -486,19 +555,19 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
   auto &larger_loop = out_ld_large ? loop_out_ld : loop_in_ld;
   auto &smaller_loop = out_ld_large ? loop_in_ld : loop_out_ld;
 
-  std::unordered_map<GenNumType, GenNumType> fact_map;
-  for (auto kv : this->th_fact_map_)
+  std::unordered_map<GenNumType, GenNumType> factor_map;
+  for (auto kv : this->th_factor_map_)
     if (kv.second > 0)
-      fact_map[kv.first] = kv.second;
-  auto larger_assigned = hptc::assign_factor(fact_map, larger_loop.size,
+      factor_map[kv.first] = kv.second;
+  auto larger_assigned = hptc::assign_factor(factor_map, larger_loop.size,
       larger_loop.th_num, hptc::ModCmp<GenNumType>());
-  auto smaller_assigned = hptc::assign_factor(fact_map, smaller_loop.size,
+  auto smaller_assigned = hptc::assign_factor(factor_map, smaller_loop.size,
       smaller_loop.th_num, hptc::ModCmp<GenNumType>());
 
   // Sort non-leading loops by their available parallelism and order
   std::unordered_map<GenNumType, GenNumType> order_map;
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
-    order_map[this->descriptor_.loop_order[loop_idx]] = loop_idx;
+    order_map[this->loop_order_candidates_.front()[loop_idx]] = loop_idx;
   std::sort(loop_strategies.begin(), loop_strategies.end(),
       [&order_map] (const auto &a, const auto &b) { return a.size > b.size or
           (a.size == b.size and order_map[a.loop_idx] < order_map[b.loop_idx]);
@@ -506,11 +575,11 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
 
   // Assign rest threads to non-leading loops
   for (auto &loop : loop_strategies)
-    hptc::assign_factor(fact_map, loop.size, loop.th_num,
+    hptc::assign_factor(factor_map, loop.size, loop.th_num,
         std::greater_equal<GenNumType>());
 
   // Give assigned leading order threads back to non-leading orders if necessary
-  if (loop_strategies.size() > 0) {
+  if (not loop_strategies.empty()) {
     // Create heap on loop parallel strategy
     auto heap_cmp = [&order_map] (const auto &a, const auto &b) -> bool {
         return a.size < b.size or
@@ -540,7 +609,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
 
   // Dealing with large prime factors
   GenNumType rest_threads = 1, rest_avail = 1;
-  for (auto kv : fact_map)
+  for (auto kv : factor_map)
     for (auto freq = 0; freq < kv.second; ++freq)
       rest_threads *= kv.first;
   for (auto &loop : loop_strategies)
@@ -558,73 +627,67 @@ void PlanTransOptimizer<ParamType>::init_parallel_() {
     auto rest_avail_vec = hptc::flat_map(hptc::factorize(rest_avail));
     std::sort(rest_avail_vec.begin(), rest_avail_vec.end());
     auto assigned_factors = hptc::approx_prod(rest_avail_vec, rest_threads);
-    fact_map.clear();
+    factor_map.clear();
     for (auto factor : assigned_factors) {
-      if (1 == fact_map.count(factor))
-        ++fact_map[factor];
+      if (1 == factor_map.count(factor))
+        ++factor_map[factor];
       else
-        fact_map[factor] = 1;
+        factor_map[factor] = 1;
     }
 
     for (auto &loop : loop_strategies)
-      hptc::assign_factor(fact_map, loop.size, loop.th_num,
+      hptc::assign_factor(factor_map, loop.size, loop.th_num,
           hptc::ModCmp<GenNumType>());
-    hptc::assign_factor(fact_map, larger_loop.size, larger_loop.th_num,
+    hptc::assign_factor(factor_map, larger_loop.size, larger_loop.th_num,
         hptc::ModCmp<GenNumType>());
-    hptc::assign_factor(fact_map, smaller_loop.size, smaller_loop.th_num,
+    hptc::assign_factor(factor_map, smaller_loop.size, smaller_loop.th_num,
         hptc::ModCmp<GenNumType>());
   }
 
   // Parallelize the default strategy
-  std::copy(this->parallel_template_.begin(), this->parallel_template_.end(),
-      this->descriptor_.parallel_strategy.begin());
-  this->descriptor_.parallel_strategy[this->in_ld_idx_] *= loop_in_ld.th_num;
-  this->descriptor_.parallel_strategy[this->out_ld_idx_] *= loop_out_ld.th_num;
+  this->template_descriptor_.parallel_strategy[this->in_ld_idx_]
+      *= loop_in_ld.th_num;
+  this->template_descriptor_.parallel_strategy[this->out_ld_idx_]
+      *= loop_out_ld.th_num;
   for (auto &loop : loop_strategies)
-    this->descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
-
-  // Update thread number
-  this->threads_ = std::accumulate(this->descriptor_.parallel_strategy.begin(),
-      this->descriptor_.parallel_strategy.end(), 1,
-      std::multiplies<GenNumType>());
+    this->template_descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
 }
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_parallel_common_leading_() {
-  // Check rest thread resource, return if no threads left
-  if (1 == this->threads_ or this->th_fact_map_.empty()) {
-    std::copy(this->parallel_template_.begin(), this->parallel_template_.end(),
-        this->descriptor_.parallel_strategy.begin());
+void PlanTransOptimizer<ParamType>::init_parallel_rule_common_leading_() {
+  // If there's no more thread factors or available parallelism left, then
+  // return the current template version
+  if (1 == this->threads_ or this->th_factor_map_.empty() or
+      std::accumulate(this->avail_parallel_.begin(),
+          this->avail_parallel_.end(), 1, std::multiplies<GenNumType>()) <= 1)
     return;
-  }
 
   std::vector<LoopParaStrategy_> loop_strategies;
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
-    loop_strategies.emplace_back(this->avail_parallel_[loop_idx],
-        this->parallel_template_[loop_idx], loop_idx);
+    loop_strategies.emplace_back(this->avail_parallel_[loop_idx], 1, loop_idx);
 
   // Sort loop strategies by their available parallelism
   std::unordered_map<GenNumType, GenNumType> order_map;
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
-    order_map[this->descriptor_.loop_order[loop_idx]] = loop_idx;
+    order_map[this->loop_order_candidates_.front()[loop_idx]] = loop_idx;
   std::sort(loop_strategies.begin(), loop_strategies.end(),
       [&order_map] (const auto &a, const auto &b) { return a.size > b.size or
           (a.size == b.size and order_map[a.loop_idx] < order_map[b.loop_idx]);
       });
 
   // Assign rest threads and compute rest available parallelism
-  auto fact_map = this->th_fact_map_;
+  auto factor_map = this->th_factor_map_;
   GenNumType rest_avail = 1;
   for (auto &loop : loop_strategies) {
-    hptc::assign_factor(fact_map, loop.size, loop.th_num,
+    hptc::assign_factor(factor_map, loop.size, loop.th_num,
         std::greater_equal<GenNumType>());
     rest_avail *= loop.size;
   }
 
   // Dealing with large prime factors
   GenNumType rest_threads = 1;
-  for (auto kv : fact_map)
+  for (auto kv : factor_map)
     for (auto freq = 0; freq < kv.second; ++freq)
       rest_threads *= kv.first;
 
@@ -639,82 +702,151 @@ void PlanTransOptimizer<ParamType>::init_parallel_common_leading_() {
     auto rest_avail_vec = hptc::flat_map(hptc::factorize(rest_avail));
     std::sort(rest_avail_vec.begin(), rest_avail_vec.end());
     auto assigned_factors = hptc::approx_prod(rest_avail_vec, rest_threads);
-    fact_map.clear();
+    factor_map.clear();
     for (auto factor : assigned_factors) {
-      if (1 == fact_map.count(factor))
-        ++fact_map[factor];
+      if (1 == factor_map.count(factor))
+        ++factor_map[factor];
       else
-        fact_map[factor] = 1;
+        factor_map[factor] = 1;
     }
 
     for (auto &loop : loop_strategies)
-      hptc::assign_factor(fact_map, loop.size, loop.th_num,
+      hptc::assign_factor(factor_map, loop.size, loop.th_num,
           hptc::ModCmp<GenNumType>());
   }
 
   // Parallelize the default strategy
   for (auto &loop : loop_strategies)
-    this->descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
-
-  // Update thread number
-  this->threads_ = std::accumulate(this->descriptor_.parallel_strategy.begin(),
-      this->descriptor_.parallel_strategy.end(), 1,
-      std::multiplies<GenNumType>());
+    this->template_descriptor_.parallel_strategy[loop.loop_idx] *= loop.th_num;
 }
 
 
 template <typename ParamType>
-std::vector<LoopOrderTrans<ParamType::ORDER>>
-PlanTransOptimizer<ParamType>::heur_loop_explorer_(
-    const TensorIdx heur_num, TensorIdx tune_num) const {
-  if (0 == heur_num)
-    return { this->descriptor_.loop_order };
-  tune_num = 0 == tune_num ? 1 : tune_num;
+void PlanTransOptimizer<ParamType>::init_parallel_heur_(
+    const TensorIdx tune_num, const TensorIdx heur_num) {
+  // If there's no more thread factors or available parallelism left, then
+  // return the current template version
+  if (1 == this->threads_ or this->th_factor_map_.empty() or
+      std::accumulate(this->avail_parallel_.begin(),
+          this->avail_parallel_.end(), 1, std::multiplies<GenNumType>()) <= 1)
+    return;
 
-  // Create best heap to store auto tuning candidates
-  // "Cost-Order" pair: (cost, loop order)
-  using OrderDes = std::pair<double, LoopOrderTrans<ORDER>>;
-  auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
+  // Data structure for describing available parallelism at a loop
+  struct LoopBin {
+    LoopBin(TensorOrder order_idx, GenNumType capacity) : order_idx(order_idx),
+        capacity(capacity), curr_size(1) {}
+    const TensorOrder order_idx;
+    const GenNumType capacity;
+    GenNumType curr_size;
+  };
+
+  std::vector<LoopBin> loop_bins;
+  for (auto order_idx = this->in_ld_idx_; order_idx < ORDER; ++order_idx)
+    if (this->avail_parallel_[order_idx] > 1)
+      loop_bins.emplace_back(order_idx, this->avail_parallel_[order_idx]);
+  const auto bin_num = static_cast<TensorOrder>(loop_bins.size());
+
+  // Data structure for describing a thread factor's position
+  struct FactorPos {
+    FactorPos(GenNumType factor) : factor(factor), bin_idx(-1) {}
+    const GenNumType factor;
+    TensorIdx bin_idx;
+  };
+
+  /*
+   * Set up two stacks for recording factors' status, deployment stack records
+   * the factors that assigned to a certain loop, wait stack records the factors
+   * that not assigned to any loops.
+   */
+  std::stack<FactorPos> deploy_stack, wait_stack;
+  auto thread_factors = hptc::flat_map(this->th_factor_map_);
+
+  // Sort thread factors in ascending order before pushing them in stack
+  std::sort(thread_factors.begin(), thread_factors.end(),
+      std::greater<GenNumType>());
+  for (auto factor : thread_factors)
+    wait_stack.emplace(factor);
+  deploy_stack.push(wait_stack.top());
+  wait_stack.pop();
+
+  // Create heap to preserve the best $tune_num resutls
+  // "Cost-Parallel" pair: (cost, parallel strategy)
+  using ParaDes = std::pair<double, ParaStrategyTrans<ORDER>>;
+  auto heap_cmp = [] (const ParaDes &a, const ParaDes &b) -> bool {
       return a.first < b.first; };
-
-  // Create initial loop order
-  LoopOrderTrans<ORDER> loop_order;
-  for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
-    loop_order[order_idx] = order_idx;
-  std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
+  std::priority_queue<ParaDes, std::vector<ParaDes>, decltype(heap_cmp)>
       best_heap(heap_cmp);
 
-  // Look for best
   TensorIdx times = 0;
-  for (bool has_next = true; has_next and (times < heur_num or heur_num < 0);
-      ++times, has_next = std::next_permutation(
-          loop_order.begin() + this->in_ld_idx_, loop_order.end())) {
-    // Skip stride-1 leading loop in common leading case
-    while (this->in_ld_idx_ == loop_order[0] and
-        (has_next = std::next_permutation(loop_order.begin() + this->in_ld_idx_,
-                                          loop_order.end())));
-    if (not has_next)
-      break;
+  while (not deploy_stack.empty() and (heur_num < 0 or heur_num > times)) {
+    auto &bin_idx = deploy_stack.top().bin_idx;
+    // Find current assigned factor's next position
+    if (-1 == bin_idx)
+      ++bin_idx;
+    else if (bin_idx >= bin_num)
+      bin_idx -= bin_num;
+    else {
+      loop_bins[bin_idx].curr_size /= deploy_stack.top().factor;
+      ++bin_idx;
+    }
 
-    // Update best heap
-    auto new_cost = this->heur_loop_evaluator_(loop_order);
-    if (tune_num < 0 or tune_num > best_heap.size())
-      best_heap.push(OrderDes(new_cost, loop_order));
-    else if (best_heap.top().first > new_cost) {
-        best_heap.pop();
-        best_heap.push(OrderDes(new_cost, loop_order));
+    for (; bin_idx < bin_num and
+        loop_bins[bin_idx].curr_size * deploy_stack.top().factor
+        > loop_bins[bin_idx].capacity; ++bin_idx);
+
+    if (bin_idx == bin_num) {
+      // No next suitable position, pop back to wait stack
+      bin_idx = -1;
+      wait_stack.push(deploy_stack.top());
+      deploy_stack.pop();
+    }
+    else {
+      // Find next suitable position, deploy this factor
+      loop_bins[bin_idx].curr_size *= deploy_stack.top().factor;
+      if (not wait_stack.empty()) {
+        // The wait stack is NOT empty, push its top factor into deploy stack
+        // If wait stack's top has same value with deploy stack, set wait stack
+        // top's bin_idx with -2;
+        if (wait_stack.top().factor == deploy_stack.top().factor)
+          wait_stack.top().bin_idx = deploy_stack.top().bin_idx + bin_num;
+        deploy_stack.push(wait_stack.top());
+        wait_stack.pop();
+      }
+      else {
+        // The wait stack is empty, we got a parallelization strategy
+        ParaStrategyTrans<ORDER> strategy;
+        strategy.fill(1);
+        for (auto &bin : loop_bins) {
+          strategy[bin.order_idx] *= bin.curr_size;
+        }
+
+        // Calculate cost and push into best heap
+        auto new_cost = this->heur_parallel_evaluator_(strategy);
+        if (tune_num < 0 or tune_num > best_heap.size())
+          best_heap.emplace(new_cost, strategy);
+        else if (best_heap.top().first > new_cost) {
+          best_heap.pop();
+          best_heap.emplace(new_cost, strategy);
+        }
+
+        // Update times
+        ++times;
+      }
     }
   }
 
-  // Create result
-  std::vector<LoopOrderTrans<ORDER>> result;
-  result.reserve(best_heap.size());
+  // If the best heap is empty, it means that there could be large prime in
+  // thread factors. In this case, use the default parallelization strategy.
+  // Store result
   while (not best_heap.empty()) {
-    result.push_back(best_heap.top().second);
+    this->parallel_strategy_candidates_.emplace_back(best_heap.top().second);
     best_heap.pop();
-  }
 
-  return result;
+    // Multiply with template descriptor's parallelization strategy
+    for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
+      this->parallel_strategy_candidates_.back()[order_idx]
+          *= this->template_descriptor_.parallel_strategy[order_idx];
+  }
 }
 
 
@@ -727,9 +859,10 @@ double PlanTransOptimizer<ParamType>::heur_loop_evaluator_(
   // Create loop penalty array
   // [..., 2 * penalty_step, 1 * penalty_step, 0 * penalty_step]
   std::vector<double> loop_penalty(merged_order, 0.0);
-  loop_penalty.back() = this->penalty_begin;
+  loop_penalty.back() = this->heur_loop_penalty_begin;
   for (TensorIdx loop_idx = merged_order - 2; loop_idx >= 0; --loop_idx)
-    loop_penalty[loop_idx] = loop_penalty[loop_idx + 1] + this->penalty_step;
+    loop_penalty[loop_idx] = loop_penalty[loop_idx + 1]
+        + this->heur_loop_penalty_step;
 
   // Create target loop order's index map
   // Key is a specific tensor order, values is its level in loop
@@ -739,17 +872,18 @@ double PlanTransOptimizer<ParamType>::heur_loop_evaluator_(
         = loop_idx - this->in_ld_idx_;
 
   // Compute target loop order's costs
-  double loop_cost = 0.0, importance = importance_begin;
+  double loop_cost = 0.0, importance = this->heur_loop_importance_begin;
   for (TensorOrder order_idx = 0; order_idx < merged_order;
-      ++order_idx, importance *= this->importance_scale) {
+      ++order_idx, importance *= this->heur_loop_importance_scale) {
     auto input_order_loop_pos = target_map[order_idx];
     auto abs_idx = order_idx + this->in_ld_idx_;
     auto output_order_loop_pos = target_map[this->param_->perm[abs_idx]];
 
     auto input_order_penalty = loop_penalty[input_order_loop_pos];
     auto output_order_penalty = loop_penalty[output_order_loop_pos];
-    loop_cost += importance * (input_order_penalty * this->input_penalty_factor
-        + output_order_penalty * this->output_penalty_factor);
+    loop_cost += importance
+        * (input_order_penalty * this->heur_loop_input_penalty_factor
+            + output_order_penalty * this->heur_loop_output_penalty_factor);
   }
 
   return loop_cost;
@@ -757,106 +891,10 @@ double PlanTransOptimizer<ParamType>::heur_loop_evaluator_(
 
 
 template <typename ParamType>
-std::vector<ParaStrategyTrans<ParamType::ORDER>>
-PlanTransOptimizer<ParamType>::heur_parallel_explorer_(
-    const TensorIdx heur_num, TensorIdx tune_num) const {
-  if (0 == heur_num)
-    return { this->descriptor_.parallel_strategy };
-  tune_num = 0 == tune_num ? 1 : tune_num;
-
-  // Create best heap to store auto tuning candidates
-  // "Cost-Parallel" pair: (cost, parallelization strategy)
-  using ParaDes = std::pair<double, ParaStrategyTrans<ORDER>>;
-  auto heap_cmp = [] (const auto &a, const auto &b) -> bool {
-      return a.first < b.first; };
-
-  // Create initial parallelization strategy.
-  ParaStrategyTrans<ORDER> parallel_strategy;
-  std::priority_queue<ParaDes, std::vector<ParaDes>, decltype(heap_cmp)>
-      best_heap(heap_cmp);
-
-  // Create stack for permuting all possible parallelization combinations
-  TensorOrder fact_num = 0;
-  std::stack<TensorOrder> loop_stack;
-  std::vector<GenNumType> factors;
-  auto fact_map = this->th_fact_map_;
-  for (auto &fact : fact_map) {
-    fact_num += fact.second;
-    while (fact.second > 0) {
-      factors.push_back(fact.first);
-      --fact.second;
-    }
-  }
-  for (TensorOrder loop_idx = 0; loop_idx < fact_num; ++loop_idx)
-    loop_stack.push(this->in_ld_idx_);
-
-  // Closure for getting next permutation of parallelization
-  auto get_next = [fact_num, this, &loop_stack] () -> bool {
-    if (loop_stack.top() + 1 < ORDER)
-      ++loop_stack.top();
-    else {
-      while (not loop_stack.empty() and loop_stack.top() + 1 == ORDER)
-        loop_stack.pop();
-      if (loop_stack.empty())
-        return false;
-      ++loop_stack.top();
-      for (auto fact_idx = loop_stack.size(); fact_idx <= fact_num; ++fact_idx)
-        loop_stack.push(this->in_ld_idx_);
-    }
-    return true;
-  };
-
-  // Look for best
-  TensorIdx times = 0;
-  for (bool has_next = true; has_next and (times < heur_num or heur_num < 0);
-      ++times, has_next = get_next()) {
-    if (not has_next)
-      break;
-
-    // Get next parallelization
-    std::vector<TensorOrder> pos;
-    auto loop_stack_cp = loop_stack;
-    while (not loop_stack_cp.empty()) {
-      pos.push_back(loop_stack_cp.top());
-      loop_stack_cp.pop();
-    }
-    parallel_strategy.fill(1);
-    for (TensorOrder fact_idx = 0; fact_idx < fact_num; ++fact_idx)
-      parallel_strategy[pos[fact_idx]] *= factors[fact_idx];
-
-    // Update best heap
-    auto new_cost = this->heur_parallel_evaluator_(parallel_strategy);
-    if (tune_num < 0 or tune_num > best_heap.size())
-      best_heap.push(ParaDes(new_cost, parallel_strategy));
-    else if (best_heap.top().first > new_cost) {
-        best_heap.pop();
-        best_heap.push(ParaDes(new_cost, parallel_strategy));
-    }
-  }
-
-  // Create result
-  std::vector<ParaStrategyTrans<ORDER>> result;
-  result.reserve(best_heap.size());
-  while (not best_heap.empty()) {
-    result.push_back(best_heap.top().second);
-    best_heap.pop();
-  }
-
-  return result;
-}
-
-
-template <typename ParamType>
 double PlanTransOptimizer<ParamType>::heur_parallel_evaluator_(
     const ParaStrategyTrans<ORDER> &target_para) const {
-  // Find the biggest enabled kernel
-  TensorIdx kn_idx = 0;
-  while (this->descriptor_.description[0][kn_idx].is_disabled())
-    ++kn_idx;
-  const auto &target_loop = this->descriptor_.description[0][kn_idx];
-
   // Calculate costs
-  double cost = 1.0;
+  auto cost = this->heur_para_cost_begin;
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx) {
     if (target_para[loop_idx] <= 1)
       continue;
@@ -865,24 +903,23 @@ double PlanTransOptimizer<ParamType>::heur_parallel_evaluator_(
     GenNumType steps_per_thread
         = (this->avail_parallel_[loop_idx] + target_para[loop_idx] - 1)
             / target_para[loop_idx];
-
     // Calculate load for loop at level loop_idx given certain number of threads
     const auto load = steps_per_thread * target_para[loop_idx];
-
     // Update cost
     cost *= static_cast<double>(load) / this->avail_parallel_[loop_idx];
   }
 
   // Strongly penalize parallelization at stride-1 loop in common leading case
   if (this->param_->is_common_leading())
-    cost *= std::pow(this->penalty_factor_cl,
+    cost *= std::pow(this->heur_para_penalty_factor_cl,
         target_para[this->in_ld_idx_] - 1);
 
   // Penalize parallelization at input/output leading order loop
-  cost *= std::pow(this->penalty_factor_inld,
-      std::min(this->max_penalty_threads, target_para[this->in_ld_idx_] - 1));
-  cost *= std::pow(this->penalty_factor_outld,
-      std::min(this->max_penalty_threads,
+  cost *= std::pow(this->heur_para_penalty_factor_inld,
+      std::min(this->heur_para_max_penalty_threads,
+          target_para[this->in_ld_idx_] - 1));
+  cost *= std::pow(this->heur_para_penalty_factor_outld,
+      std::min(this->heur_para_max_penalty_threads,
           target_para[this->param_->perm[this->in_ld_idx_]] - 1));
 
   return cost;
@@ -890,95 +927,88 @@ double PlanTransOptimizer<ParamType>::heur_parallel_evaluator_(
 
 
 template <typename ParamType>
-std::vector<Descriptor<ParamType>>
-PlanTransOptimizer<ParamType>::gen_candidates_(
-    const std::vector<LoopOrderTrans<ORDER>> &loop_orders,
-    const std::vector<ParaStrategyTrans<ORDER>> &parallel_strategies) const {
-  std::vector<Descriptor<ParamType>> candidates;
+std::vector<typename CGraphTrans<ParamType>::Descriptor>
+PlanTransOptimizer<ParamType>::gen_candidates_() const {
+  std::vector<typename CGraphTrans<ParamType>::Descriptor> candidates;
 
   // Permute over different loop orders and parallelization strategies
-  for (const auto &loop : loop_orders)
-    for (const auto &parallel : parallel_strategies) {
+  for (const auto &loop : this->loop_order_candidates_) {
+    for (const auto &strategy : this->parallel_strategy_candidates_) {
       // Create a new candidate from default single threaded descriptor
-      candidates.push_back(this->descriptor_);
+      candidates.emplace_back(this->template_descriptor_);
       candidates.back().loop_order = loop;
-      candidates.back().parallel_strategy = parallel;
+      candidates.back().parallel_strategy = strategy;
 
       // Parallelization
-      this->parallelize_(candidates.back());
-    }
+      auto &des = candidates.back().description;
 
-  return candidates;
-}
+      // Calculate actual thread number and resize description
+      const auto threads = std::accumulate(strategy.begin(), strategy.end(), 1,
+          std::multiplies<GenNumType>());
+      des.resize(threads, des[0]);
 
+      // Parallelize
+      for (TensorOrder kn_idx = 0, kn_num = des[0].size();
+          kn_idx < kn_num; ++kn_idx) {
+        // Skip disabled kernel
+        auto &kn_template = des[0][kn_idx];
+        if (kn_template.is_disabled())
+          continue;
 
-template <typename ParamType>
-void PlanTransOptimizer<ParamType>::parallelize_(
-    Descriptor<ParamType> &descriptor) const {
-  auto &des = descriptor.description;
-  const auto &strategy = descriptor.parallel_strategy;
+        for (TensorOrder loop_idx = this->in_ld_idx_, left_threads = threads;
+            loop_idx < ORDER and left_threads > 1; ++loop_idx) {
+          // Compute step times at current loop level
+          TensorIdx steps = (kn_template.loop_end[loop_idx]
+              - kn_template.loop_begin[loop_idx])
+              / kn_template.loop_step[loop_idx];
 
-  // Calculate actual thread number and resize description
-  const auto threads = std::accumulate(strategy.begin(), strategy.end(), 1,
-      std::multiplies<GenNumType>());
-  if (threads <= 1)
-    return;
-  des.resize(threads, des[0]);
+          // Create vector to store steps for each thread at current loop level
+          const auto curr_para = strategy[loop_idx];
+          std::vector<TensorIdx> split_steps(curr_para,
+              curr_para <= steps ? steps / curr_para : 0);
+          std::for_each(split_steps.end() - steps % curr_para,
+              split_steps.end(), [] (TensorIdx &num) { ++num; });
 
-  // Parallelize
-  const auto kn_num = des[0].size();
-  for (auto kn_idx = 0; kn_idx < kn_num; ++kn_idx) {
-    // Skip disabled kernel
-    auto &kn_basis = des[0][kn_idx];
-    if (kn_basis.is_disabled())
-      continue;
+          // Create unit spans
+          std::vector<TensorIdx> unit_begins(left_threads),
+              unit_ends(left_threads);
+          for (TensorIdx cp_idx = 0,
+              begin_val = kn_template.loop_begin[loop_idx],
+              copies = left_threads / curr_para; cp_idx < curr_para; ++cp_idx) {
+            auto cp_beg = cp_idx * copies;
+            auto cp_end = cp_beg + copies;
+            auto end_val = begin_val
+                + split_steps[cp_idx] * kn_template.loop_step[loop_idx];
+            std::fill(unit_begins.begin() + cp_beg,
+                unit_begins.begin() + cp_end, begin_val);
+            std::fill(unit_ends.begin() + cp_beg, unit_ends.begin() + cp_end,
+                end_val);
+            begin_val = end_val;
+          }
 
-    auto left_threads = threads;
-    for (auto loop_idx = this->in_ld_idx_;
-        loop_idx < ORDER and left_threads > 1; ++loop_idx) {
-      // Compute step times at current loop level
-      TensorIdx steps =
-          (kn_basis.loop_end[loop_idx] - kn_basis.loop_begin[loop_idx]) /
-          kn_basis.loop_step[loop_idx];
+          // Assign rest index in loop to threads
+          std::vector<TensorIdx> begins(threads), ends(threads);
+          for (GenNumType off = 0; off < threads; off += left_threads) {
+            std::copy(unit_begins.begin(), unit_begins.end(),
+                begins.begin() + off);
+            std::copy(unit_ends.begin(), unit_ends.end(), ends.begin() + off);
+          }
 
-      // Create vector to store steps for each thread at current loop level
-      const auto curr_para = strategy[loop_idx];
-      std::vector<TensorIdx> split_steps(curr_para,
-          curr_para <= steps ? steps / curr_para : 0);
-      std::for_each(split_steps.end() - steps % curr_para, split_steps.end(),
-          [] (auto &num) { ++num; });
+          for (GenNumType th_idx = 0; th_idx < threads; ++th_idx) {
+            des[th_idx][kn_idx].loop_begin[loop_idx] = begins[th_idx];
+            des[th_idx][kn_idx].loop_end[loop_idx] = ends[th_idx];
+            des[th_idx][kn_idx].loop_step[loop_idx]
+                = kn_template.loop_step[loop_idx];
+          }
 
-      // Create unit spans
-      std::vector<TensorIdx> unit_begins(left_threads), unit_ends(left_threads);
-      for (TensorIdx cp_idx = 0, begin_val = kn_basis.loop_begin[loop_idx],
-          copies = left_threads / curr_para; cp_idx < curr_para; ++cp_idx) {
-        auto cp_beg = cp_idx * copies;
-        auto cp_end = cp_beg + copies;
-        auto end_val
-            = begin_val + split_steps[cp_idx] * kn_basis.loop_step[loop_idx];
-        std::fill(unit_begins.begin() + cp_beg, unit_begins.begin() + cp_end,
-            begin_val);
-        std::fill(unit_ends.begin() + cp_beg, unit_ends.begin() + cp_end,
-            end_val);
-        begin_val = end_val;
+          // Update left thread number
+          left_threads /= curr_para;
+        }
       }
-
-      // Assign rest index in loop to threads
-      std::vector<TensorIdx> begins(threads), ends(threads);
-      for (GenNumType off = 0; off < threads; off += left_threads) {
-        std::copy(unit_begins.begin(), unit_begins.end(), begins.begin() + off);
-        std::copy(unit_ends.begin(), unit_ends.end(), ends.begin() + off);
-      }
-
-      for (GenNumType th_idx = 0; th_idx < threads; ++th_idx) {
-        des[th_idx][kn_idx].loop_begin[loop_idx] = begins[th_idx];
-        des[th_idx][kn_idx].loop_end[loop_idx] = ends[th_idx];
-        des[th_idx][kn_idx].loop_step[loop_idx] = kn_basis.loop_step[loop_idx];
-      }
-
-      left_threads /= curr_para;
     }
   }
+
+  return candidates;
 }
 
 

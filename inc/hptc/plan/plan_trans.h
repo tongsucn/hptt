@@ -20,28 +20,26 @@ namespace hptc {
 template <typename ParamType>
 class PlanTrans {
 public:
-  static constexpr auto ORDER = ParamType::ORDER;
-
-  PlanTrans(const std::shared_ptr<ParamType> &param, GenNumType thread_num = 0);
+  PlanTrans(const std::shared_ptr<ParamType> &param, TensorIdx tune_loop_num,
+      TensorIdx tune_para_num, TensorIdx heur_loop_num, TensorIdx heur_para_num,
+      GenNumType thread_num = 0, GenNumType tune_times = 5);
 
   PlanTrans(const PlanTrans &plan) = delete;
   PlanTrans<ParamType> &operator=(const PlanTrans &plan) = delete;
 
   ~PlanTrans() = default;
 
-  Graph<ParamType> *get_graph(TensorIdx heur_num = 0, TensorIdx tune_num = 0,
-      GenNumType tune_times = 10);
-  Graph<ParamType> *get_graph(std::initializer_list<TensorIdx> loop_param,
-      std::initializer_list<TensorIdx> parallel_param,
-      GenNumType tune_times = 10);
+  CGraphTrans<ParamType> *get_graph();
 
 private:
-  Graph<ParamType> *tuning_(
-      const std::vector<Descriptor<ParamType>> &descriptors,
+  using Descriptor = typename CGraphTrans<ParamType>::Descriptor;
+
+  Descriptor tuning_(const std::vector<Descriptor> &descriptors,
       GenNumType tune_times);
 
   std::shared_ptr<ParamType> param_;
   PlanTransOptimizer<ParamType> optimizer_;
+  Descriptor optimal_descriptor_;
 };
 
 

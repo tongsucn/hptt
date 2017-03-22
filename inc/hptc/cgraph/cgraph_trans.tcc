@@ -3,10 +3,10 @@
 #define HPTC_CGRAPH_CGRAPH_TRANS_TCC_
 
 /*
- * Implementation for class CGraphTrans::CGraphTransDescriptor
+ * Implementation for class CGraphTrans::Descriptor
  */
 template <typename ParamType>
-CGraphTrans<ParamType>::CGraphTransDescriptor::CGraphTransDescriptor()
+CGraphTrans<ParamType>::Descriptor::Descriptor()
     : description(1) {
   for (TensorOrder order_idx = 0; order_idx < ORDER; ++order_idx)
     this->loop_order[order_idx] = order_idx;
@@ -20,7 +20,7 @@ CGraphTrans<ParamType>::CGraphTransDescriptor::CGraphTransDescriptor()
  */
 template <typename ParamType>
 CGraphTrans<ParamType>::~CGraphTrans() {
-  this->release_operations_();
+  this->release_();
 }
 
 
@@ -34,7 +34,7 @@ INLINE void CGraphTrans<ParamType>::operator()() {
 
 
 template <typename ParamType>
-INLINE CGraphTrans<ParamType>::CGraphTransDescriptor
+INLINE CGraphTrans<ParamType>::Descriptor
 CGraphTrans<ParamType>::get_descriptor() const {
   return this->descriptor_;
 }
@@ -42,11 +42,26 @@ CGraphTrans<ParamType>::get_descriptor() const {
 
 template <typename ParamType>
 CGraphTrans<ParamType>::CGraphTrans(const std::shared_ptr<ParamType> &param,
-    const CGraphTransDescriptor &descriptor)
+    const Descriptor &descriptor)
     : param_(param),
-      descriptor_(descriptor),
-      threads_(descriptor.description.size()),
-      operations_(this->threads_ > 0 ? new For_ [this->threads_] : nullptr) {
+      threads_(0),
+      operations_(nullptr) {
+  this->init(descriptor);
+}
+
+
+template <typename ParamType>
+void CGraphTrans<ParamType>::init(const Descriptor &descriptor) {
+  // Release previous (if exists) before initialization
+  this->release_();
+
+  // Initialize members
+  this->threads_ = descriptor.description.size();
+  if (this->threads_ < 1)
+    return;
+  this->descriptor_ = descriptor;
+  this->operations_ = new For_ [this->threads_];
+
   // Initialize for loops' parameters and loop order
   for (GenNumType th_idx = 0, idx_end = this->descriptor_.description[0].size();
       th_idx < this->threads_; ++th_idx) {
@@ -66,7 +81,7 @@ CGraphTrans<ParamType>::CGraphTrans(const std::shared_ptr<ParamType> &param,
 
 
 template <typename ParamType>
-void CGraphTrans<ParamType>::release_operations_() {
+void CGraphTrans<ParamType>::release_() {
   // Release operations
   for (GenNumType idx = 0; idx < this->threads_; ++idx) {
     auto curr_oper = this->operations_[idx].next;
@@ -77,6 +92,7 @@ void CGraphTrans<ParamType>::release_operations_() {
     }
   }
 
+  this->threads_ = 0;
   delete [] this->operations_;
   this->operations_ = nullptr;
 }
@@ -204,11 +220,10 @@ INLINE void CGraphTrans<ParamType>::exec_general_() {
 template <typename ParamType>
 INLINE void CGraphTrans<ParamType>::exec_common_leading_() {
   const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
-  const auto &kn = this->param_->kn;
 
 #pragma omp parallel for schedule(static)
   for (TensorOrder idx = 0; idx < this->threads_; ++idx)
-    this->operations_[idx](kn.kn_lin, this->param_->input_tensor,
+    this->operations_[idx](this->param_->kn.kn_lin, this->param_->input_tensor,
         this->param_->output_tensor, ld_len, 0, this->param_->reg_alpha_linear,
         this->param_->reg_beta_linear);
 }

@@ -2,109 +2,63 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_TCC_
 #define HPTC_PLAN_PLAN_TRANS_TCC_
 
+template <typename ParamType>
+using DescriptorForPlanTrans = typename CGraphTrans<ParamType>::Descriptor;
+
+
 /*
  * Implementation for class PlanTrans
  */
 template <typename ParamType>
 PlanTrans<ParamType>::PlanTrans(
-    const std::shared_ptr<ParamType> &param, GenNumType thread_num)
+    const std::shared_ptr<ParamType> &param, TensorIdx tune_loop_num,
+    TensorIdx tune_para_num, TensorIdx heur_loop_num, TensorIdx heur_para_num,
+    GenNumType thread_num, GenNumType tune_times)
     : param_(param),
-      optimizer_(param, thread_num) {
+      optimizer_(param, tune_loop_num, tune_para_num, heur_loop_num,
+          heur_para_num, thread_num),
+      optimal_descriptor_(this->tuning_(this->optimizer_.get_optimal(),
+          tune_times)) {
 }
 
 
 template <typename ParamType>
-CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph(
-    TensorIdx heur_num, TensorIdx tune_num, GenNumType tune_times) {
-  // Compute heuristic number
-  TensorIdx heur_loop_num, heur_para_num;
-  if (heur_num >= 0)
-    heur_loop_num = heur_para_num = static_cast<TensorIdx>(std::sqrt(heur_num));
-  else
-    heur_loop_num = heur_para_num = -1;
-
-  // Compute auto tuning number
-  TensorIdx tune_loop_num, tune_para_num;
-  if (tune_num >= 0)
-    tune_loop_num = tune_para_num = static_cast<TensorIdx>(std::sqrt(tune_num));
-  else
-    tune_loop_num = tune_para_num = -1;
-
-  // Construct graph descriptor
-  auto descriptors = this->optimizer_.get_optimal(heur_loop_num, heur_para_num,
-      tune_loop_num, tune_para_num);
-
+CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph() {
   // Return tuned result
-  return this->tuning_(descriptors, tune_times);;
+  return new CGraphTrans<ParamType>(this->param_, this->optimal_descriptor_);
 }
 
 
 template <typename ParamType>
-CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph(
-    std::initializer_list<TensorIdx> loop_param,
-    std::initializer_list<TensorIdx> parallel_param, GenNumType tune_times) {
-  // Get heuristic number and tuning number
-  auto heur_loop_num = *loop_param.begin(),
-      heur_para_num = *parallel_param.begin();
-  auto tune_loop_num = *(loop_param.begin() + 1),
-       tune_para_num = *(parallel_param.begin() + 1);
-
-  // Construct graph descriptor
-  auto descriptors = this->optimizer_.get_optimal(heur_loop_num, heur_para_num,
-      tune_loop_num, tune_para_num);
-
-  // Return tuned result
-  return this->tuning_(descriptors, tune_times);
-}
-
-
-template <typename ParamType>
-CGraphTrans<ParamType> *PlanTrans<ParamType>::tuning_(
-    const std::vector<Descriptor<ParamType>> &descriptors,
+typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
+    const std::vector<typename CGraphTrans<ParamType>::Descriptor> &descriptors,
     GenNumType tune_times) {
   auto cand_num = static_cast<TensorIdx>(descriptors.size());
-  if (0 == cand_num)
-    return nullptr;
-  else if (1 == cand_num)
-    return new Graph<ParamType>(this->param_, descriptors[0]);
-
-  // Create fake data parameter
-  auto size_obj = this->param_->input_tensor.get_outer_size();
-  std::vector<TensorOrder> size_vec(ORDER);
-  for (TensorOrder size_idx = 0; size_idx < ORDER; ++size_idx)
-    size_vec[size_idx] = size_obj[size_idx];
-
-  // Creating fake data and fake transpose parameter
-  DataWrapper<typename ParamType::FloatType> fake_data(size_vec,
-      this->param_->input_tensor.get_data(),
-      this->param_->output_tensor.get_data());
-  auto fake_param = std::make_shared<ParamType>(*this->param_);
-  fake_param->input_tensor.set_data(fake_data.org_in_data);
-  fake_param->output_tensor.set_data(fake_data.org_out_data);
+  if (1 == cand_num)
+    return descriptors[0];
 
   // Create timer
   TimerWrapper timer(tune_times);
 
-  // Create candidates
-  std::vector<Graph<ParamType> *> candidates(cand_num, nullptr);
-  for (TensorIdx cand_idx = 0; cand_idx < cand_num; ++cand_idx)
-    candidates[cand_idx] = new Graph<ParamType>(fake_param,
-        descriptors[cand_idx]);
+  // Back up coefficients and set identical coefficients for testing
+  auto alpha = this->param_->alpha;
+  auto beta = this->param_->beta;
+  this->param_->set_coef(0.0, 1.0);
 
-  // Measure
-  TensorIdx best_cand_idx = 0;
-  auto best_cand_time = timer(*candidates[0]);
-  for (TensorIdx cand_idx = 1; cand_idx < cand_num; ++cand_idx) {
-    auto curr_time = timer(*candidates[cand_idx]);
-    if (curr_time < best_cand_time)
-      best_cand_idx = cand_idx, best_cand_time = curr_time;
+  // Measure candidates
+  TensorIdx best_idx = 0;
+  CGraphTrans<ParamType> candidate(this->param_, descriptors[best_idx]);
+  auto best_time = timer(candidate);
+  for (TensorIdx cand_idx = best_idx + 1; cand_idx < cand_num; ++cand_idx) {
+    candidate.init(descriptors[cand_idx]);
+    auto new_time = timer(candidate);
+    if (new_time < best_time)
+      best_idx = cand_idx, best_time = new_time;
   }
 
-  // Release in case memory leak
-  for (auto cand_ptr : candidates)
-    delete cand_ptr;
-
-  return new Graph<ParamType>(this->param_, descriptors[best_cand_idx]);
+  // Recover coefficients
+  this->param_->set_coef(alpha, beta);
+  return descriptors[best_idx];
 }
 
 #endif // HPTC_PLAN_PLAN_TRANS_TCC_
