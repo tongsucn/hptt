@@ -34,6 +34,7 @@ public:
 
   ~CGraphTrans();
 
+  INLINE void exec();
   INLINE void operator()();
   INLINE Descriptor get_descriptor() const;
 

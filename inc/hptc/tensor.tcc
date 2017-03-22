@@ -78,10 +78,10 @@ template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
 TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
-    const TensorSize<ORDER> &size_obj, FloatType *raw_data)
+    const TensorSize<ORDER> &size_obj, const FloatType *raw_data)
     : size_(size_obj),
       outer_size_(size_obj),
-      raw_data_(raw_data) {
+      raw_data_(const_cast<FloatType *>(raw_data)) {
   this->init_offset_();
 }
 
@@ -91,10 +91,10 @@ template <typename FloatType,
           MemLayout LAYOUT>
 TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
     const TensorSize<ORDER> &size_obj, const TensorSize<ORDER> &outer_size_obj,
-    const std::array<TensorIdx, ORDER> &order_offset, FloatType *raw_data)
+    const std::array<TensorOrder, ORDER> &order_offset, const FloatType *raw_data)
     : size_(size_obj),
       outer_size_(outer_size_obj),
-      raw_data_(raw_data) {
+      raw_data_(const_cast<FloatType *>(raw_data)) {
   if (this->size_ == this->outer_size_)
     this->init_offset_();
   else
@@ -111,7 +111,7 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
     : size_(wrapper.get_size()),
       outer_size_(wrapper.get_outer_size()),
       raw_data_(const_cast<FloatType *>(wrapper.get_data())) {
-  std::array<TensorIdx, ORDER> order_offset;
+  std::array<TensorOrder, ORDER> order_offset;
   // Translate if input wrapper has different layout
   if (LAYOUT != ACT_MAJOR) {
     // Reverse size objects
@@ -237,7 +237,7 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::set_data(FloatType *new_data) {
 template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
-INLINE const TensorIdx *TensorWrapper<FloatType, ORDER, LAYOUT>::get_offset(
+INLINE const TensorOrder *TensorWrapper<FloatType, ORDER, LAYOUT>::get_offset(
     ) const {
   return this->offsets_;
 }
@@ -273,7 +273,7 @@ template <typename FloatType,
           TensorOrder ORDER,
           MemLayout LAYOUT>
 INLINE void TensorWrapper<FloatType, ORDER, LAYOUT>::init_offset_(
-    const std::array<TensorIdx, ORDER> &order_offset) {
+    const std::array<TensorOrder, ORDER> &order_offset) {
   if (0 == ORDER)
     return;
 

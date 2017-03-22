@@ -20,30 +20,18 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       data_wrapper.ref_data);
 
   // Measure HPTC version
-  // Create tensor wrapper and parameters
-  // 1. Create size objects
-  TensorSize<ORDER> input_size(test_case.size);
-  auto output_size_vec = test_case.size;
-  for (TensorOrder idx = 0; idx < ORDER; ++idx)
-    output_size_vec[idx] = input_size[test_case.perm[idx]];
-  TensorSize<ORDER> output_size(output_size_vec);
-
-  // 2. Create tensor wrappers
-  TensorType input_tensor(input_size, data_wrapper.org_in_data);
-  TensorType output_tensor(output_size, data_wrapper.act_data);
-
-  // 3. Create parameter
   std::array<TensorOrder, ORDER> perm;
   copy(test_case.perm.begin(), test_case.perm.end(), perm.begin());
-  auto param = std::make_shared<Param>(input_tensor, output_tensor, perm,
-      static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
 
-  // 4. Create plan and generate computational graph
-  PlanTrans<Param> plan(param, 0, 0, 0, 0);
-  auto graph = plan.get_graph();
+  auto graph = create_cgraph_trans<FloatType, ORDER, USAGE>(
+      data_wrapper.org_in_data, data_wrapper.act_data, test_case.size, perm,
+      static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
 
   // Execute computational graph
   double hptc_time = timer(*graph);
+
+  auto tp_ttc = calc_tp_trans<FloatType, USAGE>(test_case.size, ttc_time);
+  auto tp_hptc = calc_tp_trans<FloatType, USAGE>(test_case.size, hptc_time);
 
   delete graph;
   graph = nullptr;
@@ -52,8 +40,10 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
 
   // Print log
   std::stringstream ss;
-  ss << std::setprecision(3) << ttc_time << ","<< std::setprecision(3)
-      << hptc_time << (-1 == result ? ",SUCCEED" : ",FAILED");
+  ss << std::setprecision(3) << ttc_time << "," << std::setprecision(3)
+      << hptc_time << "," << std::setprecision(3) << tp_ttc << ","
+      << std::setprecision(3) << tp_hptc
+      << (-1 == result ? ",SUCCEED" : ",FAILED");
   std::cout << ss.str() << std::endl;
 }
 

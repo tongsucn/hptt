@@ -3,6 +3,7 @@
 #define HPTC_UTIL_UTIL_TRANS_H_
 
 #include <array>
+#include <vector>
 #include <algorithm>
 
 #include <hptc/types.h>
@@ -63,6 +64,11 @@ using LoopOrderTrans = std::array<TensorOrder, ORDER>;
 
 template <TensorOrder ORDER>
 using ParaStrategyTrans = std::array<GenNumType, ORDER>;
+
+
+template <typename FloatType,
+          CoefUsageTrans USAGE>
+double calc_tp_trans(const std::vector<TensorOrder> &size, double time_ms);
 
 
 /*

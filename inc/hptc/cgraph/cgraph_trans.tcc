@@ -25,11 +25,17 @@ CGraphTrans<ParamType>::~CGraphTrans() {
 
 
 template <typename ParamType>
-INLINE void CGraphTrans<ParamType>::operator()() {
+INLINE void CGraphTrans<ParamType>::exec() {
   if (not this->param_->is_common_leading())
     this->exec_general_();
   else
     this->exec_common_leading_();
+}
+
+
+template <typename ParamType>
+INLINE void CGraphTrans<ParamType>::operator()() {
+  this->exec();
 }
 
 

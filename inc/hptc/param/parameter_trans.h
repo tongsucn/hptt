@@ -55,6 +55,8 @@ struct ParamTrans {
 
 private:
   TensorOrder merge_idx_(const std::array<TensorOrder, ORDER> &perm);
+
+  // They need to be initialized before merging
   std::unordered_set<TensorOrder> input_merge_set_, output_merge_set_;
 
 public:
