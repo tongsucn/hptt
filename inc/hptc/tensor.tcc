@@ -107,10 +107,10 @@ template <typename FloatType,
           MemLayout LAYOUT>
 template <MemLayout ACT_MAJOR>
 TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
-    TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
+    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
     : size_(wrapper.get_size()),
       outer_size_(wrapper.get_outer_size()),
-      raw_data_(wrapper.get_data()) {
+      raw_data_(const_cast<FloatType *>(wrapper.get_data())) {
   std::array<TensorIdx, ORDER> order_offset;
   // Translate if input wrapper has different layout
   if (LAYOUT != ACT_MAJOR) {
