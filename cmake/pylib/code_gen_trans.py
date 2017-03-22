@@ -17,6 +17,12 @@ class GenTarget(object):
     self.target_dir = os.path.join(os.getcwd(), target_dir)
     self.dtype_usage = list(dtype_usage)
     self.coef_usage = list(coef_usage)
+
+    # Check limit values
+    if order_min < 2:
+        order_min = 2
+    if order_max <= order_min:
+        order_max = order_min + 1
     self.order_range = list(range(order_min, order_max))
     self.target_suffix = target_suffix
 
@@ -73,8 +79,8 @@ def arg_parser(argv):
   parser.add_argument('--order-max', action='store', dest='order_max')
 
   parsed = parser.parse_args(argv[1:])
-  parsed.dtype = map(lambda x: dtype_dict[x], parsed.dtype.split(','))
-  parsed.coef = map(lambda x: coef_dict[x], parsed.coef.split(','))
+  parsed.dtype = map(lambda x: dtype_dict[x.lower()], parsed.dtype.split(','))
+  parsed.coef = map(lambda x: coef_dict[x.lower()], parsed.coef.split(','))
   parsed.order_min = int(parsed.order_min)
   parsed.order_max = int(parsed.order_max)
 
