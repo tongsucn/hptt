@@ -1,7 +1,7 @@
 #include <hptc/kernels/macro_kernel_trans.h>
 
 #include <hptc/types.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 
 
 namespace hptc {

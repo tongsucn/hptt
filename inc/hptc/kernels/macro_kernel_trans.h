@@ -3,7 +3,7 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
 #include <hptc/types.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 #include <hptc/kernels/micro_kernel_trans.h>
 
 

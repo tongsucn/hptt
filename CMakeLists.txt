@@ -63,19 +63,18 @@ include_directories(${HPTC_CODE_GEN_TARGET_DIR})
 add_subdirectory(src)
 
 # Add test and benchmark directory if necessary
-if (${HPTC_BUILD_TEST} AND ${GTEST_FOUND})
-  add_subdirectory(test)
+if (${HPTC_BUILD_BENCHMARK})
+  add_subdirectory(benchmark)
 endif ()
 
-if (${HPTC_BUILD_BENCHMARK})
-  if (NOT ${HPTC_BUILD_TEST})
+if (${HPTC_BUILD_TEST})
+  if (${GTEST_FOUND})
     add_subdirectory(test)
+  else ()
+    message(FATAL_ERROR "To build test or benchmark, Google Test is required.")
   endif ()
-
-  add_subdirectory(benchmark)
 endif ()
 
 #if (BUILD_DOC)
 #  add_subdirectory(doc)
 #endif()
-

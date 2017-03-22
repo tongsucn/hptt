@@ -1,4 +1,4 @@
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 #include <hptc/benchmark/benchmark_trans_avx.h>
 #include <hptc/perf-test/test_perf_util.h>
 

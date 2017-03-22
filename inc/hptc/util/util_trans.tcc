@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_CONFIG_CONFIG_TRANS_TCC_
-#define HPTC_CONFIG_CONFIG_TRANS_TCC_
+#ifndef HPTC_UTIL_UTIL_TRANS_TCC_
+#define HPTC_UTIL_UTIL_TRANS_TCC_
 
 /*
  * Implementation for struct LoopParamTrans
@@ -32,4 +32,4 @@ INLINE bool LoopParamTrans<ORDER>::is_disabled() const {
   return this->loop_begin[0] >= this->loop_end[0];
 }
 
-#endif // HPTC_CONFIG_CONFIG_TRANS_TCC_
+#endif // HPTC_UTIL_UTIL_TRANS_TCC_

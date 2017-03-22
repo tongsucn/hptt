@@ -6,8 +6,8 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/util.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util.h>
+#include <hptc/util/util_trans.h>
 
 
 namespace hptc {

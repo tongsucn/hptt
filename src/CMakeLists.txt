@@ -1,8 +1,8 @@
 # ----------------------------------------------------------------------------
 # Dependencies setting
 # ----------------------------------------------------------------------------
-file(GLOB HPTC_ROOT_SRC *.cc)
 file(GLOB HPTC_KERNEL_SRC kernels/*.cc)
+file(GLOB HPTC_UTIL_SRC util/*.cc)
 file(GLOB HPTC_GENERATED gen/*.cc)
 
 # ----------------------------------------------------------------------------
@@ -11,14 +11,14 @@ file(GLOB HPTC_GENERATED gen/*.cc)
 # Shared libraries
 add_library(
   hptc SHARED
-  ${HPTC_ROOT_SRC}
   ${HPTC_KERNEL_SRC}
+  ${HPTC_UTIL_SRC}
   ${HPTC_GENERATED})
 
 add_library(
   hptc_static STATIC
-  ${HPTC_ROOT_SRC}
   ${HPTC_KERNEL_SRC}
+  ${HPTC_UTIL_SRC}
   ${HPTC_GENERATED})
 
 set_target_properties(hptc_static PROPERTIES OUTPUT_NAME hptc)

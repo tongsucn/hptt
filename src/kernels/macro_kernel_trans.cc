@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 
 
 #include <iostream>

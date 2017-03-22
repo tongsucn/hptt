@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_UTIL_H_
-#define HPTC_UTIL_H_
+#ifndef HPTC_UTIL_UTIL_H_
+#define HPTC_UTIL_UTIL_H_
 
 #include <vector>
 #include <random>
@@ -33,12 +33,16 @@ using Enable = typename std::enable_if<COND, Type>::type;
 template <typename FloatType>
 class DataWrapper {
 public:
-  DataWrapper(const std::vector<TensorOrder> &size, bool randomize = true);
-  DataWrapper(const std::vector<TensorOrder> &size, const FloatType *input_data,
-      const FloatType *output_data);
-  virtual ~DataWrapper();
+  DataWrapper(const std::vector<TensorOrder> &size, bool randomize = false);
+  ~DataWrapper();
 
-  FloatType *org_in_data, *org_out_data;
+  void reset_ref();
+  void reset_act();
+  static TensorIdx verify(const FloatType *ref_data, const FloatType *act_data,
+      TensorIdx data_len);
+  TensorIdx verify();
+
+  FloatType *org_in_data, *org_out_data, *ref_data, *act_data;
 
 protected:
   using Deduced_ = DeducedFloatType<FloatType>;
@@ -49,7 +53,7 @@ protected:
 
   std::mt19937 gen_;
   std::uniform_real_distribution<Deduced_> dist_;
-  TensorIdx data_len_;
+  const TensorIdx data_len_;
 };
 
 
@@ -96,4 +100,4 @@ std::vector<GenNumType> flat_map(
 
 }
 
-#endif // HPTC_UTIL_H_
+#endif // HPTC_UTIL_UTIL_H_

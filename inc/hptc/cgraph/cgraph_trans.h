@@ -7,7 +7,7 @@
 #include <memory>
 
 #include <hptc/types.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 #include <hptc/operations/operation_trans.h>
 #include <hptc/param/parameter_trans.h>
 

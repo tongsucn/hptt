@@ -569,9 +569,9 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_general_() {
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
     order_map[this->loop_order_candidates_.front()[loop_idx]] = loop_idx;
   std::sort(loop_strategies.begin(), loop_strategies.end(),
-      [&order_map] (const auto &a, const auto &b) { return a.size > b.size or
-          (a.size == b.size and order_map[a.loop_idx] < order_map[b.loop_idx]);
-      });
+      [&order_map] (const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
+          return a.size > b.size or (a.size == b.size and
+              order_map[a.loop_idx] < order_map[b.loop_idx]); });
 
   // Assign rest threads to non-leading loops
   for (auto &loop : loop_strategies)
@@ -581,9 +581,10 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_general_() {
   // Give assigned leading order threads back to non-leading orders if necessary
   if (not loop_strategies.empty()) {
     // Create heap on loop parallel strategy
-    auto heap_cmp = [&order_map] (const auto &a, const auto &b) -> bool {
-        return a.size < b.size or
-        (a.size == a.size and order_map[a.loop_idx] > order_map[b.loop_idx]); };
+    auto heap_cmp =
+        [&order_map] (const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
+            return a.size < b.size or (a.size == a.size and
+                order_map[a.loop_idx] > order_map[b.loop_idx]); };
     std::make_heap(loop_strategies.begin(), loop_strategies.end(), heap_cmp);
 
     larger_loop.size *= larger_loop.th_num;
@@ -672,9 +673,9 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_common_leading_() {
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
     order_map[this->loop_order_candidates_.front()[loop_idx]] = loop_idx;
   std::sort(loop_strategies.begin(), loop_strategies.end(),
-      [&order_map] (const auto &a, const auto &b) { return a.size > b.size or
-          (a.size == b.size and order_map[a.loop_idx] < order_map[b.loop_idx]);
-      });
+      [&order_map] (const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
+          return a.size > b.size or (a.size == b.size and
+              order_map[a.loop_idx] < order_map[b.loop_idx]); });
 
   // Assign rest threads and compute rest available parallelism
   auto factor_map = this->th_factor_map_;

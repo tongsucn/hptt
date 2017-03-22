@@ -9,7 +9,7 @@
 #include <initializer_list>
 
 #include <hptc/types.h>
-#include <hptc/util.h>
+#include <hptc/util/util.h>
 #include <hptc/cgraph/cgraph_trans.h>
 #include <hptc/plan/plan_trans_util.h>
 #include <hptc/param/parameter_trans.h>

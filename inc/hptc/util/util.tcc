@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_UTIL_TCC_
-#define HPTC_UTIL_TCC_
+#ifndef HPTC_UTIL_UTIL_TCC_
+#define HPTC_UTIL_UTIL_TCC_
 
 /*
  * Implementation for class TimerWrapper
@@ -15,14 +15,14 @@ INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
 
   auto start = std::chrono::high_resolution_clock::now();
   target(std::forward<Args>(args)...);
-  auto diff = std::chrono::high_resolution_clock::now() - start;
-  auto result = std::chrono::duration_cast<Duration>(diff);
+  auto result = std::chrono::duration_cast<Duration>(
+      std::chrono::high_resolution_clock::now() - start);
 
   for (GenNumType idx = 1; idx < this->times_; ++idx) {
     start = std::chrono::high_resolution_clock::now();
     target(std::forward<Args>(args)...);
-    diff = std::chrono::high_resolution_clock::now() - start;
-    auto duration = std::chrono::duration_cast<Duration>(diff);
+    auto duration = std::chrono::duration_cast<Duration>(
+        std::chrono::high_resolution_clock::now() - start);
     if (duration < result)
       result = duration;
   }
@@ -66,4 +66,4 @@ extern template class DataWrapper<double>;
 extern template class DataWrapper<FloatComplex>;
 extern template class DataWrapper<DoubleComplex>;
 
-#endif // HPTC_UTIL_TCC_
+#endif // HPTC_UTIL_UTIL_TCC_

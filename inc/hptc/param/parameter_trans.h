@@ -10,7 +10,7 @@
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
-#include <hptc/config/config_trans.h>
+#include <hptc/util/util_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 
 

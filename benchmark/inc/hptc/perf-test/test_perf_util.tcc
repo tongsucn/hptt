@@ -12,8 +12,8 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   using Param = ParamTrans<TensorType, USAGE>;
 
   // Prepare data and timer
-  TestDataWrapper<FloatType> data_wrapper(test_case.size);
-  TimerWrapper timer(20);
+  DataWrapper<FloatType> data_wrapper(test_case.size);
+  TimerWrapper timer(5);
 
   // Measure TTC version
   double ttc_time = timer(ref_func, data_wrapper.org_in_data,
@@ -39,7 +39,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
 
   // 4. Create plan and generate computational graph
-  PlanTrans<Param> plan(param);
+  PlanTrans<Param> plan(param, 0, 0, 0, 0);
   auto graph = plan.get_graph();
 
   // Execute computational graph

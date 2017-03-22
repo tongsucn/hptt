@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_CONFIG_CONFIG_TRANS_H_
-#define HPTC_CONFIG_CONFIG_TRANS_H_
+#ifndef HPTC_UTIL_UTIL_TRANS_H_
+#define HPTC_UTIL_UTIL_TRANS_H_
 
 #include <array>
 #include <algorithm>
@@ -68,8 +68,8 @@ using ParaStrategyTrans = std::array<GenNumType, ORDER>;
 /*
  * Import implementation
  */
-#include "config_trans.tcc"
+#include "util_trans.tcc"
 
 }
 
-#endif // HPTC_CONFIG_CONFIG_TRANS_H_
+#endif // HPTC_UTIL_UTIL_TRANS_H_
