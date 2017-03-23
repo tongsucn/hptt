@@ -3,14 +3,14 @@
 #define HPTC_HPTC_TRANS_TCC_
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
 create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
-    const std::vector<TensorOrder> &in_size,
-    const std::array<TensorOrder, ORDER> &perm,
+    const std::vector<TensorUInt> &in_size,
+    const std::array<TensorUInt, ORDER> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta,
-    const GenNumType num_threads, const TensorIdx max_num_cand,
+    const TensorUInt num_threads, const TensorInt max_num_cand,
     OuterSize<ORDER> in_outer_size, OuterSize<ORDER> out_outer_size) {
   // Guardian
   // Check template arguments
@@ -62,23 +62,41 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
 
 
   // Create transpose plan
-  // Create output size and outer size objects
-  TensorSize<ORDER> out_size_obj(in_size);
-  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
-    out_size_obj[order_idx] = in_size[perm[order_idx]];
-  TensorSize<ORDER> out_outer_size_obj(
-      0 == out_outer_size_vec.size() ? out_size_obj : out_outer_size_vec);
-
+  // Create input size objects
+  std::array<TensorIdx, ORDER> in_offset, out_offset;
+  std::array<TensorIdx, ORDER> in_size_ext, in_outer_size_ext;
+  std::copy(in_size.begin(), in_size.end(), in_size_ext.begin());
   if (0 == in_outer_size_vec.size())
-    in_outer_size_vec = in_size;
-  TensorSize<ORDER> in_size_obj(in_size), in_outer_size_obj(in_outer_size_vec);
+    in_outer_size_ext = in_size_ext;
+  else {
+    std::copy(in_outer_size_vec.begin(), in_outer_size_vec.end(),
+        in_outer_size_ext.begin());
+    std::copy(in_outer_size.second.begin(), in_outer_size.second.end(),
+        in_offset.begin());
+  }
+  TensorSize<ORDER> in_size_obj(in_size_ext),
+      in_outer_size_obj(in_outer_size_ext);
+
+  // Create output size objects
+  std::array<TensorIdx, ORDER> out_size_ext, out_outer_size_ext;
+  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
+    out_size_ext[order_idx] = in_size_ext[perm[order_idx]];
+  if (0 == out_outer_size_vec.size())
+    out_outer_size_ext = out_size_ext;
+  else {
+    std::copy(out_outer_size_vec.begin(), out_outer_size_vec.end(),
+        out_outer_size_ext.begin());
+    std::copy(out_outer_size.second.begin(), out_outer_size.second.end(),
+        out_offset.begin());
+  }
+  TensorSize<ORDER> out_size_obj(out_size_ext),
+      out_outer_size_obj(out_outer_size_ext);
 
   // Create tensors
   using TensorType = TensorWrapper<FloatType, ORDER>;
-  const TensorType in_tensor(in_size_obj, in_outer_size_obj,
-      in_outer_size.second, in_data);
-  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_outer_size.second,
-      out_data);
+  const TensorType in_tensor(in_size_obj, in_outer_size_obj, in_offset,
+      in_data);
+  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_offset, out_data);
 
   // Create parameter
   using ParamType = ParamTrans<TensorType>;
@@ -94,7 +112,8 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
   PlanTrans<ParamType> plan(param, tune_num, heur_num, tune_num, heur_num,
       num_threads);
 
-  return plan.get_graph();
+  auto graph =  plan.get_graph();
+  return graph;
 }
 
 #endif // HPTC_HPTC_TRANS_TCC_

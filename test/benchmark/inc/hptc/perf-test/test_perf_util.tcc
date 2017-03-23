@@ -5,7 +5,7 @@
 template <typename FloatType,
           typename RefFuncType,
           CoefUsageTrans USAGE,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   using Deduced = DeducedFloatType<FloatType>;
   using TensorType = TensorWrapper<FloatType, ORDER>;
@@ -16,11 +16,13 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   TimerWrapper timer(1);
 
   // Create HPTC computational graph
-  std::array<TensorOrder, ORDER> perm;
+  std::array<TensorUInt, ORDER> perm;
   copy(test_case.perm.begin(), test_case.perm.end(), perm.begin());
+  std::vector<TensorUInt> size_vec(test_case.size.begin(),
+      test_case.size.end());
 
   auto graph = create_cgraph_trans<FloatType, ORDER>(
-      data_wrapper.org_in_data, data_wrapper.act_data, test_case.size, perm,
+      data_wrapper.org_in_data, data_wrapper.act_data, size_vec, perm,
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
 
   double time_ttc = DBL_MAX, time_hptc = DBL_MAX;

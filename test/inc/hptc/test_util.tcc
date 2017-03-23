@@ -6,13 +6,13 @@
  * Implementation for class DataWrapper
  */
 template <typename FloatType>
-DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
+DataWrapper<FloatType>::DataWrapper(const std::vector<TensorIdx> &size,
     bool randomize)
     : gen_(std::random_device()()),
       dist_(DataWrapper<FloatType>::ele_lower_,
           DataWrapper<FloatType>::ele_upper_),
       data_len_(std::accumulate(size.begin(), size.end(), 1,
-          std::multiplies<TensorOrder>())),
+          std::multiplies<TensorIdx>())),
       page_size_(sysconf(_SC_PAGESIZE)) {
   // Allocate memory
   posix_memalign(reinterpret_cast<void **>(&this->org_in_data),
@@ -36,7 +36,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (GenNumType in_idx = 0; in_idx < inner_; ++in_idx) {
+      for (auto in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = this->dist_(this->gen_);
         org_out_ptr[in_idx] = this->dist_(this->gen_);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -52,7 +52,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (GenNumType in_idx = 0; in_idx < inner_; ++in_idx) {
+      for (auto in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = static_cast<Deduced_>(idx);
         org_out_ptr[in_idx] = static_cast<Deduced_>(idx);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -105,7 +105,7 @@ void DataWrapper<FloatType>::trash_cache() {
 
 
 template <typename FloatType>
-TensorIdx DataWrapper<FloatType>::verify(
+TensorInt DataWrapper<FloatType>::verify(
     const FloatType *ref_data, const FloatType *act_data, TensorIdx data_len) {
   using Deduced = DeducedFloatType<FloatType>;
 
@@ -113,7 +113,7 @@ TensorIdx DataWrapper<FloatType>::verify(
   for (TensorIdx idx = 0; idx < data_len; ++idx) {
     auto deduced_ref = reinterpret_cast<const Deduced *>(&ref_data[idx]);
     auto deduced_act = reinterpret_cast<const Deduced *>(&act_data[idx]);
-    for (GenNumType in_idx = 0; in_idx < inner; ++in_idx) {
+    for (auto in_idx = 0; in_idx < inner; ++in_idx) {
       double ref_abs = std::abs(static_cast<double>(deduced_ref[in_idx]));
       double act_abs = std::abs(static_cast<double>(deduced_act[in_idx]));
       double max_abs = std::max(ref_abs, act_abs);
@@ -131,7 +131,7 @@ TensorIdx DataWrapper<FloatType>::verify(
 
 
 template <typename FloatType>
-TensorIdx DataWrapper<FloatType>::verify() {
+TensorInt DataWrapper<FloatType>::verify() {
   return this->verify(this->ref_data, this->act_data, this->data_len_);
 }
 

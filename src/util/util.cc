@@ -10,7 +10,7 @@ namespace hptc {
 /*
  * Implementation for class TimerWrapper
  */
-TimerWrapper::TimerWrapper(GenNumType times)
+TimerWrapper::TimerWrapper(TensorUInt times)
     : times_(times) {
 }
 
@@ -18,12 +18,12 @@ TimerWrapper::TimerWrapper(GenNumType times)
 /*
  * Implementation for function approx_prod
  */
-std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
-    const GenNumType target) {
+std::vector<TensorUInt> approx_prod(const std::vector<TensorUInt> &integers,
+    const TensorUInt target) {
   // Here we assume that the elements in vector integers are in ascending order
 
   // Data structure definition
-  using Cand = std::pair<GenNumType, std::vector<GenNumType>>;
+  using Cand = std::pair<TensorUInt, std::vector<TensorUInt>>;
   struct CandNode {
     CandNode() {}
     CandNode(Cand &&cand) : cand(std::move(cand)) {}
@@ -45,8 +45,8 @@ std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
     auto new_cand = CandNode(Cand(num, { num }));
 
     // Search among parents
-    auto parent_len = static_cast<GenNumType>(parents.size());
-    for (GenNumType node_idx = 0; node_idx < parent_len; ++node_idx) {
+    auto parent_len = static_cast<TensorUInt>(parents.size());
+    for (auto node_idx = 0; node_idx < parent_len; ++node_idx) {
       if (num * parents[node_idx].cand.first > target) {
         if (parents.back().children.empty()) {
           if (best_cand.first <= parents.back().cand.first)
@@ -79,8 +79,8 @@ std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
 
         // Search among children
         auto &children = parents[node_idx].children;
-        GenNumType children_len = children.size();
-        for (GenNumType child_idx = 0; child_idx < children_len; ++child_idx) {
+        auto children_len = children.size();
+        for (auto child_idx = 0; child_idx < children_len; ++child_idx) {
           const auto &child = children[child_idx];
           if (num * child.first > target) {
             if (best_cand.first < children.back().first or
@@ -125,10 +125,10 @@ std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
 }
 
 
-std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target) {
+std::unordered_map<TensorUInt, TensorUInt> factorize(TensorUInt target) {
   // Key is a prime factor, value is its frequency
-  std::unordered_map<GenNumType, GenNumType> result;
-  for (GenNumType num = 2; target > 1; ++num)
+  std::unordered_map<TensorUInt, TensorUInt> result;
+  for (auto num = 2; target > 1; ++num)
     if (0 == target % num)
       for (result[num] = 0; 0 == target % num; target /= num)
         ++result[num];
@@ -136,9 +136,9 @@ std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target) {
 }
 
 
-std::vector<GenNumType> flat_map(
-    const std::unordered_map<GenNumType, GenNumType> &input_map) {
-  std::vector<GenNumType> result;
+std::vector<TensorUInt> flat_map(
+    const std::unordered_map<TensorUInt, TensorUInt> &input_map) {
+  std::vector<TensorUInt> result;
   for (auto kv : input_map)
     for (auto freq = 0; freq < kv.second; ++freq)
       result.push_back(kv.first);

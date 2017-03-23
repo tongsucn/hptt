@@ -14,7 +14,7 @@ INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
     return 0.0;
 
   double result = DBL_MAX;
-  for (GenNumType idx = 0; idx < this->times_; ++idx) {
+  for (auto idx = 0; idx < this->times_; ++idx) {
     auto start = std::chrono::high_resolution_clock::now();
     target(std::forward<Args>(args)...);
     auto duration = std::chrono::duration_cast<Duration>(
@@ -38,10 +38,10 @@ INLINE bool ModCmp<ValType>::operator()(const ValType &first,
 
 
 template <typename TargetFunc>
-std::vector<GenNumType> assign_factor(
-    std::unordered_map<GenNumType, GenNumType> &fact_map, GenNumType &target,
-    GenNumType &accumulate, TargetFunc cmp) {
-  std::vector<GenNumType> assigned;
+std::vector<TensorUInt> assign_factor(
+    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorUInt &target,
+    TensorUInt &accumulate, TargetFunc cmp) {
+  std::vector<TensorUInt> assigned;
   for (auto &factor : fact_map) {
     while (factor.second > 0 and cmp(target, factor.first)) {
       target /= factor.first;

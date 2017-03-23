@@ -6,69 +6,69 @@
  * Implementation for class TensorMergedWrapper
  */
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 template <MemLayout ACT_MAJOR>
 TensorMergedWrapper<FloatType, ORDER>::TensorMergedWrapper(
     const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
-    const std::unordered_set<TensorOrder> &merge_set)
+    const std::unordered_set<TensorUInt> &merge_set)
     : TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR>(tensor),
       merged_order_(this->merge_idx_(merge_set)) {
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     TensorIdx **indices) {
   TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx **indices) const {
   TensorIdx abs_offset = 0;
-  for (TensorIdx idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
+  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
     abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
 
 template <typename FloatType,
-          TensorOrder ORDER>
-TensorOrder TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
-    const std::unordered_set<TensorOrder> &merge_set) {
+          TensorUInt ORDER>
+TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
+    const std::unordered_set<TensorUInt> &merge_set) {
   if (ORDER <= 2)
     return ORDER;
 
   // Merge size, outer size and offsets
-  for (TensorIdx idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
+  for (TensorInt idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
     if (1 == merge_set.count(idx)) {
       --curr_idx;
       this->size_[curr_idx] = this->size_[idx];
@@ -84,11 +84,11 @@ TensorOrder TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
   // Merge strides
   const auto begin_order_idx = ORDER - merge_set.size();
   this->strides_[begin_order_idx] = 1;
-  for (TensorIdx idx = begin_order_idx; idx < ORDER - 1; ++idx)
+  for (auto idx = begin_order_idx; idx < ORDER - 1; ++idx)
     this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
 
   // Fill the unused part
-  for (TensorIdx idx = 0; idx < begin_order_idx; ++idx) {
+  for (auto idx = 0; idx < begin_order_idx; ++idx) {
     this->size_[idx] = 1;
     this->outer_size_[idx] = 1;
   }
@@ -105,9 +105,9 @@ TensorOrder TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
 template <typename TensorType,
           CoefUsageTrans USAGE>
 ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
-    TensorType &output_tensor, const std::array<TensorOrder, ORDER> &perm,
-    const DeducedFloatType<typename TensorType::FLOAT> alpha,
-    const DeducedFloatType<typename TensorType::FLOAT> beta)
+    TensorType &output_tensor, const std::array<TensorUInt, ORDER> &perm,
+    const DeducedFloatType<typename TensorType::FloatType> alpha,
+    const DeducedFloatType<typename TensorType::FloatType> beta)
     : input_merge_set_(), output_merge_set_(),
       perm(perm), alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
@@ -117,7 +117,7 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
       output_tensor(output_tensor, this->output_merge_set_),
       kn(KernelPackTrans<FloatType, USAGE>::get_package()) {
   // Initialize registers
-  using FloatType = typename TensorType::FLOAT;
+  using FloatType = typename TensorType::FloatType;
   using KernelPack = KernelPackTrans<FloatType, USAGE>;
 
   this->reg_alpha_full = KernelPack::reg_coef_full(this->alpha);
@@ -128,9 +128,9 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
   this->reg_beta_linear = KernelPack::reg_coef_linear(this->beta);
 
   // Initialize access strides
-  for (TensorIdx idx = 0; idx < perm[0]; ++idx)
+  for (auto idx = 0; idx < perm[0]; ++idx)
     this->input_stride *= input_tensor.get_outer_size()[idx];
-  for (TensorIdx idx = 0; 0 != perm[idx]; ++idx)
+  for (auto idx = 0; 0 != perm[idx]; ++idx)
     this->output_stride *= output_tensor.get_outer_size()[idx];
 }
 
@@ -146,9 +146,9 @@ INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() {
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-INLINE std::pair<TensorOrder, TensorOrder>
+INLINE std::pair<TensorUInt, TensorUInt>
 ParamTrans<TensorType, USAGE>::get_leading() {
-  std::pair<TensorOrder, TensorOrder> result;
+  std::pair<TensorUInt, TensorUInt> result;
 
   result.first = this->input_tensor.get_size()[this->begin_order_idx];
   result.second = this->output_tensor.get_size()[this->begin_order_idx];
@@ -160,9 +160,9 @@ ParamTrans<TensorType, USAGE>::get_leading() {
 template <typename TensorType,
           CoefUsageTrans USAGE>
 INLINE void ParamTrans<TensorType, USAGE>::set_coef(
-    const DeducedFloatType<typename TensorType::FLOAT> alpha,
-    const DeducedFloatType<typename TensorType::FLOAT> beta) {
-  using FloatType = typename TensorType::FLOAT;
+    const DeducedFloatType<typename TensorType::FloatType> alpha,
+    const DeducedFloatType<typename TensorType::FloatType> beta) {
+  using FloatType = typename TensorType::FloatType;
   using KernelPack = KernelPackTrans<FloatType, USAGE>;
 
   this->alpha = alpha, this->beta = beta;
@@ -177,8 +177,8 @@ INLINE void ParamTrans<TensorType, USAGE>::set_coef(
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-TensorOrder ParamTrans<TensorType, USAGE>::merge_idx_(
-    const std::array<TensorOrder, ORDER> &perm) {
+TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
+    const std::array<TensorUInt, ORDER> &perm) {
   if (ORDER <= 1)
     return ORDER;
 
@@ -188,7 +188,7 @@ TensorOrder ParamTrans<TensorType, USAGE>::merge_idx_(
   const auto &output_outer_size = this->output_tensor.get_outer_size();
 
   // Create permutation set
-  for (TensorOrder idx = 1; idx < ORDER; ++idx) {
+  for (auto idx = 1; idx < ORDER; ++idx) {
     // If current order ID does not equal to previous order ID plus one, or
     // the previous order size does not equal to the outer size, then push
     // previous ID into set.
@@ -203,21 +203,21 @@ TensorOrder ParamTrans<TensorType, USAGE>::merge_idx_(
   this->output_merge_set_.insert(ORDER - 1);
 
   // Set merged order
-  auto merged = static_cast<TensorOrder>(this->input_merge_set_.size());
+  auto merged = static_cast<TensorUInt>(this->input_merge_set_.size());
   if (ORDER == merged)
     return ORDER;
 
   // Update permutation array
   // Create an array for storing sorted keys in input_merge_set_,
-  TensorOrder sorted_perm_arr[ORDER];
+  TensorUInt sorted_perm_arr[ORDER];
   std::copy(this->input_merge_set_.begin(), this->input_merge_set_.end(),
       sorted_perm_arr);
   std::sort(sorted_perm_arr, sorted_perm_arr + merged);
 
   // Create an unordered map to store the mapping from original order ID to
   // updated order ID.
-  std::unordered_map<TensorOrder, TensorOrder> perm_map;
-  for (TensorIdx idx = 0; idx < merged; ++idx)
+  std::unordered_map<TensorUInt, TensorUInt> perm_map;
+  for (auto idx = 0; idx < merged; ++idx)
     perm_map[sorted_perm_arr[idx]] = idx;
 
   // Update permutation array

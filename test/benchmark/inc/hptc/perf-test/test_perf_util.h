@@ -5,6 +5,7 @@
 #include <cfloat>
 
 #include <array>
+#include <vector>
 #include <memory>
 #include <sstream>
 #include <iomanip>
@@ -25,7 +26,7 @@ namespace hptc {
 template <typename FloatType,
           typename RefFuncType,
           CoefUsageTrans USAGE,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case);
 
 

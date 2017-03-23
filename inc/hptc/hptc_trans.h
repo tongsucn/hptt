@@ -2,6 +2,8 @@
 #ifndef HPTC_HPTC_TRANS_H_
 #define HPTC_HPTC_TRANS_H_
 
+#include <cstdint>
+
 #include <array>
 #include <vector>
 #include <memory>
@@ -20,9 +22,9 @@
 namespace hptc {
 
 // Type alias for describing tensor outer size and sub tensor's offset
-template <TensorOrder ORDER>
-using OuterSize = std::pair<std::vector<TensorOrder>,
-      std::array<TensorOrder, ORDER>>;
+template <uint32_t ORDER>
+using OuterSize = std::pair<std::vector<uint32_t>,
+      std::array<uint32_t, ORDER>>;
 
 /**
  * \brief Function for creating a tensor transpose.
@@ -105,18 +107,18 @@ using OuterSize = std::pair<std::vector<TensorOrder>,
  * \sa CGraphTrans
  */
 template <typename FloatType,
-          TensorOrder ORDER>
+          uint32_t ORDER>
 CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
 create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
-    const std::vector<TensorOrder> &in_size,
-    const std::array<TensorOrder, ORDER> &perm,
+    const std::vector<uint32_t> &in_size,
+    const std::array<uint32_t, ORDER> &perm,
     const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta, const GenNumType num_threads,
-    const TensorIdx max_num_cand = 0,
+    const DeducedFloatType<FloatType> beta, const uint32_t num_threads,
+    const int32_t max_num_cand = 0,
     OuterSize<ORDER> in_outer_size
-        = OuterSize<ORDER>({}, std::array<TensorOrder, ORDER>()),
+        = OuterSize<ORDER>({}, std::array<uint32_t, ORDER>()),
     OuterSize<ORDER> out_outer_size
-        = OuterSize<ORDER>({}, std::array<TensorOrder, ORDER>()));
+        = OuterSize<ORDER>({}, std::array<uint32_t, ORDER>()));
 
 
 /*

@@ -10,14 +10,14 @@
 namespace hptc {
 
 struct RefTransConfig {
-  RefTransConfig(TensorOrder order, GenNumType thread_num,
-      const std::vector<TensorOrder> &perm,
-      const std::vector<TensorOrder> &size);
+  RefTransConfig(TensorUInt order, TensorUInt thread_num,
+      const std::vector<TensorUInt> &perm,
+      const std::vector<TensorIdx> &size);
 
-  TensorOrder order;
-  GenNumType thread_num;
-  std::vector<TensorOrder> perm;
-  std::vector<TensorOrder> size;
+  TensorUInt order;
+  TensorUInt thread_num;
+  std::vector<TensorUInt> perm;
+  std::vector<TensorIdx> size;
 };
 
 /*

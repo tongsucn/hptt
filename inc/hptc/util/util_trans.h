@@ -14,7 +14,7 @@ namespace hptc {
 /*
  * Transpose coefficients types
  */
-enum class CoefUsageTrans : GenNumType {
+enum class CoefUsageTrans : TensorUInt {
   USE_NONE  = 0x0,
   USE_ALPHA = 0x1,
   USE_BETA  = 0x2,
@@ -25,7 +25,7 @@ enum class CoefUsageTrans : GenNumType {
 /*
  * Transpose kernel types
  */
-enum class KernelTypeTrans : GenNumType {
+enum class KernelTypeTrans : TensorUInt {
   KERNEL_FULL = 0,
   KERNEL_HALF = 1,
   KERNEL_LINE = 2
@@ -44,11 +44,11 @@ template <typename FloatType,
 using DeducedRegType = typename RegTypeDeducer<FloatType, TYPE>::type;
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 struct LoopParamTrans {
   LoopParamTrans();
 
-  INLINE void set_pass(TensorOrder order);
+  INLINE void set_pass(TensorUInt order);
   INLINE void set_disable();
   INLINE bool is_disabled() const;
 
@@ -58,17 +58,17 @@ struct LoopParamTrans {
 };
 
 
-template <TensorOrder ORDER>
-using LoopOrderTrans = std::array<TensorOrder, ORDER>;
+template <TensorUInt ORDER>
+using LoopOrderTrans = std::array<TensorUInt, ORDER>;
 
 
-template <TensorOrder ORDER>
-using ParaStrategyTrans = std::array<GenNumType, ORDER>;
+template <TensorUInt ORDER>
+using ParaStrategyTrans = std::array<TensorUInt, ORDER>;
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-double calc_tp_trans(const std::vector<TensorOrder> &size, double time_ms);
+double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms);
 
 
 /*

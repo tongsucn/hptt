@@ -43,9 +43,9 @@ KernelPackTrans<FloatType, USAGE>::reg_coef_linear(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-GenNumType KernelPackTrans<FloatType, USAGE>::kernel_offset(
-    const KernelTypeTrans kn_type, const GenNumType cont_size,
-    const GenNumType ncont_size, const bool is_tail) const {
+TensorUInt KernelPackTrans<FloatType, USAGE>::kernel_offset(
+    const KernelTypeTrans kn_type, const TensorUInt cont_size,
+    const TensorUInt ncont_size, const bool is_tail) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return 4 * (cont_size - 1) + ncont_size - 1;
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)
@@ -57,8 +57,8 @@ GenNumType KernelPackTrans<FloatType, USAGE>::kernel_offset(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-GenNumType KernelPackTrans<FloatType, USAGE>::kn_cont_len(
-    const KernelTypeTrans kn_type, const GenNumType cont_size) const {
+TensorUInt KernelPackTrans<FloatType, USAGE>::kn_cont_len(
+    const KernelTypeTrans kn_type, const TensorUInt cont_size) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return cont_size * this->knf_basic.get_cont_len();
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)
@@ -70,8 +70,8 @@ GenNumType KernelPackTrans<FloatType, USAGE>::kn_cont_len(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-GenNumType KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
-    const KernelTypeTrans kn_type, const GenNumType ncont_size) const {
+TensorUInt KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
+    const KernelTypeTrans kn_type, const TensorUInt ncont_size) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return ncont_size * this->knf_basic.get_ncont_len();
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)

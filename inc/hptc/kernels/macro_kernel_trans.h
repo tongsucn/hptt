@@ -10,19 +10,19 @@
 namespace hptc {
 
 template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
 class MacroTransVec {
 public:
-  using FLOAT = typename KernelFunc::FLOAT;
+  using FloatType = typename KernelFunc::FloatType;
   using RegType = typename KernelFunc::RegType;
 
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
-  constexpr GenNumType get_cont_len() const;
-  constexpr GenNumType get_ncont_len() const;
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
+  constexpr TensorUInt get_cont_len() const;
+  constexpr TensorUInt get_ncont_len() const;
 
-  void operator()(const FLOAT * RESTRICT input_data,
-      FLOAT * RESTRICT output_data, const TensorIdx input_stride,
+  void operator()(const FloatType * RESTRICT input_data,
+      FloatType * RESTRICT output_data, const TensorIdx input_stride,
       const TensorIdx output_stride, const RegType &reg_alpha,
       const RegType &reg_beta) const;
 
@@ -50,16 +50,16 @@ public:
  */
 template <typename FloatType,
           CoefUsageTrans USAGE,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
 using MacroTransVecFull = MacroTransVec<KernelTransFull<FloatType, USAGE>,
       CONT_LEN, NCONT_LEN>;
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
 using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
       CONT_LEN, NCONT_LEN>;
 

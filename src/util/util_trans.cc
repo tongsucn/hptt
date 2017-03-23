@@ -9,9 +9,9 @@ namespace hptc {
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-double calc_tp_trans(const std::vector<TensorOrder> &size, double time_ms) {
+double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms) {
   // Compute moved element number
-  const TensorIdx moved_num = std::accumulate(size.begin(), size.end(), 1,
+  const auto moved_num = std::accumulate(size.begin(), size.end(), 1,
       std::multiplies<TensorIdx>());
 
   // Compute moved size (in bytes)
@@ -32,36 +32,36 @@ double calc_tp_trans(const std::vector<TensorOrder> &size, double time_ms) {
  * Explicit template instantiation for function calc_tp_trans
  */
 template double calc_tp_trans<float, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<float, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<float, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<float, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<double, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<double, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<double, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<double, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorOrder> &, double);
+    const std::vector<TensorIdx> &, double);
 
 }

@@ -11,9 +11,9 @@ using DescriptorForPlanTrans = typename CGraphTrans<ParamType>::Descriptor;
  */
 template <typename ParamType>
 PlanTrans<ParamType>::PlanTrans(
-    const std::shared_ptr<ParamType> &param, TensorIdx tune_loop_num,
-    TensorIdx tune_para_num, TensorIdx heur_loop_num, TensorIdx heur_para_num,
-    GenNumType thread_num, GenNumType tune_times)
+    const std::shared_ptr<ParamType> &param, TensorInt tune_loop_num,
+    TensorInt tune_para_num, TensorInt heur_loop_num, TensorInt heur_para_num,
+    TensorUInt thread_num, TensorUInt tune_times)
     : param_(param),
       optimizer_(param, tune_loop_num, tune_para_num, heur_loop_num,
           heur_para_num, thread_num),
@@ -32,8 +32,8 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph() {
 template <typename ParamType>
 typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
     const std::vector<typename CGraphTrans<ParamType>::Descriptor> &descriptors,
-    GenNumType tune_times) {
-  auto cand_num = static_cast<TensorIdx>(descriptors.size());
+    TensorUInt tune_times) {
+  auto cand_num = descriptors.size();
   if (1 == cand_num)
     return descriptors[0];
 
@@ -46,10 +46,10 @@ typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
   this->param_->set_coef(0.0, 1.0);
 
   // Measure candidates
-  TensorIdx best_idx = 0;
+  auto best_idx = 0;
   CGraphTrans<ParamType> candidate(this->param_, descriptors[best_idx]);
   auto best_time = timer(candidate);
-  for (TensorIdx cand_idx = best_idx + 1; cand_idx < cand_num; ++cand_idx) {
+  for (auto cand_idx = best_idx + 1; cand_idx < cand_num; ++cand_idx) {
     candidate.init(descriptors[cand_idx]);
     auto new_time = timer(candidate);
     if (new_time < best_time)

@@ -12,30 +12,30 @@
 
 namespace hptc {
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 class TensorSize {
 public:
   TensorSize();
-  TensorSize(const std::array<TensorOrder, ORDER> &sizes);
-  TensorSize(const std::vector<TensorOrder> &sizes);
-  TensorSize(std::initializer_list<TensorOrder> sizes);
+  TensorSize(const std::array<TensorIdx, ORDER> &sizes);
+  TensorSize(const std::vector<TensorIdx> &sizes);
+  TensorSize(std::initializer_list<TensorIdx> sizes);
 
   bool operator==(const TensorSize<ORDER> &size_obj) const;
 
-  INLINE TensorOrder &operator[](TensorOrder order);
-  INLINE const TensorOrder &operator[](TensorOrder order) const;
+  INLINE TensorIdx &operator[](TensorUInt order);
+  INLINE const TensorIdx &operator[](TensorUInt order) const;
 
 private:
-  TensorOrder size_[ORDER];
+  TensorIdx size_[ORDER];
 };
 
 
 template <typename FloatType,
-          TensorOrder ORDER,
+          TensorUInt ORDER,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
-  using FLOAT = FloatType;
+  using FloatType = FloatType;
   constexpr static auto TENSOR_ORDER = ORDER;
 
   TensorWrapper();
@@ -43,7 +43,7 @@ public:
   TensorWrapper(const TensorSize<ORDER> &size_obj, const FloatType *raw_data);
   TensorWrapper(const TensorSize<ORDER> &size_obj,
       const TensorSize<ORDER> &outer_size_obj,
-      const std::array<TensorOrder, ORDER> &order_offset,
+      const std::array<TensorIdx, ORDER> &order_offset,
       const FloatType *raw_data);
 
   template <MemLayout ACT_MAJOR>
@@ -62,23 +62,23 @@ public:
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
   INLINE void set_data(FloatType *new_data);
-  INLINE const TensorOrder *get_offset() const;
+  INLINE const TensorIdx *get_offset() const;
 
 protected:
   // Internal function member
   INLINE void init_offset_();
-  INLINE void init_offset_(const std::array<TensorOrder, ORDER> &order_offset);
+  INLINE void init_offset_(const std::array<TensorIdx, ORDER> &order_offset);
 
   template <typename... Idx>
-  INLINE FloatType &get_element_(TensorOrder curr_order, TensorIdx curr_offset,
+  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx curr_offset,
       TensorIdx next_idx, Idx... idx);
-  INLINE FloatType &get_element_(TensorOrder curr_order, TensorIdx curr_offset);
+  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx curr_offset);
 
   // Internal data member
   TensorSize<ORDER> size_;
   TensorSize<ORDER> outer_size_;
   FloatType *raw_data_;
-  TensorOrder offsets_[ORDER];
+  TensorIdx offsets_[ORDER];
   TensorIdx strides_[ORDER];
 };
 

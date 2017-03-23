@@ -19,15 +19,15 @@ namespace hptc {
 template <typename FloatType>
 class DataWrapper {
 public:
-  DataWrapper(const std::vector<TensorOrder> &size, bool randomize = false);
+  DataWrapper(const std::vector<TensorIdx> &size, bool randomize = false);
   ~DataWrapper();
 
   void reset_ref();
   void reset_act();
   void trash_cache();
-  static TensorIdx verify(const FloatType *ref_data, const FloatType *act_data,
+  static TensorInt verify(const FloatType *ref_data, const FloatType *act_data,
       TensorIdx data_len);
-  TensorIdx verify();
+  TensorInt verify();
 
   FloatType *org_in_data, *org_out_data, *ref_data, *act_data;
 
@@ -37,8 +37,8 @@ protected:
 
   constexpr static Deduced_ ele_lower_ = static_cast<Deduced_>(-50.0f);
   constexpr static Deduced_ ele_upper_ = static_cast<Deduced_>(50.0f);
-  constexpr static GenNumType inner_ = sizeof(FloatType) / sizeof(Deduced_);
-  constexpr static TensorOrder trash_size_ = (1 << 20) * 100;
+  constexpr static TensorUInt inner_ = sizeof(FloatType) / sizeof(Deduced_);
+  constexpr static TensorUInt trash_size_ = (1 << 20) * 100;
   constexpr static TrashType_ trash_calc_scale_ = 0.42;
 
   std::mt19937 gen_;

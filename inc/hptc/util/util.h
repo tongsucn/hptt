@@ -15,13 +15,13 @@
 
 namespace hptc {
 
-template <GenNumType GEN_NUM>
+template <TensorUInt GEN_NUM>
 struct GenCounter {
 };
 
 
-template <GenNumType ROWS,
-          GenNumType COLS>
+template <TensorUInt ROWS,
+          TensorUInt COLS>
 struct DualCounter {
 };
 
@@ -33,14 +33,14 @@ using Enable = typename std::enable_if<COND, Type>::type;
 
 class TimerWrapper {
 public:
-  TimerWrapper(GenNumType times);
+  TimerWrapper(TensorUInt times);
 
   template <typename Callable,
             typename... Args>
   INLINE double operator()(Callable &target, Args&&... args);
 
 private:
-  GenNumType times_;
+  TensorUInt times_;
 };
 
 
@@ -50,21 +50,21 @@ struct ModCmp {
 };
 
 
-std::vector<GenNumType> approx_prod(const std::vector<GenNumType> &integers,
-    const GenNumType target);
+std::vector<TensorUInt> approx_prod(const std::vector<TensorUInt> &integers,
+    const TensorUInt target);
 
 
-std::unordered_map<GenNumType, GenNumType> factorize(GenNumType target);
+std::unordered_map<TensorUInt, TensorUInt> factorize(TensorUInt target);
 
 
 template <typename TargetFunc>
-std::vector<GenNumType> assign_factor(
-    std::unordered_map<GenNumType, GenNumType> &fact_map, GenNumType &target,
-    GenNumType &accumulate, TargetFunc cmp);
+std::vector<TensorUInt> assign_factor(
+    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorUInt &target,
+    TensorUInt &accumulate, TargetFunc cmp);
 
 
-std::vector<GenNumType> flat_map(
-    const std::unordered_map<GenNumType, GenNumType> &input_map);
+std::vector<TensorUInt> flat_map(
+    const std::unordered_map<TensorUInt, TensorUInt> &input_map);
 
 
 /*

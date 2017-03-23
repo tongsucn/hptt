@@ -12,20 +12,20 @@
 
 namespace hptc {
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 class OpForTrans {
 public:
   OpForTrans();
   OpForTrans(const LoopOrderTrans<ORDER> &loop_order,
-      const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-      const std::array<TensorOrder, ORDER> &perm);
+      const LoopParamTrans<ORDER> &loops, const TensorUInt begin_order_idx,
+      const std::array<TensorUInt, ORDER> &perm);
 
   OpForTrans(const OpForTrans &loop_data) = delete;
   OpForTrans<ORDER> &operator=(const OpForTrans &loop_data) = delete;
 
   INLINE void init(const LoopOrderTrans<ORDER> &loop_order,
-      const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-      const std::array<TensorOrder, ORDER> &perm);
+      const LoopParamTrans<ORDER> &loops, const TensorUInt begin_order_idx,
+      const std::array<TensorUInt, ORDER> &perm);
 
   template <typename MacroType,
             typename TensorType,
@@ -45,7 +45,7 @@ private:
   template <typename MacroType,
             typename TensorType,
             typename RegType,
-            GenNumType UNROLL_NUM>
+            TensorUInt UNROLL_NUM>
   INLINE void unroller_(GenCounter<UNROLL_NUM>, MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
       const TensorIdx input_stride, const TensorIdx output_stride,

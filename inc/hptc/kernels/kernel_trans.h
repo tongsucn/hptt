@@ -15,11 +15,11 @@ namespace hptc {
 template <typename FloatType,
           CoefUsageTrans USAGE>
 struct KernelPackTrans {
-  template <GenNumType CONT_LEN,
-            GenNumType NCONT_LEN>
+  template <TensorUInt CONT_LEN,
+            TensorUInt NCONT_LEN>
   using KernelFull = MacroTransVecFull<FloatType, USAGE, CONT_LEN, NCONT_LEN>;
-  template <GenNumType CONT_LEN,
-            GenNumType NCONT_LEN>
+  template <TensorUInt CONT_LEN,
+            TensorUInt NCONT_LEN>
   using KernelHalf = MacroTransVecHalf<FloatType, USAGE, CONT_LEN, NCONT_LEN>;
 
   using RegTypeFull = typename KernelFull<1, 1>::RegType;
@@ -32,7 +32,7 @@ struct KernelPackTrans {
       const KernelPackTrans<FloatType, USAGE> &) = delete;
 
   // Static member functions
-  static constexpr GenNumType KERNEL_NUM = 25;
+  static constexpr TensorUInt KERNEL_NUM = 25;
   static KernelPackTrans<FloatType, USAGE> &get_package();
 
   // Register types
@@ -41,14 +41,14 @@ struct KernelPackTrans {
   static RegTypeLinear reg_coef_linear(const DeducedFloatType<FloatType> coef);
 
   // Non-static member functions
-  GenNumType kernel_offset(const KernelTypeTrans kn_type,
-      const GenNumType cont_size, const GenNumType ncont_size,
+  TensorUInt kernel_offset(const KernelTypeTrans kn_type,
+      const TensorUInt cont_size, const TensorUInt ncont_size,
       const bool is_tail = false) const;
 
-  GenNumType kn_cont_len(const KernelTypeTrans kn_type,
-      const GenNumType cont_size) const;
-  GenNumType kn_ncont_len(const KernelTypeTrans kn_type,
-      const GenNumType ncont_size) const;
+  TensorUInt kn_cont_len(const KernelTypeTrans kn_type,
+      const TensorUInt cont_size) const;
+  TensorUInt kn_ncont_len(const KernelTypeTrans kn_type,
+      const TensorUInt ncont_size) const;
 
 
   // Non-linear full kernels

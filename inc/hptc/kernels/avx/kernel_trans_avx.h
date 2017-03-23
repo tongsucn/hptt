@@ -76,10 +76,10 @@ struct RegTypeDeducer<FloatType, TYPE,
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct KernelTransAvxBase {
-  using FLOAT = FloatType;
-  using RegType = DeducedRegType<FLOAT, TYPE>;
+  using FloatType = FloatType;
+  using RegType = DeducedRegType<FloatType, TYPE>;
 
-  static constexpr GenNumType kn_width = KernelTypeTrans::KERNEL_FULL == TYPE
+  static constexpr TensorUInt kn_width = KernelTypeTrans::KERNEL_FULL == TYPE
       ? REG_SIZE_BYTE_AVX / sizeof(FloatType)
       : KernelTypeTrans::KERNEL_HALF == TYPE
           ? REG_SIZE_BYTE_AVX / sizeof(FloatType) / 2 : 1;

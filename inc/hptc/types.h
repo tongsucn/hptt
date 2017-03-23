@@ -13,9 +13,9 @@ namespace hptc {
 /*
  * Tensor assistant types
  */
-using GenNumType = uint32_t;
-using TensorIdx = int64_t;
-using TensorOrder = GenNumType;
+using TensorIdx = uint64_t;
+using TensorInt = int32_t;
+using TensorUInt = uint32_t;
 
 
 /*

@@ -8,7 +8,7 @@
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<float, KernelTypeTrans::KERNEL_FULL> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
@@ -20,7 +20,7 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<double, KernelTypeTrans::KERNEL_FULL> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
@@ -32,7 +32,7 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_FULL> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
@@ -44,7 +44,7 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
     : public KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_FULL> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
@@ -56,7 +56,7 @@ struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<float, KernelTypeTrans::KERNEL_HALF> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const float * RESTRICT input_data,
       float * RESTRICT output_data, const TensorIdx input_stride,
@@ -68,7 +68,7 @@ struct KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<double, KernelTypeTrans::KERNEL_HALF> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const double * RESTRICT input_data,
       double * RESTRICT output_data, const TensorIdx input_stride,
@@ -80,7 +80,7 @@ struct KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<FloatComplex, KernelTypeTrans::KERNEL_HALF> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const FloatComplex * RESTRICT input_data,
       FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
@@ -92,7 +92,7 @@ struct KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
 template <CoefUsageTrans USAGE>
 struct KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_HALF> final
     : public KernelTransAvxBase<DoubleComplex, KernelTypeTrans::KERNEL_HALF> {
-  static RegType reg_coef(const DeducedFloatType<FLOAT> coef);
+  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
   void operator()(const DoubleComplex * RESTRICT input_data,
       DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,

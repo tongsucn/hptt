@@ -20,31 +20,31 @@ class OpForTrans<1> {
 /*
  * Implementation for class OpForTrans
  */
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 OpForTrans<ORDER>::OpForTrans()
     : next(nullptr) {
   this->init_disable_();
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 OpForTrans<ORDER>::OpForTrans(const LoopOrderTrans<ORDER> &loop_order,
-    const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-    const std::array<TensorOrder, ORDER> &perm)
+    const LoopParamTrans<ORDER> &loops, const TensorUInt begin_order_idx,
+    const std::array<TensorUInt, ORDER> &perm)
     : next(nullptr) {
   this->init(loop_order, loops, begin_order_idx, perm);
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 void OpForTrans<ORDER>::init(const LoopOrderTrans<ORDER> &loop_order,
-    const LoopParamTrans<ORDER> &loops, const TensorOrder begin_order_idx,
-    const std::array<TensorOrder, ORDER> &perm) {
+    const LoopParamTrans<ORDER> &loops, const TensorUInt begin_order_idx,
+    const std::array<TensorUInt, ORDER> &perm) {
   // Initialize loops
   this->init_loops_(loop_order, loops);
 
   // Initialize permutation array
-  for (TensorOrder idx = 0; idx < begin_order_idx; ++idx)
+  for (auto idx = 0; idx < begin_order_idx; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
 
   for (auto idx = begin_order_idx; idx < ORDER; ++idx)
@@ -52,7 +52,7 @@ void OpForTrans<ORDER>::init(const LoopOrderTrans<ORDER> &loop_order,
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 template <typename MacroType,
           typename TensorType,
           typename RegType>
@@ -65,7 +65,7 @@ INLINE void OpForTrans<ORDER>::operator()(MacroType &macro_kernel,
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 void OpForTrans<ORDER>::init_disable_() {
   std::fill(this->loop_idx_, this->loop_idx_ + ORDER, 0);
   std::fill(this->loop_perm_idx_, this->loop_perm_idx_ + ORDER, nullptr);
@@ -73,12 +73,12 @@ void OpForTrans<ORDER>::init_disable_() {
   std::fill(this->loop_end_, this->loop_end_ + ORDER, 0);
   std::fill(this->loop_step_, this->loop_step_ + ORDER, 0);
 
-  for (TensorOrder idx = 0; idx < ORDER; ++idx)
+  for (auto idx = 0; idx < ORDER; ++idx)
     this->loop_order_[idx] = idx;
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 void OpForTrans<ORDER>::init_loops_(const LoopOrderTrans<ORDER> &loop_order,
     const LoopParamTrans<ORDER> &loop) {
   // Initialize loop order
@@ -91,11 +91,11 @@ void OpForTrans<ORDER>::init_loops_(const LoopOrderTrans<ORDER> &loop_order,
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 template <typename MacroType,
           typename TensorType,
           typename RegType,
-          GenNumType UNROLL_NUM>
+          TensorUInt UNROLL_NUM>
 INLINE void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
     MacroType &macro_kernel, const TensorType &input_tensor,
     TensorType &output_tensor, const TensorIdx input_stride,
@@ -110,7 +110,7 @@ INLINE void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
 }
 
 
-template <TensorOrder ORDER>
+template <TensorUInt ORDER>
 template <typename MacroType,
           typename TensorType,
           typename RegType>

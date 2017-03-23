@@ -11,47 +11,47 @@ class MacroTransVec<KernelFunc, 0, 0> {
 
 
 template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
 typename KernelFunc::RegType
 MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::reg_coef(
-    const DeducedFloatType<typename KernelFunc::FLOAT> coef) {
+    const DeducedFloatType<typename KernelFunc::FloatType> coef) {
   return KernelFunc::reg_coef(coef);
 }
 
 
 template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-constexpr GenNumType
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+constexpr TensorUInt
 MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() const {
   return CONT_LEN * KernelFunc::kn_width;
 }
 
 
 template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
-constexpr GenNumType
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+constexpr TensorUInt
 MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
   return NCONT_LEN * KernelFunc::kn_width;
 }
 
 
 template <typename KernelFunc,
-          GenNumType CONT_LEN,
-          GenNumType NCONT_LEN>
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
 void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
-    const typename KernelFunc::FLOAT * RESTRICT input_data,
-    typename KernelFunc::FLOAT * RESTRICT output_data,
+    const typename KernelFunc::FloatType * RESTRICT input_data,
+    typename KernelFunc::FloatType * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const typename KernelFunc::RegType &reg_alpha,
     const typename KernelFunc::RegType &reg_beta) const {
   constexpr auto kn_wd = KernelFunc::kn_width;
 #pragma unroll_and_jam(CONT_LEN)
-  for (GenNumType cont = 0; cont < CONT_LEN; ++cont)
+  for (auto cont = 0; cont < CONT_LEN; ++cont)
 #pragma unroll_and_jam(NCONT_LEN)
-    for (GenNumType ncont = 0; ncont < NCONT_LEN; ++ncont)
+    for (auto ncont = 0; ncont < NCONT_LEN; ++ncont)
       this->kernel_(input_data + cont * kn_wd + ncont * kn_wd * input_stride,
           output_data + ncont * kn_wd + cont * kn_wd * output_stride,
           input_stride, output_stride, reg_alpha, reg_beta);

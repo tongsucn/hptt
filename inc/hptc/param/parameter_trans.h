@@ -17,7 +17,7 @@
 namespace hptc {
 
 template <typename FloatType,
-          TensorOrder ORDER>
+          TensorUInt ORDER>
 class TensorMergedWrapper
     : public TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR> {
 public:
@@ -25,7 +25,7 @@ public:
 
   template <MemLayout ACT_MAJOR>
   TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
-      const std::unordered_set<TensorOrder> &merge_set);
+      const std::unordered_set<TensorUInt> &merge_set);
 
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
@@ -33,9 +33,9 @@ public:
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
 private:
-  TensorOrder merged_order_;
+  TensorUInt merged_order_;
 
-  TensorOrder merge_idx_(const std::unordered_set<TensorOrder> &merge_set);
+  TensorUInt merge_idx_(const std::unordered_set<TensorUInt> &merge_set);
 };
 
 
@@ -43,7 +43,7 @@ template <typename TensorType,
           CoefUsageTrans USAGE = CoefUsageTrans::USE_BOTH>
 struct ParamTrans {
   // Type alias and constant values
-  using FloatType = typename TensorType::FLOAT;
+  using FloatType = typename TensorType::FloatType;
   using Deduced = DeducedFloatType<FloatType>;
   using KernelPack = KernelPackTrans<FloatType, USAGE>;
   using RegTypeFull = typename KernelPack::RegTypeFull;
@@ -54,21 +54,21 @@ struct ParamTrans {
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
 private:
-  TensorOrder merge_idx_(const std::array<TensorOrder, ORDER> &perm);
+  TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
 
   // They need to be initialized before merging
-  std::unordered_set<TensorOrder> input_merge_set_, output_merge_set_;
+  std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
 
 public:
   ParamTrans(const TensorType &input_tensor, TensorType &output_tensor,
-      const std::array<TensorOrder, ORDER> &perm, const Deduced alpha,
+      const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
       const Deduced beta);
 
   INLINE bool is_common_leading();
-  INLINE std::pair<TensorOrder, TensorOrder> get_leading();
+  INLINE std::pair<TensorUInt, TensorUInt> get_leading();
   INLINE void set_coef(const Deduced alpha, const Deduced beta);
 
-  std::array<TensorOrder, ORDER> perm;
+  std::array<TensorUInt, ORDER> perm;
   Deduced alpha, beta;
   TensorIdx input_stride, output_stride;
 
@@ -76,8 +76,8 @@ public:
   RegTypeHalf reg_alpha_half, reg_beta_half;
   RegTypeLinear reg_alpha_linear, reg_beta_linear;
 
-  TensorOrder merged_order;
-  TensorOrder begin_order_idx;
+  TensorUInt merged_order;
+  TensorUInt begin_order_idx;
 
   // Put the merged tensors here, they must be initialized after merging
   const TensorMergedWrapper<FloatType, ORDER> input_tensor;

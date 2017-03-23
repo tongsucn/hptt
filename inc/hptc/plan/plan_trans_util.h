@@ -31,42 +31,42 @@ public:
   static constexpr auto ORDER = ParamType::ORDER;
 
   PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
-      TensorIdx tune_loop_num, TensorIdx tune_para_num, TensorIdx heur_loop_num,
-      TensorIdx heur_para_num, GenNumType thread_num);
+      TensorInt tune_loop_num, TensorInt tune_para_num, TensorInt heur_loop_num,
+      TensorInt heur_para_num, TensorUInt thread_num);
 
   std::vector<Descriptor> get_optimal() const;
 
 private:
   struct LoopParaStrategy_ {
-    LoopParaStrategy_(TensorOrder size, GenNumType th_num, TensorOrder loop_idx)
+    LoopParaStrategy_(TensorUInt size, TensorUInt th_num, TensorUInt loop_idx)
         : size(size), th_num(th_num), loop_idx(loop_idx) {}
-    TensorOrder size;
-    GenNumType th_num;
-    TensorOrder loop_idx;
+    TensorUInt size;
+    TensorUInt th_num;
+    TensorUInt loop_idx;
   };
 
-  void init_(TensorIdx tune_loop_num, TensorIdx tune_para_num,
-      TensorIdx heur_loop_num, TensorIdx heur_para_num);
+  void init_(TensorInt tune_loop_num, TensorInt tune_para_num,
+      TensorInt heur_loop_num, TensorInt heur_para_num);
   void init_config_();
   void init_loop_evaluator_param_();
   void init_parallel_evaluator_param_();
 
   void init_loop_rule_();
-  void init_loop_heur_(const TensorIdx tune_num, const TensorIdx heur_num);
+  void init_loop_heur_(const TensorInt tune_num, const TensorInt heur_num);
 
   void init_threads_();
 
   void init_vec_general_();
   void init_vec_deploy_kernels_(const KernelTypeTrans kn_type,
-      const GenNumType kn_cont_size, const GenNumType kn_ncont_size,
-      const TensorOrder cont_begin_pos, const TensorOrder ncont_begin_pos,
-      const TensorOrder cont_offset_size, const TensorOrder ncont_offset_size,
+      const TensorUInt kn_cont_size, const TensorUInt kn_ncont_size,
+      const TensorUInt cont_begin_pos, const TensorUInt ncont_begin_pos,
+      const TensorUInt cont_offset_size, const TensorUInt ncont_offset_size,
       const bool is_linh = false);
   void init_vec_common_leading_();
 
   void init_parallel_rule_general_();
   void init_parallel_rule_common_leading_();
-  void init_parallel_heur_(const TensorIdx tune_num, const TensorIdx heur_num);
+  void init_parallel_heur_(const TensorInt tune_num, const TensorInt heur_num);
 
   double heur_loop_evaluator_(
       const LoopOrderTrans<ORDER> &target_loop_order) const;
@@ -77,9 +77,9 @@ private:
 
 
   std::shared_ptr<ParamType> param_;
-  GenNumType threads_;
-  const TensorOrder in_ld_idx_, out_ld_idx_;
-  std::unordered_map<GenNumType, GenNumType> th_factor_map_;
+  TensorUInt threads_;
+  const TensorUInt in_ld_idx_, out_ld_idx_;
+  std::unordered_map<TensorUInt, TensorUInt> th_factor_map_;
   ParaStrategyTrans<ORDER> avail_parallel_;
 
   std::vector<LoopOrderTrans<ORDER>> loop_order_candidates_;
@@ -95,7 +95,7 @@ private:
   // Parameters for parallelization heuristics
   double heur_para_penalty_factor_cl, heur_para_penalty_factor_inld,
          heur_para_penalty_factor_outld, heur_para_cost_begin;
-  GenNumType heur_para_max_penalty_threads;
+  TensorUInt heur_para_max_penalty_threads;
 };
 
 

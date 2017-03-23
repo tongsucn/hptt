@@ -59,7 +59,7 @@ protected:
 
 
   std::shared_ptr<ParamType> param_;
-  GenNumType threads_;
+  TensorUInt threads_;
   Descriptor descriptor_;
   For_ *operations_;
 };
