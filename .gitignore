@@ -43,3 +43,7 @@ build/
 ttc_implementations/
 inc/hptc/gen
 src/gen
+
+# temporaries
+*.swo
+*.swp
