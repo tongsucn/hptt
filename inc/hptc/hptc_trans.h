@@ -52,15 +52,13 @@ using OuterSize = std::pair<std::vector<TensorOrder>,
  * \param[in] perm Vector used for describing permutation (e.g., perm={1,0}
  *     denotes a matrix transpose).
  * \param[in] alpha Coefficient for scaling all the elements in input tensor.
- * \param[in] beta Coefficient for updating output tensor.
- * \param[in] thread_num Thread number for transpose, unsigned integer. When
+ *     When using complex type, its type will be deduced into float (for
+ *     FloatComplex) or double (for DoubleComplex).
+ * \param[in] beta Coefficient for updating output tensor. When using complex
+ *     type, its type will be deduced into float (for FloatComplex) or double
+ *     (for DoubleComplex).
+ * \param[in] num_threads Thread number for transpose, unsigned integer. When
  *     setting to 0, the OpenMP's OMP_NUM_THREADS will be used.
- * \param[in] in_outer_size An std::pair for describing input tensor outer size,
- *     First is the outer size vector, second is offset for each order. Optional
- *     parameter, default's first is an empty std::initializer_list;
- * \param[in] out_outer_size An std::pair for describing output tensor outer
- *     size, First is the outer size vector, second is offset for each order.
- *     Optional parameter, default's first is an empty std::initializer_list;
  * \param[in] max_num_cand Number of candidate implementations that should be
  *     evaluated; this is an optional parameter (default value is 0). Its
  *     input value could be:
@@ -73,6 +71,12 @@ using OuterSize = std::pair<std::vector<TensorOrder>,
  *       according to the performance model will be selected automatically.
  *     - max_num_cand > 0: max_num_cand candidates will be measured and
  *       compared.
+ * \param[in] in_outer_size An std::pair for describing input tensor outer size,
+ *     First is the outer size vector, second is offset for each order. Optional
+ *     parameter, default's first is an empty std::initializer_list;
+ * \param[in] out_outer_size An std::pair for describing output tensor outer
+ *     size, First is the outer size vector, second is offset for each order.
+ *     Optional parameter, default's first is an empty std::initializer_list;
  *
  * \return A pointer to the computational graph for this transpose. It can be
  *     used like this:
@@ -107,12 +111,12 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
     const std::vector<TensorOrder> &in_size,
     const std::array<TensorOrder, ORDER> &perm,
     const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta, const GenNumType thread_num,
+    const DeducedFloatType<FloatType> beta, const GenNumType num_threads,
+    const TensorIdx max_num_cand = 0,
     OuterSize<ORDER> in_outer_size
         = OuterSize<ORDER>({}, std::array<TensorOrder, ORDER>()),
     OuterSize<ORDER> out_outer_size
-        = OuterSize<ORDER>({}, std::array<TensorOrder, ORDER>()),
-    TensorIdx max_num_cand = 0);
+        = OuterSize<ORDER>({}, std::array<TensorOrder, ORDER>()));
 
 
 /*

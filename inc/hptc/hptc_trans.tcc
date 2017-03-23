@@ -9,9 +9,9 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
     const std::vector<TensorOrder> &in_size,
     const std::array<TensorOrder, ORDER> &perm,
     const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta, const GenNumType thread_num,
-    OuterSize<ORDER> in_outer_size, OuterSize<ORDER> out_outer_size,
-    TensorIdx max_num_cand) {
+    const DeducedFloatType<FloatType> beta,
+    const GenNumType num_threads, const TensorIdx max_num_cand,
+    OuterSize<ORDER> in_outer_size, OuterSize<ORDER> out_outer_size) {
   // Guardian
   // Check template arguments
   if (ORDER <= 1)
@@ -86,13 +86,13 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
       alpha, beta);
 
   // Create plan, all heuristics will be generated here
-  max_num_cand = max_num_cand < 0 ? -1
+  auto tune_num = max_num_cand < 0 ? -1
       : static_cast<TensorIdx>(std::sqrt(max_num_cand));
   // For now, with this function the library will not generate more than 640
   // (loop order) x 640 (parallelization strategy) candidates
   const TensorIdx heur_num = 640;
-  PlanTrans<ParamType> plan(param, max_num_cand, heur_num, max_num_cand,
-      heur_num, thread_num);
+  PlanTrans<ParamType> plan(param, tune_num, heur_num, tune_num, heur_num,
+      num_threads);
 
   return plan.get_graph();
 }

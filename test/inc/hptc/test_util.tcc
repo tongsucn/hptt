@@ -9,14 +9,24 @@ template <typename FloatType>
 DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
     bool randomize)
     : gen_(std::random_device()()),
-      dist_(this->ele_lower_, this->ele_upper_),
+      dist_(DataWrapper<FloatType>::ele_lower_,
+          DataWrapper<FloatType>::ele_upper_),
       data_len_(std::accumulate(size.begin(), size.end(), 1,
-          std::multiplies<TensorOrder>())) {
+          std::multiplies<TensorOrder>())),
+      page_size_(sysconf(_SC_PAGESIZE)) {
   // Allocate memory
-  this->org_in_data = new FloatType [this->data_len_];
-  this->org_out_data = new FloatType [this->data_len_];
-  this->ref_data = new FloatType [this->data_len_];
-  this->act_data = new FloatType [this->data_len_];
+  posix_memalign(reinterpret_cast<void **>(&this->org_in_data),
+      this->page_size_, sizeof(FloatType) * this->data_len_);
+  posix_memalign(reinterpret_cast<void **>(&this->org_out_data),
+      this->page_size_, sizeof(FloatType) * this->data_len_);
+  posix_memalign(reinterpret_cast<void **>(&this->ref_data), this->page_size_,
+      sizeof(FloatType) * this->data_len_);
+  posix_memalign(reinterpret_cast<void **>(&this->act_data), this->page_size_,
+      sizeof(FloatType) * this->data_len_);
+  posix_memalign(reinterpret_cast<void **>(&this->trash_[0]), this->page_size_,
+      sizeof(FloatType) * DataWrapper<FloatType>::trash_size_);
+  posix_memalign(reinterpret_cast<void **>(&this->trash_[1]), this->page_size_,
+      sizeof(FloatType) * DataWrapper<FloatType>::trash_size_);
 
   if (randomize) {
     // Initialize content with random number
@@ -26,7 +36,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (GenNumType in_idx = 0; in_idx < this->inner_; ++in_idx) {
+      for (GenNumType in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = this->dist_(this->gen_);
         org_out_ptr[in_idx] = this->dist_(this->gen_);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -42,7 +52,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (GenNumType in_idx = 0; in_idx < this->inner_; ++in_idx) {
+      for (GenNumType in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = static_cast<Deduced_>(idx);
         org_out_ptr[in_idx] = static_cast<Deduced_>(idx);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -55,10 +65,12 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
 
 template <typename FloatType>
 DataWrapper<FloatType>::~DataWrapper() {
-  delete [] this->org_in_data;
-  delete [] this->org_out_data;
-  delete [] this->ref_data;
-  delete [] this->act_data;
+  free(this->org_in_data);
+  free(this->org_out_data);
+  free(this->ref_data);
+  free(this->act_data);
+  free(this->trash_[0]);
+  free(this->trash_[1]);
 }
 
 
