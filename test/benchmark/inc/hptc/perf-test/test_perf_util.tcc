@@ -23,7 +23,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   std::array<TensorOrder, ORDER> perm;
   copy(test_case.perm.begin(), test_case.perm.end(), perm.begin());
 
-  auto graph = create_cgraph_trans<FloatType, ORDER, USAGE>(
+  auto graph = create_cgraph_trans<FloatType, ORDER>(
       data_wrapper.org_in_data, data_wrapper.act_data, test_case.size, perm,
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
 

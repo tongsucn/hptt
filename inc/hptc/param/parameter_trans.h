@@ -40,7 +40,7 @@ private:
 
 
 template <typename TensorType,
-          CoefUsageTrans USAGE>
+          CoefUsageTrans USAGE = CoefUsageTrans::USE_BOTH>
 struct ParamTrans {
   // Type alias and constant values
   using FloatType = typename TensorType::FLOAT;

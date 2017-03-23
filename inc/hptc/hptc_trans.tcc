@@ -3,16 +3,15 @@
 #define HPTC_HPTC_TRANS_TCC_
 
 template <typename FloatType,
-          TensorOrder ORDER,
-          CoefUsageTrans USAGE>
-CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>, USAGE>> *
+          TensorOrder ORDER>
+CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
 create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
     const std::vector<TensorOrder> &in_size,
     const std::array<TensorOrder, ORDER> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta, const GenNumType thread_num,
     OuterSize<ORDER> in_outer_size, OuterSize<ORDER> out_outer_size,
-    TensorIdx tune_num, TensorIdx heur_num) {
+    TensorIdx max_num_cand) {
   // Guardian
   // Check template arguments
   if (ORDER <= 1)
@@ -82,14 +81,18 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
       out_data);
 
   // Create parameter
-  using ParamType = ParamTrans<TensorType, USAGE>;
+  using ParamType = ParamTrans<TensorType>;
   auto param = std::make_shared<ParamType>(in_tensor, out_tensor, perm,
       alpha, beta);
 
   // Create plan, all heuristics will be generated here
-  tune_num = tune_num < 0 ? -1 : static_cast<TensorIdx>(std::sqrt(tune_num));
-  heur_num = heur_num < 0 ? -1 : static_cast<TensorIdx>(std::sqrt(heur_num));
-  PlanTrans<ParamType> plan(param, tune_num, -1, tune_num, -1, thread_num);
+  max_num_cand = max_num_cand < 0 ? -1
+      : static_cast<TensorIdx>(std::sqrt(max_num_cand));
+  // For now, with this function the library will not generate more than 640
+  // (loop order) x 640 (parallelization strategy) candidates
+  const TensorIdx heur_num = 640;
+  PlanTrans<ParamType> plan(param, max_num_cand, heur_num, max_num_cand,
+      heur_num, thread_num);
 
   return plan.get_graph();
 }

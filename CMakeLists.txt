@@ -42,7 +42,7 @@ set(HPTC_CODE_GEN_TRANS_DTYPE "s,d,c,z" CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_DTYPE})
 
 # Coefficient usage type of transpose pre-compiled in shared/static library.
-set(HPTC_CODE_GEN_TRANS_COEF "alpha,beta,both,none" CACHE STRING
+set(HPTC_CODE_GEN_TRANS_COEF "both" CACHE STRING
   ${HPTC_MSG_CODE_GEN_TRANS_COEF})
 
 set(HPTC_CODE_GEN_TARGET_DIR_PREFIX ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH
