@@ -10,7 +10,8 @@ string(CONCAT HPTC_CODE_GEN_TRANS_SCRIPT ${HPTC_CODE_GEN_SCRIPT_DIR}
 # Code generation
 # ----------------------------------------------------------------------------
 macro(hptc_code_gen_trans GEN_SCRIPT WORKING_DIR)
-  message(${HPTC_MSG_CODE_GEN_TRANS})
+  message("-- Generating transpose library template explicit instantation. "
+    "Target directory: " ${HPTC_CODE_GEN_TARGET_DIR})
   execute_process(
     COMMAND ${HPTC_PYTHON_EXEC} ${GEN_SCRIPT}
     ${HPTC_CODE_GEN_TARGET_DIR_ARG} ${HPTC_CODE_GEN_TARGET_DIR}
@@ -25,7 +26,10 @@ macro(hptc_code_gen_trans GEN_SCRIPT WORKING_DIR)
     )
 
   if (NOT RET_VAL EQUAL 0)
-    message(FATAL_ERROR ${HPTC_MSG_FATAL_CODE_GEN_TRANS})
+    message("!! Failed to generate template explicit instantation.")
+    message("!! Generation script stdout: " ${CODE_GEN_STDOUT})
+    message("!! Generation script stderr: " ${CODE_GEN_STDERR})
+    message(FATAL_ERROR "!! Library cannot be built without code generation.")
   endif ()
 endmacro()
 

@@ -1,14 +1,9 @@
-# ----------------------------------------------------------------------------
-# Dependencies setting
-# ----------------------------------------------------------------------------
+# Target dependencies setting
 file(GLOB HPTC_KERNEL_SRC kernels/*.cc)
 file(GLOB HPTC_UTIL_SRC util/*.cc)
 file(GLOB HPTC_GENERATED gen/*.cc)
 
-# ----------------------------------------------------------------------------
-# Libraries setting
-# ----------------------------------------------------------------------------
-# Shared libraries
+# Shared and static libraries
 add_library(
   hptc SHARED
   ${HPTC_KERNEL_SRC}
@@ -23,12 +18,6 @@ add_library(
 
 set_target_properties(hptc_static PROPERTIES OUTPUT_NAME hptc)
 
-
-# ----------------------------------------------------------------------------
-# Installation setting
-# ----------------------------------------------------------------------------
-# Configure installation
-#install(TARGETS hptc hptc_static
-#      LIBRARY DESTINATION lib
-#      ARCHIVE DESTINATION lib)
-
+# Set install
+include(../cmake/hptc_install.cmake)
+hptc_set_target_install()

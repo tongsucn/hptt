@@ -12,9 +12,9 @@ class IncTarget(object):
 
     self.filename = ['%s_gen.tcc' % TARGET_PREFIX]
     temp_content = '''#pragma once
-#ifndef %s
-#define %s
-''' % (TARGET_PREFIX.upper() + '_GEN_TCC', TARGET_PREFIX.upper() + '_GEN_TCC')
+#ifndef HPTC_GEN_%s_GEN_TCC_
+#define HPTC_GEN_%s_GEN_TCC_
+''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper())
 
     for order in orders:
       temp_content += '\nextern template class OpForTrans<%d>;' % order
