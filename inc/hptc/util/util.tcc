@@ -13,21 +13,17 @@ INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
   if (0 == this->times_)
     return 0.0;
 
-  auto start = std::chrono::high_resolution_clock::now();
-  target(std::forward<Args>(args)...);
-  auto result = std::chrono::duration_cast<Duration>(
-      std::chrono::high_resolution_clock::now() - start);
-
-  for (GenNumType idx = 1; idx < this->times_; ++idx) {
-    start = std::chrono::high_resolution_clock::now();
+  double result = DBL_MAX;
+  for (GenNumType idx = 0; idx < this->times_; ++idx) {
+    auto start = std::chrono::high_resolution_clock::now();
     target(std::forward<Args>(args)...);
     auto duration = std::chrono::duration_cast<Duration>(
         std::chrono::high_resolution_clock::now() - start);
-    if (duration < result)
-      result = duration;
+    if (duration.count() < result)
+      result = duration.count();
   }
 
-  return result.count();
+  return result;
 }
 
 

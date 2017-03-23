@@ -2,6 +2,8 @@
 #ifndef HPTC_UTIL_UTIL_H_
 #define HPTC_UTIL_UTIL_H_
 
+#include <cfloat>
+
 #include <vector>
 #include <chrono>
 #include <utility>

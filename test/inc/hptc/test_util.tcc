@@ -24,9 +24,9 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
   posix_memalign(reinterpret_cast<void **>(&this->act_data), this->page_size_,
       sizeof(FloatType) * this->data_len_);
   posix_memalign(reinterpret_cast<void **>(&this->trash_[0]), this->page_size_,
-      sizeof(FloatType) * DataWrapper<FloatType>::trash_size_);
+      sizeof(TrashType_) * DataWrapper<FloatType>::trash_size_);
   posix_memalign(reinterpret_cast<void **>(&this->trash_[1]), this->page_size_,
-      sizeof(FloatType) * DataWrapper<FloatType>::trash_size_);
+      sizeof(TrashType_) * DataWrapper<FloatType>::trash_size_);
 
   if (randomize) {
     // Initialize content with random number
@@ -60,6 +60,11 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorOrder> &size,
       }
     }
   }
+
+  // Initialize trash array
+#pragma omp parallel for schedule(static)
+  for (TensorIdx idx = 0; idx < DataWrapper<FloatType>::trash_size_; ++idx)
+    this->trash_[0][idx] = this->trash_[1][idx] = 1.0;
 }
 
 
@@ -87,6 +92,15 @@ void DataWrapper<FloatType>::reset_act() {
 #pragma omp parallel for schedule(static)
   for (TensorIdx idx = 0; idx < this->data_len_; ++idx)
     this->act_data[idx] = this->org_out_data[idx];
+}
+
+
+template <typename FloatType>
+void DataWrapper<FloatType>::trash_cache() {
+#pragma omp parallel for schedule(static)
+  for (TensorIdx idx = 0; idx < DataWrapper<FloatType>::trash_size_; ++idx)
+    this->trash_[0][idx] = DataWrapper<FloatType>::trash_calc_scale_
+        * this->trash_[1][idx];
 }
 
 

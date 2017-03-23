@@ -2,6 +2,8 @@
 #ifndef HPTC_PERF_TEST_TEST_PERF_UTIL_H_
 #define HPTC_PERF_TEST_TEST_PERF_UTIL_H_
 
+#include <cfloat>
+
 #include <array>
 #include <memory>
 #include <sstream>
@@ -15,6 +17,7 @@
 
 #define ALPHA 2.3f
 #define BETA 4.2f
+#define MEASURE_REPEAT 5
 
 
 namespace hptc {

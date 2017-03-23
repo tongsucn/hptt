@@ -13,13 +13,9 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
 
   // Prepare data and timer
   DataWrapper<FloatType> data_wrapper(test_case.size);
-  TimerWrapper timer(5);
+  TimerWrapper timer(1);
 
-  // Measure TTC version
-  double ttc_time = timer(ref_func, data_wrapper.org_in_data,
-      data_wrapper.ref_data);
-
-  // Measure HPTC version
+  // Create HPTC computational graph
   std::array<TensorOrder, ORDER> perm;
   copy(test_case.perm.begin(), test_case.perm.end(), perm.begin());
 
@@ -27,11 +23,22 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       data_wrapper.org_in_data, data_wrapper.act_data, test_case.size, perm,
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
 
-  // Execute computational graph
-  double hptc_time = timer(*graph);
+  double time_ttc = DBL_MAX, time_hptc = DBL_MAX;
+  for (auto times = 0; times < MEASURE_REPEAT; ++times) {
+    // Measure TTC version
+    data_wrapper.trash_cache();
+    auto new_time_ttc = timer(ref_func, data_wrapper.org_in_data,
+        data_wrapper.ref_data);
+    time_ttc = new_time_ttc < time_ttc ? new_time_ttc : time_ttc;
 
-  auto tp_ttc = calc_tp_trans<FloatType, USAGE>(test_case.size, ttc_time);
-  auto tp_hptc = calc_tp_trans<FloatType, USAGE>(test_case.size, hptc_time);
+    // Measure HPTC version
+    data_wrapper.trash_cache();
+    auto new_time_hptc  = timer(*graph);
+    time_hptc = new_time_hptc < time_hptc ? new_time_hptc : time_hptc;
+  }
+
+  auto tp_ttc = calc_tp_trans<FloatType, USAGE>(test_case.size, time_ttc);
+  auto tp_hptc = calc_tp_trans<FloatType, USAGE>(test_case.size, time_hptc);
 
   delete graph;
   graph = nullptr;
@@ -40,8 +47,8 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
 
   // Print log
   std::stringstream ss;
-  ss << std::setprecision(3) << ttc_time << "," << std::setprecision(3)
-      << hptc_time << "," << std::setprecision(3) << tp_ttc << ","
+  ss << std::setprecision(3) << time_ttc << "," << std::setprecision(3)
+      << time_hptc << "," << std::setprecision(3) << tp_ttc << ","
       << std::setprecision(3) << tp_hptc
       << (-1 == result ? ",SUCCEED" : ",FAILED");
   std::cout << ss.str() << std::endl;
