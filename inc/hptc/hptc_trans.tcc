@@ -112,9 +112,8 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
 
   // Create tensors
   using TensorType = TensorWrapper<FloatType, ORDER>;
-  const TensorType in_tensor(in_size_obj, in_outer_size_obj, in_offset,
-      in_data);
-  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_offset, out_data);
+  const TensorType in_tensor(in_size_obj, in_outer_size_obj, in_data);
+  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_data);
 
   // Create parameter
   using ParamType = ParamTrans<TensorType>;

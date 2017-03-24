@@ -33,7 +33,7 @@ public:
   INLINE const FloatType &operator[](const TensorIdx **indices) const;
 
 private:
-  TensorUInt merged_order_;
+  TensorUInt begin_order_idx_, merged_order_;
 
   TensorUInt merge_idx_(const std::unordered_set<TensorUInt> &merge_set);
 };
@@ -64,8 +64,8 @@ public:
       const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
       const Deduced beta);
 
-  INLINE bool is_common_leading();
-  INLINE std::pair<TensorUInt, TensorUInt> get_leading();
+  INLINE bool is_common_leading() const;
+  INLINE std::pair<TensorUInt, TensorUInt> get_leading() const;
   INLINE void set_coef(const Deduced alpha, const Deduced beta);
 
   std::array<TensorUInt, ORDER> perm;
@@ -76,8 +76,7 @@ public:
   RegTypeHalf reg_alpha_half, reg_beta_half;
   RegTypeLinear reg_alpha_linear, reg_beta_linear;
 
-  TensorUInt merged_order;
-  TensorUInt begin_order_idx;
+  TensorUInt begin_order_idx, merged_order;
 
   // Put the merged tensors here, they must be initialized after merging
   const TensorMergedWrapper<FloatType, ORDER> input_tensor;

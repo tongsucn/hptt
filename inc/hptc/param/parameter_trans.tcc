@@ -12,6 +12,7 @@ TensorMergedWrapper<FloatType, ORDER>::TensorMergedWrapper(
     const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
     const std::unordered_set<TensorUInt> &merge_set)
     : TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR>(tensor),
+      begin_order_idx_(0),
       merged_order_(this->merge_idx_(merge_set)) {
 }
 
@@ -21,8 +22,8 @@ template <typename FloatType,
 INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
-  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
+  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+    abs_offset += indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
@@ -32,8 +33,8 @@ template <typename FloatType,
 INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
-  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + indices[idx]) * this->strides_[idx];
+  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+    abs_offset += indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
@@ -43,8 +44,8 @@ template <typename FloatType,
 INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     TensorIdx **indices) {
   TensorIdx abs_offset = 0;
-  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
+  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+    abs_offset += *indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
@@ -54,8 +55,8 @@ template <typename FloatType,
 INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx **indices) const {
   TensorIdx abs_offset = 0;
-  for (auto idx = ORDER - this->merged_order_; idx < ORDER; ++idx)
-    abs_offset += (this->offsets_[idx] + *indices[idx]) * this->strides_[idx];
+  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+    abs_offset += *indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
 
@@ -67,13 +68,12 @@ TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
   if (ORDER <= 2)
     return ORDER;
 
-  // Merge size, outer size and offsets
+  // Merge size and outer size
   for (TensorInt idx = ORDER - 1, curr_idx = ORDER; idx >= 0; --idx) {
     if (1 == merge_set.count(idx)) {
       --curr_idx;
       this->size_[curr_idx] = this->size_[idx];
       this->outer_size_[curr_idx] = this->outer_size_[idx];
-      this->offsets_[curr_idx] = this->offsets_[idx];
     }
     else {
       this->size_[curr_idx] *= this->size_[idx];
@@ -82,18 +82,17 @@ TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
   }
 
   // Merge strides
-  const auto begin_order_idx = ORDER - merge_set.size();
-  this->strides_[begin_order_idx] = 1;
-  for (auto idx = begin_order_idx; idx < ORDER - 1; ++idx)
+  this->begin_order_idx_ = ORDER - merge_set.size();
+  this->strides_[this->begin_order_idx_] = 1;
+  for (auto idx = this->begin_order_idx_; idx < ORDER - 1; ++idx)
     this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
 
-  // Fill the unused part
-  for (auto idx = 0; idx < begin_order_idx; ++idx) {
+  // Fill in unused part
+  for (auto idx = 0; idx < this->begin_order_idx_; ++idx) {
     this->size_[idx] = 1;
     this->outer_size_[idx] = 1;
   }
-  std::fill(this->offsets_, this->offsets_ + begin_order_idx, 0);
-  std::fill(this->strides_, this->strides_ + begin_order_idx, 0);
+  std::fill(this->strides_, this->strides_ + this->begin_order_idx_, 0);
 
   return merge_set.size();
 }
@@ -112,7 +111,6 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
       perm(perm), alpha(alpha), beta(beta),
       input_stride(1), output_stride(1),
       merged_order(this->merge_idx_(perm)),
-      begin_order_idx(ORDER - this->merged_order),
       input_tensor(input_tensor, this->input_merge_set_),
       output_tensor(output_tensor, this->output_merge_set_),
       kn(KernelPackTrans<FloatType, USAGE>::get_package()) {
@@ -137,7 +135,7 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() {
+INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() const {
   if (0 == this->perm[this->begin_order_idx])
     return true;
   return false;
@@ -147,7 +145,7 @@ INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() {
 template <typename TensorType,
           CoefUsageTrans USAGE>
 INLINE std::pair<TensorUInt, TensorUInt>
-ParamTrans<TensorType, USAGE>::get_leading() {
+ParamTrans<TensorType, USAGE>::get_leading() const {
   std::pair<TensorUInt, TensorUInt> result;
 
   result.first = this->input_tensor.get_size()[this->begin_order_idx];
@@ -199,11 +197,15 @@ TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
       this->output_merge_set_.insert(idx - 1);
     }
   }
+
+  // input/output merge sets are initialized, they are ready for initializing
+  // TensorMergedWrapper
   this->input_merge_set_.insert(perm[ORDER - 1]);
   this->output_merge_set_.insert(ORDER - 1);
 
-  // Set merged order
+  // Check merged order
   auto merged = static_cast<TensorUInt>(this->input_merge_set_.size());
+  this->begin_order_idx = ORDER - merged;
   if (ORDER == merged)
     return ORDER;
 
@@ -221,10 +223,11 @@ TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
     perm_map[sorted_perm_arr[idx]] = idx;
 
   // Update permutation array
-  for (TensorIdx idx = ORDER - 1, curr_idx = ORDER - 1; idx >= 0; --idx) {
-    if (1 == this->input_merge_set_.count(this->perm[idx])) {
-      this->perm[curr_idx] = perm_map[this->perm[idx]];
-      --curr_idx;
+  for (TensorInt order_idx = ORDER - 1, update_idx = ORDER - 1;
+      order_idx >= 0; --order_idx) {
+    if (1 == this->input_merge_set_.count(this->perm[order_idx])) {
+      this->perm[update_idx] = perm_map[this->perm[order_idx]];
+      --update_idx;
     }
   }
   // Fill unused part of the permutation array

@@ -42,9 +42,7 @@ public:
 
   TensorWrapper(const TensorSize<ORDER> &size_obj, const FloatType *raw_data);
   TensorWrapper(const TensorSize<ORDER> &size_obj,
-      const TensorSize<ORDER> &outer_size_obj,
-      const std::array<TensorIdx, ORDER> &order_offset,
-      const FloatType *raw_data);
+      const TensorSize<ORDER> &outer_size_obj, const FloatType *raw_data);
 
   template <MemLayout ACT_MAJOR>
   TensorWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
@@ -55,30 +53,24 @@ public:
   INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
   INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
 
-  INLINE TensorSize<ORDER> &get_size();
   INLINE const TensorSize<ORDER> &get_size() const;
-  INLINE TensorSize<ORDER> &get_outer_size();
   INLINE const TensorSize<ORDER> &get_outer_size() const;
   INLINE FloatType *get_data();
   INLINE const FloatType *get_data() const;
-  INLINE void set_data(FloatType *new_data);
-  INLINE const TensorIdx *get_offset() const;
 
 protected:
   // Internal function member
-  INLINE void init_offset_();
-  INLINE void init_offset_(const std::array<TensorIdx, ORDER> &order_offset);
+  INLINE void init_strides_();
 
   template <typename... Idx>
-  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx curr_offset,
+  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset,
       TensorIdx next_idx, Idx... idx);
-  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx curr_offset);
+  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset);
 
   // Internal data member
   TensorSize<ORDER> size_;
   TensorSize<ORDER> outer_size_;
   FloatType *raw_data_;
-  TensorIdx offsets_[ORDER];
   TensorIdx strides_[ORDER];
 };
 
