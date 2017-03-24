@@ -23,8 +23,7 @@ namespace hptc {
 
 // Type alias for describing tensor outer size and sub tensor's offset
 template <uint32_t ORDER>
-using OuterSize = std::pair<std::vector<uint32_t>,
-      std::array<uint32_t, ORDER>>;
+using OuterSize = std::pair<std::vector<uint32_t>, std::vector<uint32_t>>;
 
 /**
  * \brief Function for creating a tensor transpose.
@@ -75,10 +74,13 @@ using OuterSize = std::pair<std::vector<uint32_t>,
  *       compared.
  * \param[in] in_outer_size An std::pair for describing input tensor outer size,
  *     First is the outer size vector, second is offset for each order. Optional
- *     parameter, default's first is an empty std::initializer_list;
+ *     parameter, default has  two empty std::initializer_list. If the second is
+ *     empty, then the sub-tensor has no offset within the outer tensor.
  * \param[in] out_outer_size An std::pair for describing output tensor outer
  *     size, First is the outer size vector, second is offset for each order.
- *     Optional parameter, default's first is an empty std::initializer_list;
+ *     Optional parameter, default has two empty std::initializer_list. If the
+ *     second is empty, then the sub-tensor has no offset within the outer
+ *     tensor.
  *
  * \return A pointer to the computational graph for this transpose. It can be
  *     used like this:
@@ -94,7 +96,7 @@ using OuterSize = std::pair<std::vector<uint32_t>,
  * The returned pointer will be null, when:
  * 1. template argument ORDER is less than or equal to 1.
  * 2. at least one of the two data pointers in function parameter list is null.
- * 3. the content of input permutation array is not valid.
+ * 3. the size and content of input permutation array is not valid.
  * 4. at least one of the tensor size vectors is incorrect, i.e. in_size's
  *    size is not ORDER; in_outer_size's or out_outer_size's size is neither 0
  *    nor ORDER.
@@ -110,15 +112,12 @@ template <typename FloatType,
           uint32_t ORDER>
 CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
 create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
-    const std::vector<uint32_t> &in_size,
-    const std::array<uint32_t, ORDER> &perm,
+    const std::vector<uint32_t> &in_size, const std::vector<uint32_t> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta, const uint32_t num_threads,
     const int32_t max_num_cand = 0,
-    OuterSize<ORDER> in_outer_size
-        = OuterSize<ORDER>({}, std::array<uint32_t, ORDER>()),
-    OuterSize<ORDER> out_outer_size
-        = OuterSize<ORDER>({}, std::array<uint32_t, ORDER>()));
+    OuterSize<ORDER> in_outer_size = OuterSize<ORDER>({}, {}),
+    OuterSize<ORDER> out_outer_size = OuterSize<ORDER>({}, {}));
 
 
 /*

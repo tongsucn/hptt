@@ -6,8 +6,7 @@ template <typename FloatType,
           TensorUInt ORDER>
 CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
 create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
-    const std::vector<TensorUInt> &in_size,
-    const std::array<TensorUInt, ORDER> &perm,
+    const std::vector<TensorUInt> &in_size, const std::vector<TensorUInt> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta,
     const TensorUInt num_threads, const TensorInt max_num_cand,
@@ -22,6 +21,11 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
     return nullptr;
 
   // Check permutation array
+  if (ORDER != perm.size())
+    return nullptr;
+  std::array<TensorUInt, ORDER> perm_arr;
+  std::copy(perm.begin(), perm.end(), perm_arr.begin());
+
   std::array<bool, ORDER> perm_verify_map;
   perm_verify_map.fill(false);
   for (auto order_idx : perm) {
@@ -48,17 +52,25 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
       return nullptr;
 
   // Check size offset
-  if (not in_outer_size_vec.empty())
+  if (not in_outer_size_vec.empty()) {
+    if (ORDER != in_outer_size.second.size() or
+        not in_outer_size.second.empty())
+      return nullptr;
     for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
       if (in_outer_size.second[order_idx] + in_size[order_idx]
           > in_outer_size_vec[order_idx])
         return nullptr;
+  }
 
-  if (not out_outer_size_vec.empty())
+  if (not out_outer_size_vec.empty()) {
+    if (ORDER != out_outer_size.second.size() or
+        not out_outer_size.second.empty())
+      return nullptr;
     for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
       if (out_outer_size.second[order_idx] + in_size[perm[order_idx]]
           > out_outer_size_vec[order_idx])
         return nullptr;
+  }
 
 
   // Create transpose plan
@@ -71,8 +83,11 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
   else {
     std::copy(in_outer_size_vec.begin(), in_outer_size_vec.end(),
         in_outer_size_ext.begin());
-    std::copy(in_outer_size.second.begin(), in_outer_size.second.end(),
-        in_offset.begin());
+    if (in_outer_size.second.empty())
+      in_offset.fill(0);
+    else
+      std::copy(in_outer_size.second.begin(), in_outer_size.second.end(),
+          in_offset.begin());
   }
   TensorSize<ORDER> in_size_obj(in_size_ext),
       in_outer_size_obj(in_outer_size_ext);
@@ -86,8 +101,11 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
   else {
     std::copy(out_outer_size_vec.begin(), out_outer_size_vec.end(),
         out_outer_size_ext.begin());
-    std::copy(out_outer_size.second.begin(), out_outer_size.second.end(),
-        out_offset.begin());
+    if (out_outer_size.second.empty())
+      out_offset.fill(0);
+    else
+      std::copy(out_outer_size.second.begin(), out_outer_size.second.end(),
+          out_offset.begin());
   }
   TensorSize<ORDER> out_size_obj(out_size_ext),
       out_outer_size_obj(out_outer_size_ext);
@@ -100,7 +118,7 @@ create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
 
   // Create parameter
   using ParamType = ParamTrans<TensorType>;
-  auto param = std::make_shared<ParamType>(in_tensor, out_tensor, perm,
+  auto param = std::make_shared<ParamType>(in_tensor, out_tensor, perm_arr,
       alpha, beta);
 
   // Create plan, all heuristics will be generated here

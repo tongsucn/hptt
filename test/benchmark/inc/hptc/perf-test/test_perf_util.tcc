@@ -16,7 +16,7 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   TimerWrapper timer(1);
 
   // Create HPTC computational graph
-  std::array<TensorUInt, ORDER> perm;
+  std::vector<TensorUInt> perm(ORDER);
   copy(test_case.perm.begin(), test_case.perm.end(), perm.begin());
   std::vector<TensorUInt> size_vec(test_case.size.begin(),
       test_case.size.end());
