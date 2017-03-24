@@ -54,7 +54,7 @@ macro(hptc_set_options)
     ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MIN})
 
   # Maximum order number of transpose pre-compiled in shared/static library.
-  set(HPTC_CODE_GEN_TRANS_ORDER_MAX 7 CACHE STRING
+  set(HPTC_CODE_GEN_TRANS_ORDER_MAX 6 CACHE STRING
     ${HPTC_MSG_CODE_GEN_TRANS_ORDER_MAX})
 
   # Data type of transpose pre-compiled in shared/static library.

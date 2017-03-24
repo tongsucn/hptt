@@ -82,7 +82,7 @@ def arg_parser(argv):
   parsed.dtype = map(lambda x: dtype_dict[x.lower()], parsed.dtype.split(','))
   parsed.coef = map(lambda x: coef_dict[x.lower()], parsed.coef.split(','))
   parsed.order_min = int(parsed.order_min)
-  parsed.order_max = int(parsed.order_max)
+  parsed.order_max = int(parsed.order_max) + 1
 
   return parsed
 
