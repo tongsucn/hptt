@@ -102,6 +102,16 @@ struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
 
 
 /*
+ * Type alias for AVX micro kernel
+ */
+template <typename FloatType,
+          CoefUsageTrans USAGE,
+          KernelTypeTrans TYPE>
+using KernelTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
+
+
+
+/*
  * Import template class KernelTransAvx's partial specialization
  * and explicit instantiation declaration
  */
