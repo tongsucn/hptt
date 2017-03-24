@@ -32,7 +32,7 @@ set(HPTC_CODE_GEN_TRANS_ORDER_MAX_ARG "--order-max")
 set(HPTC_CODE_GEN_TRANS_DTYPE_ARG "--dtype")
 set(HPTC_CODE_GEN_TRANS_COEF_ARG "--coef")
 
-set(HPTC_CODE_GEN_TARGET_DIR "src/gen")
+set(HPTC_CODE_GEN_TARGET_DIR "src/hptc/gen")
 
 
 # ----------------------------------------------------------------------------

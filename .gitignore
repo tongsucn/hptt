@@ -41,8 +41,7 @@ build/
 
 # Project related files
 ttc_implementations/
-inc/hptc/gen
-src/gen
+gen/
 
 # temporaries
 *.swo

@@ -1,7 +1,7 @@
 # Target dependencies setting
 file(GLOB HPTC_KERNEL_SRC kernels/*.cc)
 file(GLOB HPTC_UTIL_SRC util/*.cc)
-file(GLOB HPTC_GENERATED gen/*.cc)
+file(GLOB HPTC_GENERATED hptc/gen/*.cc)
 
 # Shared and static libraries
 add_library(
