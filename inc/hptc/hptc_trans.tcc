@@ -19,12 +19,12 @@ public:
       const DeducedFloatType<FloatType> beta,
       const TensorUInt num_threads, const TensorInt tune_loop_num,
       const TensorInt tune_para_num, const TensorInt heur_loop_num,
-      const TensorInt heur_para_num, const double tuning_timeout,
+      const TensorInt heur_para_num, const double tuning_timeout_ms,
       const std::vector<TensorUInt> &in_outer_size,
       const std::vector<TensorUInt> &out_outer_size)
       : CGraphTransPackBase<FloatType>(in_data, out_data, order, in_size, perm,
         alpha, beta, num_threads, tune_loop_num, tune_para_num, heur_loop_num,
-        heur_para_num, tuning_timeout, in_outer_size, out_outer_size) {
+        heur_para_num, tuning_timeout_ms, in_outer_size, out_outer_size) {
   }
 
   // Copy and move are disabled
@@ -92,12 +92,16 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
 
   // For now, heuristic number will be limited to 640 (loop orders) x 640 (
   // parallelization strategies) candidates.
-  constexpr auto heur_num = 640, tune_num = 0;
+  constexpr auto heur_num = 640;
+
+  // Set auto-tuning amount and convert timeout from second to millisecond.
+  const auto tune_num = 0.0 == tuning_timeout ? 0 : -1;
+  const auto tuning_timeout_ms = tuning_timeout * 1000;
 
   // Create transpose computational graph package
   return new CGraphTransPack<FloatType>(in_data, out_data, order, in_size,
       perm, alpha, beta, num_threads, tune_num, tune_num, heur_num, heur_num,
-      tuning_timeout, in_outer_size, out_outer_size);
+      tuning_timeout_ms, in_outer_size, out_outer_size);
 }
 
 

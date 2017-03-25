@@ -21,8 +21,8 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   std::vector<TensorUInt> size_vec(test_case.size.begin(),
       test_case.size.end());
 
-  auto graph = create_cgraph_trans<FloatType>(
-      data_wrapper.org_in_data, data_wrapper.act_data, ORDER, size_vec, perm,
+  auto graph = create_cgraph_trans<FloatType>(data_wrapper.org_in_data,
+      data_wrapper.act_data, ORDER, size_vec, perm,
       static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
 
   double time_ttc = DBL_MAX, time_hptc = DBL_MAX;

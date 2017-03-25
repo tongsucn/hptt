@@ -2,10 +2,11 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_H_
 #define HPTC_PLAN_PLAN_TRANS_H_
 
+#include <cfloat>
+
 #include <vector>
 #include <memory>
 #include <utility>
-#include <cmath>
 #include <initializer_list>
 
 #include <hptc/types.h>
@@ -27,7 +28,7 @@ public:
       const TensorUInt num_threads,
       const TensorInt tune_loop_num, const TensorInt tune_para_num,
       const TensorInt heur_loop_num, const TensorInt heur_para_num,
-      const double tuning_timeout, const TensorUInt tune_times = 5);
+      const double tuning_timeout_ms, const TensorUInt tune_times = 5);
 
   PlanTrans(const PlanTrans &plan) = delete;
   PlanTrans<ParamType> &operator=(const PlanTrans &plan) = delete;

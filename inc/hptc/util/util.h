@@ -33,14 +33,21 @@ using Enable = typename std::enable_if<COND, Type>::type;
 
 class TimerWrapper {
 public:
-  TimerWrapper(TensorUInt times);
+  TimerWrapper(const TensorUInt times);
 
   template <typename Callable,
             typename... Args>
   INLINE double operator()(Callable &target, Args&&... args);
 
+  void start_countdown(const double timeout);
+  bool is_timeout() const;
+
 private:
-  TensorUInt times_;
+  using Duration_ = std::chrono::duration<double, std::milli>;
+
+  const TensorUInt times_;
+  double timeout_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> countdown_begin_;
 };
 
 

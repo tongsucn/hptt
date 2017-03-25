@@ -33,13 +33,10 @@ CGraphTrans<ParamType> *PlanTrans<ParamType>::get_graph() {
 template <typename ParamType>
 typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
     const std::vector<typename CGraphTrans<ParamType>::Descriptor> &descriptors,
-    const double tuning_timeout, const TensorUInt tune_times) {
+    const double tuning_timeout_ms, const TensorUInt tune_times) {
   auto cand_num = descriptors.size();
   if (1 == cand_num)
     return descriptors[0];
-
-  // Create timer
-  TimerWrapper timer(tune_times);
 
   // Back up coefficients and set identical coefficients for testing
   auto alpha = this->param_->alpha;
@@ -48,12 +45,19 @@ typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
 
   // Measure candidates
   auto best_idx = 0;
+  auto best_time = DBL_MAX;
   CGraphTrans<ParamType> candidate(this->param_, descriptors[best_idx]);
-  auto best_time = timer(candidate);
-  for (auto cand_idx = best_idx + 1; cand_idx < cand_num; ++cand_idx) {
+
+  // Set tuning timeout
+  TimerWrapper timer(tune_times);
+  timer.start_countdown(tuning_timeout_ms);
+  for (auto cand_idx = best_idx; cand_idx < cand_num; ++cand_idx) {
     candidate.init(descriptors[cand_idx]);
     auto new_time = timer(candidate);
-    if (new_time < best_time)
+
+    if (timer.is_timeout())
+      break;  // If timeout, then break
+    else if (new_time < best_time)
       best_idx = cand_idx, best_time = new_time;
   }
 

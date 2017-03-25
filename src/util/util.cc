@@ -1,6 +1,9 @@
 #include <hptc/util/util.h>
 
+#include <cfloat>
+
 #include <vector>
+#include <chrono>
 #include <utility>
 #include <unordered_map>
 
@@ -11,7 +14,24 @@ namespace hptc {
  * Implementation for class TimerWrapper
  */
 TimerWrapper::TimerWrapper(TensorUInt times)
-    : times_(times) {
+    : times_(times),
+      timeout_(-1.0) {
+}
+
+
+void TimerWrapper::start_countdown(const double timeout) {
+  this->timeout_ = timeout;
+  this->countdown_begin_ = std::chrono::high_resolution_clock::now();
+}
+
+
+bool TimerWrapper::is_timeout() const {
+  if (this->timeout_ < 0.0)
+    return false;
+
+  auto duration = std::chrono::duration_cast<Duration_>(
+      std::chrono::high_resolution_clock::now() - this->countdown_begin_);
+  return duration.count() >= this->timeout_ ? true : false;
 }
 
 

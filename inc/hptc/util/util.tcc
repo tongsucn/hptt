@@ -8,22 +8,22 @@
 template <typename Callable,
           typename... Args>
 INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
-  using Duration = std::chrono::duration<double, std::milli>;
-
   if (0 == this->times_)
     return 0.0;
+  else if (this->is_timeout())
+    return -1.0;
 
   double result = DBL_MAX;
-  for (auto idx = 0; idx < this->times_; ++idx) {
+  for (auto idx = 0; idx < this->times_ and not this->is_timeout(); ++idx) {
     auto start = std::chrono::high_resolution_clock::now();
     target(std::forward<Args>(args)...);
-    auto duration = std::chrono::duration_cast<Duration>(
+    auto duration = std::chrono::duration_cast<Duration_>(
         std::chrono::high_resolution_clock::now() - start);
     if (duration.count() < result)
       result = duration.count();
   }
 
-  return result;
+  return DBL_MAX == result ? -1.0 : result;
 }
 
 
