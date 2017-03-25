@@ -5,11 +5,11 @@
 #include <hptc/util/util_trans.h>
 
 // Architecture selection
-// #if defined(HPTC_ARCH_AVX)
+#if defined(HPTC_ARCH_AVX)
 // AVX
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
-/*#elif defined(HPTC_ARCH_AVX2)
+#elif defined(HPTC_ARCH_AVX2)
 // AVX2
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
@@ -17,7 +17,7 @@
 // Common, no specific architecture
 #include <hptc/kernels/common/kernel_trans_common.h>
 
-#endif*/
+#endif
 
 
 namespace hptc {

@@ -18,6 +18,8 @@ find_package(GTest)
 # Setting options
 include(${HPTC_CMAKE_SCRIPT_DIR}/hptc_config.cmake)
 hptc_set_options()
+include(${HPTC_CMAKE_SCRIPT_DIR}/hptc_detect_arch.cmake)
+hptc_detect_arch()
 hptc_set_compiler()
 
 # Call code generation script

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Code generation
+# Code generation configuration
 # ----------------------------------------------------------------------------
 string(CONCAT HPTC_CODE_GEN_SCRIPT_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   "/cmake/pylib")

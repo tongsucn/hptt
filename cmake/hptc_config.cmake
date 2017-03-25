@@ -24,6 +24,12 @@ both, none")
 
 
 # ----------------------------------------------------------------------------
+# Architecture detection variables
+# ----------------------------------------------------------------------------
+set(HPTC_ARCH_TYPE "")
+
+
+# ----------------------------------------------------------------------------
 # Code generation variables
 # ----------------------------------------------------------------------------
 set(HPTC_CODE_GEN_TARGET_DIR_ARG "--target")
@@ -88,5 +94,10 @@ macro(hptc_set_compiler)
   endif ()
   string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " " ${HPTC_CXX_FLAG})
 
-  message("-- Compiler flags: " ${CMAKE_CXX_FLAGS})
+  # Add architecture macro definition
+  if (NOT ${HPTC_ARCH_TYPE} STREQUAL "")
+    string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -D" ${HPTC_ARCH_TYPE})
+  endif ()
+
+  message("-- Compiler flags:" ${CMAKE_CXX_FLAGS})
 endmacro()
