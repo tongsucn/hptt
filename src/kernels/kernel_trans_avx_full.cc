@@ -1,6 +1,5 @@
 #include <hptc/kernels/avx/kernel_trans_avx.h>
 
-#include <xmmintrin.h>
 #include <immintrin.h>
 
 #include <hptc/types.h>
