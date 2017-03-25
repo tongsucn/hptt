@@ -59,7 +59,7 @@ class IncTarget(object):
   TensorType out_tensor(out_size_obj, out_outer_size_obj, out_data);          \\
   PlanTrans<ParamType> plan(std::make_shared<ParamType>(in_tensor, out_tensor,\\
       perm_arr, alpha, beta), num_threads, tune_loop_num, tune_para_num,      \\
-      heur_loop_num, heur_para_num, tuning_timeout);
+      heur_loop_num, heur_para_num, tuning_timeout_ms);
 
 
 template <typename FloatType>
@@ -72,7 +72,7 @@ public:
       const DeducedFloatType<FloatType> beta,
       const TensorUInt num_threads, const TensorInt tune_loop_num,
       const TensorInt tune_para_num, const TensorInt heur_loop_num,
-      const TensorInt heur_para_num, const double tuning_timeout,
+      const TensorInt heur_para_num, const double tuning_timeout_ms,
       const std::vector<TensorUInt> &in_outer_size,
       const std::vector<TensorUInt> &out_outer_size) {
     // Create input size objects
@@ -94,6 +94,9 @@ public:
   ~CGraphTransPackBase() {%s
   }
 
+  constexpr static auto MIN_ORDER = %d;
+  constexpr static auto MAX_ORDER = %d;
+
 protected:
   INLINE void exec_base_() {%s
   }
@@ -109,7 +112,7 @@ private:
 };
 
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(), constructor_content,
-    destructor_content, exec_content, member_content)]
+    destructor_content, orders[0], orders[-1], exec_content, member_content)]
 
 class SrcTarget(object):
   def __init__(self, **kwargs):
