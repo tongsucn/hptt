@@ -4,7 +4,7 @@
 import os, shutil, sys, argparse
 
 from gen_util import (tensor_gen, cgraph_trans_gen, operation_trans_gen,
-    param_trans_gen, plan_trans_util_gen)
+    param_trans_gen, plan_trans_gen, plan_trans_util_gen, hptc_trans_gen)
 from gen_util.gen_types import (FloatType, CoefTrans, FLOAT_MAP, COEF_TRANS_MAP)
 
 
@@ -36,7 +36,9 @@ class GenTarget(object):
         cgraph_trans_gen.IncTarget,
         operation_trans_gen.IncTarget,
         param_trans_gen.IncTarget,
-        plan_trans_util_gen.IncTarget
+        plan_trans_gen.IncTarget,
+        plan_trans_util_gen.IncTarget,
+        hptc_trans_gen.IncTarget
         ]
 
     self.src_targets = [
@@ -44,7 +46,9 @@ class GenTarget(object):
         cgraph_trans_gen.SrcTarget,
         operation_trans_gen.SrcTarget,
         param_trans_gen.SrcTarget,
-        plan_trans_util_gen.SrcTarget
+        plan_trans_gen.SrcTarget,
+        plan_trans_util_gen.SrcTarget,
+        hptc_trans_gen.SrcTarget
         ]
 
   def gen(self):

@@ -7,11 +7,11 @@
  */
 template <typename ParamType>
 PlanTransOptimizer<ParamType>::PlanTransOptimizer(
-    const std::shared_ptr<ParamType> &param, TensorInt tune_loop_num,
-    TensorInt tune_para_num, TensorInt heur_loop_num, TensorInt heur_para_num,
-    TensorUInt thread_num)
+    const std::shared_ptr<ParamType> &param, const TensorUInt num_threads,
+    const TensorInt tune_loop_num, const TensorInt tune_para_num,
+    const TensorInt heur_loop_num, const TensorInt heur_para_num)
     : param_(param->merged_order <= 1 ? nullptr : param),
-      threads_(thread_num),
+      threads_(num_threads),
       in_ld_idx_(this->param_->begin_order_idx),
       out_ld_idx_(this->param_->perm[this->in_ld_idx_] + this->in_ld_idx_),
       th_factor_map_(), avail_parallel_(),

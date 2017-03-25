@@ -51,6 +51,7 @@ class SrcTarget(object):
 
 #include <hptc/types.h>
 #include <hptc/compat.h>
+#include <hptc/tensor.h>
 #include <hptc/util/util_trans.h>
 
 namespace hptc {
@@ -62,9 +63,9 @@ template struct ParamTrans<
     CoefUsageTrans::%s>;
 template struct ParamTrans<
     TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>,
-    CoefUsageTrans::%s>;
-''' % (FLOAT_MAP[dtype].full, order, COEF_TRANS_MAP[coef].full,
-    FLOAT_MAP[dtype].full, order, COEF_TRANS_MAP[coef].full)
+    CoefUsageTrans::%s>;''' % (FLOAT_MAP[dtype].full, order,
+    COEF_TRANS_MAP[coef].full, FLOAT_MAP[dtype].full, order,
+    COEF_TRANS_MAP[coef].full)
 
         temp_content += '\n\n}'
         self.content.append(temp_content)

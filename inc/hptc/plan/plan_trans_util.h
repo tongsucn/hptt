@@ -18,12 +18,20 @@
 #include <hptc/types.h>
 #include <hptc/util/util.h>
 #include <hptc/util/util_trans.h>
-#include <hptc/cgraph/cgraph_trans.h>
-#include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {
 
+/*
+ * Forward declaration
+ */
+template <typename ParamType>
+class CGraphTrans;
+
+
+/*
+ * Definition for class PlanTransOptimizer
+ */
 template <typename ParamType>
 class PlanTransOptimizer {
 public:
@@ -31,8 +39,9 @@ public:
   static constexpr auto ORDER = ParamType::ORDER;
 
   PlanTransOptimizer(const std::shared_ptr<ParamType> &param,
-      TensorInt tune_loop_num, TensorInt tune_para_num, TensorInt heur_loop_num,
-      TensorInt heur_para_num, TensorUInt thread_num);
+      const TensorUInt num_threads, const TensorInt tune_loop_num,
+      const TensorInt tune_para_num, const TensorInt heur_loop_num,
+      const TensorInt heur_para_num);
 
   std::vector<Descriptor> get_optimal() const;
 

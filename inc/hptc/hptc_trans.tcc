@@ -2,135 +2,156 @@
 #ifndef HPTC_HPTC_TRANS_TCC_
 #define HPTC_HPTC_TRANS_TCC_
 
-template <typename FloatType,
-          TensorUInt ORDER>
-CGraphTrans<ParamTrans<TensorWrapper<FloatType, ORDER>>> *
-create_cgraph_trans(const FloatType *in_data, FloatType *out_data,
-    const std::vector<TensorUInt> &in_size, const std::vector<TensorUInt> &perm,
+/*
+ * Implementation for class CGraphTransPack
+ */
+template <typename FloatType>
+class CGraphTransPackBase;
+
+
+template <typename FloatType>
+class CGraphTransPack final : public CGraphTransPackBase<FloatType> {
+public:
+  CGraphTransPack(const FloatType *in_data, FloatType *out_data,
+      const TensorUInt order, const std::vector<TensorUInt> &in_size,
+      const std::vector<TensorUInt> &perm,
+      const DeducedFloatType<FloatType> alpha,
+      const DeducedFloatType<FloatType> beta,
+      const TensorUInt num_threads, const TensorInt tune_loop_num,
+      const TensorInt tune_para_num, const TensorInt heur_loop_num,
+      const TensorInt heur_para_num, const double tuning_timeout,
+      const std::vector<TensorUInt> &in_outer_size,
+      const std::vector<TensorUInt> &out_outer_size)
+      : CGraphTransPackBase<FloatType>(in_data, out_data, order, in_size, perm,
+        alpha, beta, num_threads, tune_loop_num, tune_para_num, heur_loop_num,
+        heur_para_num, tuning_timeout, in_outer_size, out_outer_size) {
+  }
+
+  // Copy and move are disabled
+  CGraphTransPack(const CGraphTransPack &) = delete;
+  CGraphTransPack<FloatType> operator=(const CGraphTransPack &) = delete;
+  CGraphTransPack(CGraphTransPack &&) = delete;
+  CGraphTransPack<FloatType> operator=(CGraphTransPack &&) = delete;
+
+  INLINE void exec() {
+    this->exec_base_();
+  }
+
+  INLINE void operator()() {
+    this->exec_base_();
+  }
+};
+
+
+/*
+ * Implementation for function create_cgraph_trans
+ */
+template <typename FloatType>
+CGraphTransPack<FloatType> *create_cgraph_trans(
+    const FloatType *in_data, FloatType *out_data, const TensorUInt order,
+    const std::vector<TensorUInt> &in_size,
+    const std::vector<TensorUInt> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta,
-    const TensorUInt num_threads, const TensorInt max_num_cand,
-    OuterSize<ORDER> in_outer_size, OuterSize<ORDER> out_outer_size) {
+    const TensorUInt num_threads, const double tuning_timeout,
+    const std::vector<TensorUInt> &in_outer_size,
+    const std::vector<TensorUInt> &out_outer_size) {
   // Guardian
-  // Check template arguments
-  if (ORDER <= 1)
-    return nullptr;
-
   // Check raw data
   if (nullptr == in_data or nullptr == out_data)
     return nullptr;
 
-  // Check permutation array
-  if (ORDER != perm.size())
+  // Check order value
+  if (order <= 1)
     return nullptr;
-  std::array<TensorUInt, ORDER> perm_arr;
-  std::copy(perm.begin(), perm.end(), perm_arr.begin());
 
-  std::array<bool, ORDER> perm_verify_map;
-  perm_verify_map.fill(false);
+  // Check tensor sizes
+  if (order != in_size.size() or
+      (not in_outer_size.empty() and order != in_outer_size.size()) or
+      (not out_outer_size.empty() and order != out_outer_size.size()))
+    return nullptr;
+
+  // Check outer size values
+  for (auto order_idx = 0; order_idx < order; ++order_idx)
+    if (0 == in_size[order_idx] or (not in_outer_size.empty() and
+        in_outer_size[order_idx] < in_size[order_idx]) or
+            (not out_outer_size.empty() and
+            out_outer_size[perm[order_idx]] < in_size[order_idx]))
+      return nullptr;
+
+  // Check permutation array
+  if (order != perm.size())
+    return nullptr;
+  std::vector<bool> perm_verify_map(order, false);
   for (auto order_idx : perm) {
-    if (order_idx >= ORDER or perm_verify_map[order_idx])
+    if (order_idx >= order or perm_verify_map[order_idx])
       return nullptr;
     else
       perm_verify_map[order_idx] = true;
   }
 
-  // Check tensor sizes
-  auto &in_outer_size_vec = in_outer_size.first;
-  auto &out_outer_size_vec = out_outer_size.first;
-  if (ORDER != in_size.size() or
-      (not in_outer_size_vec.empty() and ORDER != in_outer_size_vec.size()) or
-      (not out_outer_size_vec.empty() and ORDER != out_outer_size_vec.size()))
-    return nullptr;
+  // For now, heuristic number will be limited to 640 (loop orders) x 640 (
+  // parallelization strategies) candidates.
+  constexpr auto heur_num = 640, tune_num = 0;
 
-  // Check outer size values
-  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
-    if (0 == in_size[order_idx] or (not in_outer_size_vec.empty() and
-        in_outer_size_vec[order_idx] < in_size[order_idx]) or
-            (not out_outer_size_vec.empty() and
-            out_outer_size_vec[perm[order_idx]] < in_size[order_idx]))
-      return nullptr;
-
-  // Check size offset
-  if (not in_outer_size_vec.empty()) {
-    if (ORDER != in_outer_size.second.size() or
-        not in_outer_size.second.empty())
-      return nullptr;
-    for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
-      if (in_outer_size.second[order_idx] + in_size[order_idx]
-          > in_outer_size_vec[order_idx])
-        return nullptr;
-  }
-
-  if (not out_outer_size_vec.empty()) {
-    if (ORDER != out_outer_size.second.size() or
-        not out_outer_size.second.empty())
-      return nullptr;
-    for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
-      if (out_outer_size.second[order_idx] + in_size[perm[order_idx]]
-          > out_outer_size_vec[order_idx])
-        return nullptr;
-  }
-
-
-  // Create transpose plan
-  // Create input size objects
-  std::array<TensorIdx, ORDER> in_offset, out_offset;
-  std::array<TensorIdx, ORDER> in_size_ext, in_outer_size_ext;
-  std::copy(in_size.begin(), in_size.end(), in_size_ext.begin());
-  if (0 == in_outer_size_vec.size())
-    in_outer_size_ext = in_size_ext;
-  else {
-    std::copy(in_outer_size_vec.begin(), in_outer_size_vec.end(),
-        in_outer_size_ext.begin());
-    if (in_outer_size.second.empty())
-      in_offset.fill(0);
-    else
-      std::copy(in_outer_size.second.begin(), in_outer_size.second.end(),
-          in_offset.begin());
-  }
-  TensorSize<ORDER> in_size_obj(in_size_ext),
-      in_outer_size_obj(in_outer_size_ext);
-
-  // Create output size objects
-  std::array<TensorIdx, ORDER> out_size_ext, out_outer_size_ext;
-  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
-    out_size_ext[order_idx] = in_size_ext[perm[order_idx]];
-  if (0 == out_outer_size_vec.size())
-    out_outer_size_ext = out_size_ext;
-  else {
-    std::copy(out_outer_size_vec.begin(), out_outer_size_vec.end(),
-        out_outer_size_ext.begin());
-    if (out_outer_size.second.empty())
-      out_offset.fill(0);
-    else
-      std::copy(out_outer_size.second.begin(), out_outer_size.second.end(),
-          out_offset.begin());
-  }
-  TensorSize<ORDER> out_size_obj(out_size_ext),
-      out_outer_size_obj(out_outer_size_ext);
-
-  // Create tensors
-  using TensorType = TensorWrapper<FloatType, ORDER>;
-  const TensorType in_tensor(in_size_obj, in_outer_size_obj, in_data);
-  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_data);
-
-  // Create parameter
-  using ParamType = ParamTrans<TensorType>;
-  auto param = std::make_shared<ParamType>(in_tensor, out_tensor, perm_arr,
-      alpha, beta);
-
-  // Create plan, all heuristics will be generated here
-  auto tune_num = max_num_cand < 0 ? -1
-      : static_cast<TensorIdx>(std::sqrt(max_num_cand));
-  // For now, with this function the library will not generate more than 640
-  // (loop order) x 640 (parallelization strategy) candidates
-  const TensorIdx heur_num = 640;
-  PlanTrans<ParamType> plan(param, tune_num, heur_num, tune_num, heur_num,
-      num_threads);
-
-  auto graph =  plan.get_graph();
-  return graph;
+  // Create transpose computational graph package
+  return new CGraphTransPack<FloatType>(in_data, out_data, order, in_size,
+      perm, alpha, beta, num_threads, tune_num, tune_num, heur_num, heur_num,
+      tuning_timeout, in_outer_size, out_outer_size);
 }
+
+
+/*
+ * Import implementations of class CGraphTransPack, this file should be
+ * generated by cmake script.
+ */
+#include <hptc/gen/hptc_trans_gen.tcc>
+
+
+/*
+ * Explicit extern template instantiation declaration for class
+ * CGraphTransPackBase
+ */
+extern template class CGraphTransPackBase<float>;
+extern template class CGraphTransPackBase<double>;
+extern template class CGraphTransPackBase<FloatComplex>;
+extern template class CGraphTransPackBase<DoubleComplex>;
+
+
+/*
+ * Explicit extern template instantiation declaration for class CGraphTransPack
+ */
+extern template class CGraphTransPack<float>;
+extern template class CGraphTransPack<double>;
+extern template class CGraphTransPack<FloatComplex>;
+extern template class CGraphTransPack<DoubleComplex>;
+
+
+/*
+ * Explicit extern template instantiation declaration for function
+ * create_cgraph_trans
+ */
+extern template CGraphTransPack<float> *create_cgraph_trans<float>(
+    const float *, float *, const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<float>,
+    const DeducedFloatType<float>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPack<double> *create_cgraph_trans<double>(
+    const double *, double *, const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<double>,
+    const DeducedFloatType<double>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPack<FloatComplex> *
+create_cgraph_trans<FloatComplex>(const FloatComplex *, FloatComplex *,
+    const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
+    const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPack<DoubleComplex> *
+create_cgraph_trans<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
+    const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,
+    const DeducedFloatType<DoubleComplex>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
 
 #endif // HPTC_HPTC_TRANS_TCC_

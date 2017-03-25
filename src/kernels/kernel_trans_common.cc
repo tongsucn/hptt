@@ -32,8 +32,9 @@ void KernelTransCommon<FloatType, USAGE, TYPE>:: operator()(
   // Get number of elements to be processed in on row
   constexpr auto KN_WIDTH = KernelTransCommonBase<FloatType, TYPE>::kn_width;
 
-#pragma omp simd collapse(2)
+#pragma unroll_and_jam(KN_WIDTH)
   for (auto ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
+#pragma unroll_and_jam(KN_WIDTH)
     for (auto cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
       const auto input_idx = cont_idx + ncont_idx * input_stride,
             output_idx = ncont_idx + cont_idx * output_stride;
