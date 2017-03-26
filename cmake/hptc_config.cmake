@@ -82,16 +82,18 @@ endmacro()
 macro(hptc_set_compiler)
   # For now, we support only Intel compiler (version 16+)
   set(HPTC_CXX_FLAG "-Wall -Werror -std=c++14")
+  set(HPTC_DEBUG_FLAG "-O0 -g")
+  set(HPTC_RELEASE_FLAG "-O3 -DNDEBUG")
+
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -qopenmp -xhost")
+    string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG} " -debug full")
   elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -fopenmp -march=native")
+    string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG} " -ggdb")
   else ()
     message(FATAL_ERROR "!! Unrecognized compiler: " ${CMAKE_CXX_COMPILER_ID})
   endif ()
-
-  set(HPTC_DEBUG_FLAG "-O0 -g")
-  set(HPTC_RELEASE_FLAG "-O3 -DNDEBUG")
 
   if (${HPTC_BUILD_DEBUG})
     # Use debug configurations.
