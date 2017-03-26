@@ -16,17 +16,17 @@ using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_FULL>;
  * Implementation for class KernelTransAvx
  */
 template <CoefUsageTrans USAGE>
-RegType<float> KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::
-reg_coef(const DeducedFloatType<float> coef) {
+INLINE RegType<float>
+KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
+    const DeducedFloatType<float> coef) {
   return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
-void KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::
-operator()(const float * RESTRICT input_data,
-    float * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride, const RegType &reg_alpha,
-    const RegType &reg_beta) const {
+INLINE void KernelTransAvx<float, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+    const float * RESTRICT input_data, float * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) {
   // Load input data into registers
   __m256 reg_input[8];
   reg_input[0] = _mm256_loadu_ps(input_data);
@@ -129,17 +129,17 @@ operator()(const float * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
-RegType<double> KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::
-reg_coef(const DeducedFloatType<double> coef) {
+INLINE RegType<double>
+KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
+    const DeducedFloatType<double> coef) {
   return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
-void KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::
-operator()(const double * RESTRICT input_data,
-    double * RESTRICT output_data, const TensorIdx input_stride,
-    const TensorIdx output_stride, const RegType &reg_alpha,
-    const RegType &reg_beta) const {
+INLINE void KernelTransAvx<double, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+    const double * RESTRICT input_data, double * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) {
   // Load input data into registers
   __m256d reg_input[4];
   reg_input[0] = _mm256_loadu_pd(input_data);
@@ -200,18 +200,19 @@ operator()(const double * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
-RegType<FloatComplex>
-KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-reg_coef(const DeducedFloatType<FloatComplex> coef) {
+INLINE RegType<FloatComplex>
+KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
+    const DeducedFloatType<FloatComplex> coef) {
   return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
-void KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-operator()(const FloatComplex * RESTRICT input_data,
+INLINE void
+KernelTransAvx<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+    const FloatComplex * RESTRICT input_data,
     FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride, const RegType &reg_alpha,
-    const RegType &reg_beta) const {
+    const RegType &reg_beta) {
   // Load input data into registers
   __m256 reg_input[4];
   reg_input[0] = _mm256_loadu_ps(reinterpret_cast<const float *>(input_data));
@@ -282,18 +283,19 @@ operator()(const FloatComplex * RESTRICT input_data,
 
 
 template <CoefUsageTrans USAGE>
-RegType<DoubleComplex>
-KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-reg_coef(const DeducedFloatType<DoubleComplex> coef) {
+INLINE RegType<DoubleComplex>
+KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
+    const DeducedFloatType<DoubleComplex> coef) {
   return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
-void KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::
-operator()(const DoubleComplex * RESTRICT input_data,
+INLINE void
+KernelTransAvx<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+    const DoubleComplex * RESTRICT input_data,
     DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
     const TensorIdx output_stride, const RegType &reg_alpha,
-    const RegType &reg_beta) const {
+    const RegType &reg_beta) {
   // Load input data into registers
   __m256d reg_input[2];
   reg_input[0] = _mm256_loadu_pd(reinterpret_cast<const double *>(input_data));

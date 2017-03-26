@@ -96,7 +96,7 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
     const RegType &reg_alpha, const RegType &reg_beta) const {
   this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
       input_stride, output_stride, reg_alpha, reg_beta);
-  this->kernel_(input_data + CONT * KernelFunc::kn_width
+  KernelFunc::exec(input_data + CONT * KernelFunc::kn_width
           + NCONT * KernelFunc::kn_width * input_stride,
       output_data + NCONT * KernelFunc::kn_width
           + CONT * KernelFunc::kn_width * output_stride,
@@ -114,7 +114,7 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
     typename KernelFunc::Float * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const RegType &reg_alpha, const RegType &reg_beta) const {
-  this->kernel_(input_data + NCONT * KernelFunc::kn_width * input_stride,
+  KernelFunc::exec(input_data + NCONT * KernelFunc::kn_width * input_stride,
       output_data + NCONT * KernelFunc::kn_width, input_stride, output_stride,
       reg_alpha, reg_beta);
 }

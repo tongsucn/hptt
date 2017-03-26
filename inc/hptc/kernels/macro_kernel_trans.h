@@ -52,8 +52,6 @@ private:
       const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride,
       const RegType &reg_alpha, const RegType &reg_beta) const;
-
-  KernelFunc kernel_;
 };
 
 

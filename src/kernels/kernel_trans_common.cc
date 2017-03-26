@@ -15,7 +15,7 @@ namespace hptc {
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-DeducedRegType<FloatType, TYPE>
+INLINE DeducedRegType<FloatType, TYPE>
 KernelTransCommon<FloatType, USAGE, TYPE>:: reg_coef(
     const DeducedFloatType<FloatType> coef) {
   return coef;
@@ -25,16 +25,14 @@ KernelTransCommon<FloatType, USAGE, TYPE>:: reg_coef(
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-void KernelTransCommon<FloatType, USAGE, TYPE>:: operator()(
+INLINE void KernelTransCommon<FloatType, USAGE, TYPE>::exec(
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) const {
+    const RegType &reg_alpha, const RegType &reg_beta) {
   // Get number of elements to be processed in on row
   constexpr auto KN_WIDTH = KernelTransCommonBase<FloatType, TYPE>::kn_width;
 
-#pragma unroll_and_jam(KN_WIDTH)
   for (auto ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
-#pragma unroll_and_jam(KN_WIDTH)
     for (auto cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
       const auto input_idx = cont_idx + ncont_idx * input_stride,
             output_idx = ncont_idx + cont_idx * output_stride;

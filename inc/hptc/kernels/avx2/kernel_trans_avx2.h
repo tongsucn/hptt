@@ -78,6 +78,7 @@ template <typename FloatType,
 struct KernelTransAvx2Base {
   using Float = FloatType;
   using RegType = DeducedRegType<FloatType, TYPE>;
+  constexpr KernelTransAvx2Base() = default;
 
   static constexpr TensorUInt kn_width = KernelTypeTrans::KERNEL_FULL == TYPE
       ? REG_SIZE_BYTE_AVX2 / sizeof(FloatType)
@@ -90,14 +91,14 @@ template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
 struct KernelTransAvx2 final : public KernelTransAvx2Base<FloatType, TYPE> {
-  using RegType = DeducedRegType<FloatType, TYPE>;
+  using RegType = typename KernelTransAvx2Base<FloatType, TYPE>::RegType;
 
   static RegType reg_coef(const DeducedFloatType<FloatType> coef);
 
-  void operator()(const FloatType * RESTRICT input_data,
+  static void exec(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
       const TensorIdx output_stride, const RegType &reg_alpha,
-      const RegType &reg_beta) const;
+      const RegType &reg_beta);
 };
 
 
