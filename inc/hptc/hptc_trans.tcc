@@ -92,7 +92,7 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
 
   // For now, heuristic number will be limited to 640 (loop orders) x 640 (
   // parallelization strategies) candidates.
-  constexpr auto heur_num = 640;
+  constexpr auto heur_num = 64;
 
   // Set auto-tuning amount and convert timeout from second to millisecond.
   const auto tune_num = 0.0 == tuning_timeout ? 0 : -1;
