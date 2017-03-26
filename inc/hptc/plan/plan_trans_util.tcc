@@ -146,7 +146,7 @@ void PlanTransOptimizer<ParamType>::init_loop_rule_() {
 
   // Set loop order
   this->loop_order_candidates_.emplace_back();
-  for (auto loop_idx = 0; loop_idx < ORDER; ++loop_idx)
+  for (TensorUInt loop_idx = 0; loop_idx < ORDER; ++loop_idx)
     this->loop_order_candidates_.back()[loop_idx] = scores[loop_idx].first;
 }
 
@@ -162,7 +162,7 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_(
 
   // Create initial loop order
   LoopOrderTrans<ORDER> loop_order;
-  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
+  for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
     loop_order[order_idx] = order_idx;
   std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
       best_heap(heap_cmp);
@@ -178,7 +178,7 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_(
           loop_order.begin() + this->in_ld_idx_, loop_order.end())) {
     // Update best heap
     auto new_cost = this->heur_loop_evaluator_(loop_order);
-    if (tune_num < 0 or tune_num > best_heap.size())
+    if (tune_num < 0 or tune_num > static_cast<TensorInt>(best_heap.size()))
       best_heap.emplace(new_cost, loop_order);
     else if (best_heap.top().first > new_cost) {
         best_heap.pop();
@@ -315,7 +315,7 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
 
     // Assign threads factors to all loops as many as possible, large prime
     // factors may not be taken into account here
-    auto non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
+    TensorUInt non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
         this->avail_parallel_.end(), 1, std::multiplies<TensorUInt>());
     auto rest_factors = hptc::flat_map(factor_map);
     std::sort(rest_factors.begin(), rest_factors.end());
@@ -358,7 +358,7 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
         loops[0].size /= factor, loops[0].th_num *= factor;
     }
 
-    TensorUInt cont_assigned, ncont_assigned;
+    TensorUInt cont_assigned = 1, ncont_assigned = 1;
     for (auto &loop : loops) {
       if (this->in_ld_idx_ == loop.loop_idx)
         cont_assigned = loop.th_num;
@@ -610,7 +610,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_general_() {
   // Dealing with large prime factors
   TensorUInt rest_threads = 1, rest_avail = 1;
   for (auto kv : factor_map)
-    for (auto freq = 0; freq < kv.second; ++freq)
+    for (TensorUInt freq = 0; freq < kv.second; ++freq)
       rest_threads *= kv.first;
   for (auto &loop : loop_strategies)
     rest_avail *= loop.size;
@@ -688,7 +688,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_common_leading_() {
   // Dealing with large prime factors
   TensorUInt rest_threads = 1;
   for (auto kv : factor_map)
-    for (auto freq = 0; freq < kv.second; ++freq)
+    for (TensorUInt freq = 0; freq < kv.second; ++freq)
       rest_threads *= kv.first;
 
   if (rest_threads >= rest_avail) {
@@ -744,7 +744,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_heur_(
   for (auto order_idx = this->in_ld_idx_; order_idx < ORDER; ++order_idx)
     if (this->avail_parallel_[order_idx] > 1)
       loop_bins.emplace_back(order_idx, this->avail_parallel_[order_idx]);
-  const auto bin_num = static_cast<TensorUInt>(loop_bins.size());
+  const auto bin_num = static_cast<TensorInt>(loop_bins.size());
 
   // Data structure for describing a thread factor's position
   struct FactorPos {
@@ -822,7 +822,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_heur_(
 
         // Calculate cost and push into best heap
         auto new_cost = this->heur_parallel_evaluator_(strategy);
-        if (tune_num < 0 or tune_num > best_heap.size())
+        if (tune_num < 0 or tune_num > static_cast<TensorInt>(best_heap.size()))
           best_heap.emplace(new_cost, strategy);
         else if (best_heap.top().first > new_cost) {
           best_heap.pop();
@@ -843,7 +843,7 @@ void PlanTransOptimizer<ParamType>::init_parallel_heur_(
     best_heap.pop();
 
     // Multiply with template descriptor's parallelization strategy
-    for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
+    for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
       this->parallel_strategy_candidates_.back()[order_idx]
           *= this->template_descriptor_.parallel_strategy[order_idx];
   }
@@ -873,7 +873,7 @@ double PlanTransOptimizer<ParamType>::heur_loop_evaluator_(
 
   // Compute target loop order's costs
   double loop_cost = 0.0, importance = this->heur_loop_importance_begin;
-  for (auto order_idx = 0; order_idx < merged_order;
+  for (TensorUInt order_idx = 0; order_idx < merged_order;
       ++order_idx, importance *= this->heur_loop_importance_scale) {
     auto input_order_loop_pos = target_map[order_idx];
     auto abs_idx = order_idx + this->in_ld_idx_;
@@ -943,8 +943,8 @@ PlanTransOptimizer<ParamType>::gen_candidates_() const {
       auto &des = candidates.back().description;
 
       // Calculate actual thread number and resize description
-      const auto threads = std::accumulate(strategy.begin(), strategy.end(), 1,
-          std::multiplies<TensorUInt>());
+      const TensorUInt threads = std::accumulate(strategy.begin(),
+          strategy.end(), 1, std::multiplies<TensorUInt>());
       des.resize(threads, des[0]);
 
       // Parallelize
@@ -988,13 +988,13 @@ PlanTransOptimizer<ParamType>::gen_candidates_() const {
 
           // Assign rest index in loop to threads
           std::vector<TensorIdx> begins(threads), ends(threads);
-          for (auto off = 0; off < threads; off += left_threads) {
+          for (TensorUInt off = 0; off < threads; off += left_threads) {
             std::copy(unit_begins.begin(), unit_begins.end(),
                 begins.begin() + off);
             std::copy(unit_ends.begin(), unit_ends.end(), ends.begin() + off);
           }
 
-          for (auto th_idx = 0; th_idx < threads; ++th_idx) {
+          for (TensorUInt th_idx = 0; th_idx < threads; ++th_idx) {
             des[th_idx][kn_idx].loop_begin[loop_idx] = begins[th_idx];
             des[th_idx][kn_idx].loop_end[loop_idx] = ends[th_idx];
             des[th_idx][kn_idx].loop_step[loop_idx]

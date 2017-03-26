@@ -2,12 +2,13 @@
 #ifndef HPTC_COMPAT_H_
 #define HPTC_COMPAT_H_
 
+// Force inline
 #if defined(__INTEL_COMPILER)
-  #define INLINE __forceinline
+  #define HPTC_INL __forceinline
 #elif defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
-  #define INLINE __attribute__((always_inline))
+  #define HPTC_INL inline
 #else
-  #define INLINE inline
+  #define HPTC_INL inline
 #endif
 
 

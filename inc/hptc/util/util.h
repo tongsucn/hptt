@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 
 
 namespace hptc {
@@ -37,7 +38,7 @@ public:
 
   template <typename Callable,
             typename... Args>
-  INLINE double operator()(Callable &target, Args&&... args);
+  HPTC_INL double operator()(Callable &target, Args&&... args);
 
   void start_countdown(const double timeout);
   bool is_timeout() const;
@@ -53,7 +54,7 @@ private:
 
 template <typename ValType>
 struct ModCmp {
-  INLINE bool operator()(const ValType &first, const ValType &second);
+  HPTC_INL bool operator()(const ValType &first, const ValType &second);
 };
 
 

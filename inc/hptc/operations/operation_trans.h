@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/util/util.h>
 #include <hptc/util/util_trans.h>
 
@@ -23,14 +24,14 @@ public:
   OpForTrans(const OpForTrans &loop_data) = delete;
   OpForTrans<ORDER> &operator=(const OpForTrans &loop_data) = delete;
 
-  INLINE void init(const LoopOrderTrans<ORDER> &loop_order,
+  HPTC_INL void init(const LoopOrderTrans<ORDER> &loop_order,
       const LoopParamTrans<ORDER> &loops, const TensorUInt begin_order_idx,
       const std::array<TensorUInt, ORDER> &perm);
 
   template <typename MacroType,
             typename TensorType,
             typename RegType>
-  INLINE void operator()(MacroType &macro_kernel,
+  HPTC_INL void operator()(const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
       const TensorIdx input_stride, const TensorIdx output_stride,
       const RegType &reg_alpha, const RegType &reg_beta);
@@ -46,14 +47,14 @@ private:
             typename TensorType,
             typename RegType,
             TensorUInt UNROLL_NUM>
-  INLINE void unroller_(GenCounter<UNROLL_NUM>, MacroType &macro_kernel,
+  HPTC_INL void unroller_(GenCounter<UNROLL_NUM>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
       const TensorIdx input_stride, const TensorIdx output_stride,
       const RegType &reg_alpha, const RegType &reg_beta);
   template <typename MacroType,
             typename TensorType,
             typename RegType>
-  INLINE void unroller_(GenCounter<0>, MacroType &macro_kernel,
+  HPTC_INL void unroller_(GenCounter<0>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
       const TensorIdx input_stride, const TensorIdx output_stride,
       const RegType &reg_alpha, const RegType &reg_beta);

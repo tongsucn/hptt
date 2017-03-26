@@ -22,8 +22,8 @@ public:
 
   bool operator==(const TensorSize<ORDER> &size_obj) const;
 
-  INLINE TensorIdx &operator[](TensorUInt order);
-  INLINE const TensorIdx &operator[](TensorUInt order) const;
+  TensorIdx &operator[](TensorUInt order);
+  const TensorIdx &operator[](TensorUInt order) const;
 
 private:
   TensorIdx size_[ORDER];
@@ -35,7 +35,7 @@ template <typename FloatType,
           MemLayout LAYOUT = MemLayout::COL_MAJOR>
 class TensorWrapper {
 public:
-  using FloatType = FloatType;
+  using Float = FloatType;
   constexpr static auto TENSOR_ORDER = ORDER;
 
   TensorWrapper();
@@ -48,24 +48,24 @@ public:
   TensorWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
 
   template <typename... Idx>
-  INLINE FloatType &operator()(Idx... indices);
+  FloatType &operator()(Idx... indices);
 
-  INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
-  INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
+  FloatType &operator[](const TensorIdx * RESTRICT indices);
+  const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
 
-  INLINE const TensorSize<ORDER> &get_size() const;
-  INLINE const TensorSize<ORDER> &get_outer_size() const;
-  INLINE FloatType *get_data();
-  INLINE const FloatType *get_data() const;
+  const TensorSize<ORDER> &get_size() const;
+  const TensorSize<ORDER> &get_outer_size() const;
+  FloatType *get_data();
+  const FloatType *get_data() const;
 
 protected:
   // Internal function member
-  INLINE void init_strides_();
+  void init_strides_();
 
   template <typename... Idx>
-  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset,
+  FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset,
       TensorIdx next_idx, Idx... idx);
-  INLINE FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset);
+  FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset);
 
   // Internal data member
   TensorSize<ORDER> size_;

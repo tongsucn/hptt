@@ -33,11 +33,11 @@ public:
   CGraphTransPack(CGraphTransPack &&) = delete;
   CGraphTransPack<FloatType> operator=(CGraphTransPack &&) = delete;
 
-  INLINE void exec() {
+  HPTC_INL void exec() {
     this->exec_base_();
   }
 
-  INLINE void operator()() {
+  HPTC_INL void operator()() {
     this->exec_base_();
   }
 };
@@ -72,7 +72,7 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
     return nullptr;
 
   // Check outer size values
-  for (auto order_idx = 0; order_idx < order; ++order_idx)
+  for (TensorUInt order_idx = 0; order_idx < order; ++order_idx)
     if (0 == in_size[order_idx] or (not in_outer_size.empty() and
         in_outer_size[order_idx] < in_size[order_idx]) or
             (not out_outer_size.empty() and
@@ -83,7 +83,7 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
   if (order != perm.size())
     return nullptr;
   std::vector<bool> perm_verify_map(order, false);
-  for (auto order_idx : perm) {
+  for (TensorUInt order_idx : perm) {
     if (order_idx >= order or perm_verify_map[order_idx])
       return nullptr;
     else

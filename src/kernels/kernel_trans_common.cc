@@ -4,6 +4,7 @@
 #include <immintrin.h>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/util/util_trans.h>
 
 
@@ -15,7 +16,7 @@ namespace hptc {
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-INLINE DeducedRegType<FloatType, TYPE>
+HPTC_INL DeducedRegType<FloatType, TYPE>
 KernelTransCommon<FloatType, USAGE, TYPE>:: reg_coef(
     const DeducedFloatType<FloatType> coef) {
   return coef;
@@ -25,15 +26,15 @@ KernelTransCommon<FloatType, USAGE, TYPE>:: reg_coef(
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-INLINE void KernelTransCommon<FloatType, USAGE, TYPE>::exec(
+HPTC_INL void KernelTransCommon<FloatType, USAGE, TYPE>::exec(
     const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const RegType &reg_alpha, const RegType &reg_beta) {
   // Get number of elements to be processed in on row
   constexpr auto KN_WIDTH = KernelTransCommonBase<FloatType, TYPE>::kn_width;
 
-  for (auto ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
-    for (auto cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
+  for (TensorUInt ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
+    for (TensorUInt cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
       const auto input_idx = cont_idx + ncont_idx * input_stride,
             output_idx = ncont_idx + cont_idx * output_stride;
       if (CoefUsageTrans::USE_BOTH == USAGE)

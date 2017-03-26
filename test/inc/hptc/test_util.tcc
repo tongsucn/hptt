@@ -36,7 +36,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorIdx> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (auto in_idx = 0; in_idx < inner_; ++in_idx) {
+      for (TensorUInt in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = this->dist_(this->gen_);
         org_out_ptr[in_idx] = this->dist_(this->gen_);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -52,7 +52,7 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorIdx> &size,
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
       auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
       auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
-      for (auto in_idx = 0; in_idx < inner_; ++in_idx) {
+      for (TensorUInt in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = static_cast<Deduced_>(idx);
         org_out_ptr[in_idx] = static_cast<Deduced_>(idx);
         ref_ptr[in_idx] = org_out_ptr[in_idx];
@@ -113,7 +113,7 @@ TensorInt DataWrapper<FloatType>::verify(
   for (TensorIdx idx = 0; idx < data_len; ++idx) {
     auto deduced_ref = reinterpret_cast<const Deduced *>(&ref_data[idx]);
     auto deduced_act = reinterpret_cast<const Deduced *>(&act_data[idx]);
-    for (auto in_idx = 0; in_idx < inner; ++in_idx) {
+    for (TensorUInt in_idx = 0; in_idx < inner; ++in_idx) {
       double ref_abs = std::abs(static_cast<double>(deduced_ref[in_idx]));
       double act_abs = std::abs(static_cast<double>(deduced_act[in_idx]));
       double max_abs = std::max(ref_abs, act_abs);

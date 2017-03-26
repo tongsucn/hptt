@@ -8,8 +8,6 @@ template <typename FloatType,
           TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   using Deduced = DeducedFloatType<FloatType>;
-  using TensorType = TensorWrapper<FloatType, ORDER>;
-  using Param = ParamTrans<TensorType, USAGE>;
 
   // Prepare data and timer
   DataWrapper<FloatType> data_wrapper(test_case.size);

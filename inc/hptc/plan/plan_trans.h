@@ -33,8 +33,6 @@ public:
   PlanTrans(const PlanTrans &plan) = delete;
   PlanTrans<ParamType> &operator=(const PlanTrans &plan) = delete;
 
-  ~PlanTrans() = default;
-
   CGraphTrans<ParamType> *get_graph();
 
 private:

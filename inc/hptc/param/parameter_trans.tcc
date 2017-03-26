@@ -19,10 +19,10 @@ TensorMergedWrapper<FloatType, ORDER>::TensorMergedWrapper(
 
 template <typename FloatType,
           TensorUInt ORDER>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
+HPTC_INL FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
-  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+  for (TensorUInt idx = this->begin_order_idx_; idx < ORDER; ++idx)
     abs_offset += indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
@@ -30,10 +30,10 @@ INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
 
 template <typename FloatType,
           TensorUInt ORDER>
-INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
+HPTC_INL const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
-  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+  for (TensorUInt idx = this->begin_order_idx_; idx < ORDER; ++idx)
     abs_offset += indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
@@ -41,10 +41,10 @@ INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
 
 template <typename FloatType,
           TensorUInt ORDER>
-INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
+HPTC_INL FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     TensorIdx **indices) {
   TensorIdx abs_offset = 0;
-  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+  for (TensorUInt idx = this->begin_order_idx_; idx < ORDER; ++idx)
     abs_offset += *indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
@@ -52,10 +52,10 @@ INLINE FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
 
 template <typename FloatType,
           TensorUInt ORDER>
-INLINE const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
+HPTC_INL const FloatType &TensorMergedWrapper<FloatType, ORDER>::operator[](
     const TensorIdx **indices) const {
   TensorIdx abs_offset = 0;
-  for (auto idx = this->begin_order_idx_; idx < ORDER; ++idx)
+  for (TensorUInt idx = this->begin_order_idx_; idx < ORDER; ++idx)
     abs_offset += *indices[idx] * this->strides_[idx];
   return this->raw_data_[abs_offset];
 }
@@ -84,11 +84,11 @@ TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
   // Merge strides
   this->begin_order_idx_ = ORDER - merge_set.size();
   this->strides_[this->begin_order_idx_] = 1;
-  for (auto idx = this->begin_order_idx_; idx < ORDER - 1; ++idx)
+  for (TensorUInt idx = this->begin_order_idx_; idx < ORDER - 1; ++idx)
     this->strides_[idx + 1] = this->outer_size_[idx] * this->strides_[idx];
 
   // Fill in unused part
-  for (auto idx = 0; idx < this->begin_order_idx_; ++idx) {
+  for (TensorUInt idx = 0; idx < this->begin_order_idx_; ++idx) {
     this->size_[idx] = 1;
     this->outer_size_[idx] = 1;
   }
@@ -105,37 +105,32 @@ template <typename TensorType,
           CoefUsageTrans USAGE>
 ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
     TensorType &output_tensor, const std::array<TensorUInt, ORDER> &perm,
-    const DeducedFloatType<typename TensorType::FloatType> alpha,
-    const DeducedFloatType<typename TensorType::FloatType> beta)
+    const DeducedFloatType<typename TensorType::Float> alpha,
+    const DeducedFloatType<typename TensorType::Float> beta)
     : input_merge_set_(), output_merge_set_(),
       perm(perm), alpha(alpha), beta(beta),
+      reg_alpha_full(KernelPack::reg_coef_full(alpha)),
+      reg_beta_full(KernelPack::reg_coef_full(beta)),
+      reg_alpha_half(KernelPack::reg_coef_half(alpha)),
+      reg_beta_half(KernelPack::reg_coef_half(beta)),
+      reg_alpha_linear(KernelPack::reg_coef_linear(alpha)),
+      reg_beta_linear(KernelPack::reg_coef_linear(beta)),
       input_stride(1), output_stride(1),
       merged_order(this->merge_idx_(perm)),
       input_tensor(input_tensor, this->input_merge_set_),
       output_tensor(output_tensor, this->output_merge_set_),
-      kn(KernelPackTrans<FloatType, USAGE>::get_package()) {
-  // Initialize registers
-  using FloatType = typename TensorType::FloatType;
-  using KernelPack = KernelPackTrans<FloatType, USAGE>;
-
-  this->reg_alpha_full = KernelPack::reg_coef_full(this->alpha);
-  this->reg_beta_full = KernelPack::reg_coef_full(this->beta);
-  this->reg_alpha_half = KernelPack::reg_coef_half(this->alpha);
-  this->reg_beta_half = KernelPack::reg_coef_half(this->beta);
-  this->reg_alpha_linear = KernelPack::reg_coef_linear(this->alpha);
-  this->reg_beta_linear = KernelPack::reg_coef_linear(this->beta);
-
+      kn(KernelPackTrans<typename TensorType::Float, USAGE>::get_package()) {
   // Initialize access strides
-  for (auto idx = 0; idx < perm[0]; ++idx)
+  for (TensorUInt idx = 0; idx < perm[0]; ++idx)
     this->input_stride *= input_tensor.get_outer_size()[idx];
-  for (auto idx = 0; 0 != perm[idx]; ++idx)
+  for (TensorUInt idx = 0; 0 != perm[idx]; ++idx)
     this->output_stride *= output_tensor.get_outer_size()[idx];
 }
 
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() const {
+HPTC_INL bool ParamTrans<TensorType, USAGE>::is_common_leading() const {
   if (0 == this->perm[this->begin_order_idx])
     return true;
   return false;
@@ -144,7 +139,7 @@ INLINE bool ParamTrans<TensorType, USAGE>::is_common_leading() const {
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-INLINE std::pair<TensorUInt, TensorUInt>
+HPTC_INL std::pair<TensorUInt, TensorUInt>
 ParamTrans<TensorType, USAGE>::get_leading() const {
   std::pair<TensorUInt, TensorUInt> result;
 
@@ -157,10 +152,10 @@ ParamTrans<TensorType, USAGE>::get_leading() const {
 
 template <typename TensorType,
           CoefUsageTrans USAGE>
-INLINE void ParamTrans<TensorType, USAGE>::set_coef(
-    const DeducedFloatType<typename TensorType::FloatType> alpha,
-    const DeducedFloatType<typename TensorType::FloatType> beta) {
-  using FloatType = typename TensorType::FloatType;
+HPTC_INL void ParamTrans<TensorType, USAGE>::set_coef(
+    const DeducedFloatType<typename TensorType::Float> alpha,
+    const DeducedFloatType<typename TensorType::Float> beta) {
+  using FloatType = typename TensorType::Float;
   using KernelPack = KernelPackTrans<FloatType, USAGE>;
 
   this->alpha = alpha, this->beta = beta;
@@ -186,7 +181,7 @@ TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
   const auto &output_outer_size = this->output_tensor.get_outer_size();
 
   // Create permutation set
-  for (auto idx = 1; idx < ORDER; ++idx) {
+  for (TensorUInt idx = 1; idx < ORDER; ++idx) {
     // If current order ID does not equal to previous order ID plus one, or
     // the previous order size does not equal to the outer size, then push
     // previous ID into set.
@@ -219,7 +214,7 @@ TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
   // Create an unordered map to store the mapping from original order ID to
   // updated order ID.
   std::unordered_map<TensorUInt, TensorUInt> perm_map;
-  for (auto idx = 0; idx < merged; ++idx)
+  for (TensorUInt idx = 0; idx < merged; ++idx)
     perm_map[sorted_perm_arr[idx]] = idx;
 
   // Update permutation array

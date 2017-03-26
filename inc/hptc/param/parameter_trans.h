@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <algorithm>
 
+#include <hptc/compat.h>
 #include <hptc/types.h>
 #include <hptc/tensor.h>
 #include <hptc/util/util_trans.h>
@@ -27,10 +28,11 @@ public:
   TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
       const std::unordered_set<TensorUInt> &merge_set);
 
-  INLINE FloatType &operator[](const TensorIdx * RESTRICT indices);
-  INLINE const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
-  INLINE FloatType &operator[](TensorIdx **indices);
-  INLINE const FloatType &operator[](const TensorIdx **indices) const;
+  HPTC_INL FloatType &operator[](const TensorIdx * RESTRICT indices);
+  HPTC_INL const FloatType &operator[](
+      const TensorIdx * RESTRICT indices) const;
+  HPTC_INL FloatType &operator[](TensorIdx **indices);
+  HPTC_INL const FloatType &operator[](const TensorIdx **indices) const;
 
 private:
   TensorUInt begin_order_idx_, merged_order_;
@@ -43,7 +45,7 @@ template <typename TensorType,
           CoefUsageTrans USAGE = CoefUsageTrans::USE_BOTH>
 struct ParamTrans {
   // Type alias and constant values
-  using FloatType = typename TensorType::FloatType;
+  using FloatType = typename TensorType::Float;
   using Deduced = DeducedFloatType<FloatType>;
   using KernelPack = KernelPackTrans<FloatType, USAGE>;
   using RegTypeFull = typename KernelPack::RegTypeFull;
@@ -64,18 +66,17 @@ public:
       const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
       const Deduced beta);
 
-  INLINE bool is_common_leading() const;
-  INLINE std::pair<TensorUInt, TensorUInt> get_leading() const;
-  INLINE void set_coef(const Deduced alpha, const Deduced beta);
+  HPTC_INL bool is_common_leading() const;
+  HPTC_INL std::pair<TensorUInt, TensorUInt> get_leading() const;
+  HPTC_INL void set_coef(const Deduced alpha, const Deduced beta);
 
   std::array<TensorUInt, ORDER> perm;
   Deduced alpha, beta;
-  TensorIdx input_stride, output_stride;
-
   RegTypeFull reg_alpha_full, reg_beta_full;
   RegTypeHalf reg_alpha_half, reg_beta_half;
   RegTypeLinear reg_alpha_linear, reg_beta_linear;
 
+  TensorIdx input_stride, output_stride;
   TensorUInt begin_order_idx, merged_order;
 
   // Put the merged tensors here, they must be initialized after merging

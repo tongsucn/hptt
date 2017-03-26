@@ -8,7 +8,7 @@
 template <typename ParamType>
 CGraphTrans<ParamType>::Descriptor::Descriptor()
     : description(1) {
-  for (auto order_idx = 0; order_idx < ORDER; ++order_idx)
+  for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
     this->loop_order[order_idx] = order_idx;
   this->parallel_strategy.fill(1);
   this->description[0].fill(LoopParamTrans<ORDER>());
@@ -25,7 +25,7 @@ CGraphTrans<ParamType>::~CGraphTrans() {
 
 
 template <typename ParamType>
-INLINE void CGraphTrans<ParamType>::exec() {
+HPTC_INL void CGraphTrans<ParamType>::exec() {
   if (not this->param_->is_common_leading())
     this->exec_general_();
   else
@@ -34,13 +34,13 @@ INLINE void CGraphTrans<ParamType>::exec() {
 
 
 template <typename ParamType>
-INLINE void CGraphTrans<ParamType>::operator()() {
+HPTC_INL void CGraphTrans<ParamType>::operator()() {
   this->exec();
 }
 
 
 template <typename ParamType>
-INLINE CGraphTrans<ParamType>::Descriptor
+HPTC_INL typename CGraphTrans<ParamType>::Descriptor
 CGraphTrans<ParamType>::get_descriptor() const {
   return this->descriptor_;
 }
@@ -69,14 +69,15 @@ void CGraphTrans<ParamType>::init(const Descriptor &descriptor) {
   this->operations_ = new For_ [this->threads_];
 
   // Initialize for loops' parameters and loop order
-  for (TensorUInt th_idx = 0, idx_end = this->descriptor_.description[0].size();
+  for (decltype(this->threads_) th_idx = 0,
+          idx_end = this->descriptor_.description[0].size();
       th_idx < this->threads_; ++th_idx) {
     auto curr_oper = this->operations_ + th_idx;
     curr_oper->init(this->descriptor_.loop_order,
         this->descriptor_.description[th_idx][0],
         this->param_->begin_order_idx, this->param_->perm);
 
-    for (auto kn_idx = 1; kn_idx < idx_end; ++kn_idx) {
+    for (decltype(idx_end) kn_idx = 1; kn_idx < idx_end; ++kn_idx) {
       curr_oper->next = new For_(this->descriptor_.loop_order,
           this->descriptor_.description[th_idx][kn_idx],
           this->param_->begin_order_idx, this->param_->perm);
@@ -89,8 +90,8 @@ void CGraphTrans<ParamType>::init(const Descriptor &descriptor) {
 template <typename ParamType>
 void CGraphTrans<ParamType>::release_() {
   // Release operations
-  for (auto idx = 0; idx < this->threads_; ++idx) {
-    auto curr_oper = this->operations_[idx].next;
+  for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
+    auto curr_oper = this->operations_[th_idx].next;
     while (nullptr != curr_oper) {
       auto next = curr_oper->next;
       delete curr_oper;
@@ -105,7 +106,7 @@ void CGraphTrans<ParamType>::release_() {
 
 
 template <typename ParamType>
-INLINE void CGraphTrans<ParamType>::exec_general_() {
+HPTC_INL void CGraphTrans<ParamType>::exec_general_() {
   const auto &kn = this->param_->kn;
   auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
@@ -119,7 +120,7 @@ INLINE void CGraphTrans<ParamType>::exec_general_() {
   const auto &reg_beta_linear = this->param_->reg_beta_linear;
 
 #pragma omp parallel for schedule(static)
-  for (auto th_idx = 0; th_idx < this->threads_; ++th_idx) {
+  for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
     auto task = this->operations_ + th_idx;
     (*task)(kn.knf_1x1, input_tensor, output_tensor, input_stride,
         output_stride, reg_alpha_full, reg_beta_full);
@@ -224,11 +225,11 @@ INLINE void CGraphTrans<ParamType>::exec_general_() {
 
 
 template <typename ParamType>
-INLINE void CGraphTrans<ParamType>::exec_common_leading_() {
+HPTC_INL void CGraphTrans<ParamType>::exec_common_leading_() {
   const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
 
 #pragma omp parallel for schedule(static)
-  for (auto th_idx = 0; th_idx < this->threads_; ++th_idx)
+  for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx)
     this->operations_[th_idx](this->param_->kn.kn_lin,
         this->param_->input_tensor, this->param_->output_tensor,
         ld_len, 0, this->param_->reg_alpha_linear,

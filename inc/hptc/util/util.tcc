@@ -7,14 +7,15 @@
  */
 template <typename Callable,
           typename... Args>
-INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
+HPTC_INL double TimerWrapper::operator()(Callable &target, Args&&... args) {
   if (0 == this->times_)
     return 0.0;
   else if (this->is_timeout())
     return -1.0;
 
   double result = DBL_MAX;
-  for (auto idx = 0; idx < this->times_ and not this->is_timeout(); ++idx) {
+  for (TensorUInt idx = 0; idx < this->times_ and not this->is_timeout();
+      ++idx) {
     auto start = std::chrono::high_resolution_clock::now();
     target(std::forward<Args>(args)...);
     auto duration = std::chrono::duration_cast<Duration_>(
@@ -31,7 +32,7 @@ INLINE double TimerWrapper::operator()(Callable &target, Args&&... args) {
  * Implementation for struct ModCmp
  */
 template <typename ValType>
-INLINE bool ModCmp<ValType>::operator()(const ValType &first,
+HPTC_INL bool ModCmp<ValType>::operator()(const ValType &first,
     const ValType &second) {
   return 0 == first % second;
 }

@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 
 
 namespace hptc {
@@ -48,9 +49,9 @@ template <TensorUInt ORDER>
 struct LoopParamTrans {
   LoopParamTrans();
 
-  INLINE void set_pass(TensorUInt order);
-  INLINE void set_disable();
-  INLINE bool is_disabled() const;
+  HPTC_INL void set_pass(TensorUInt order);
+  HPTC_INL void set_disable();
+  HPTC_INL bool is_disabled() const;
 
   TensorIdx loop_begin[ORDER];
   TensorIdx loop_end[ORDER];

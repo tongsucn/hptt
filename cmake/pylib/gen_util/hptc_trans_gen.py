@@ -84,7 +84,7 @@ public:
     // Create output size objects
     std::vector<TensorIdx> out_size_vec(order),
         out_outer_size_vec(out_outer_size.begin(), out_outer_size.end());
-    for (auto order_idx = 0; order_idx < order; ++order_idx)
+    for (TensorUInt order_idx = 0; order_idx < order; ++order_idx)
       out_size_vec[order_idx] = in_size_vec[perm[order_idx]];
     if (0 == out_outer_size.size())
       out_outer_size_vec = out_size_vec;
@@ -98,7 +98,7 @@ public:
   constexpr static auto MAX_ORDER = %d;
 
 protected:
-  INLINE void exec_base_() {%s
+  HPTC_INL void exec_base_() {%s
   }
 
 private:

@@ -9,7 +9,10 @@
 #include <memory>
 #include <algorithm>
 
+#include <immintrin.h>
+
 #include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/tensor.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/plan/plan_trans.h>

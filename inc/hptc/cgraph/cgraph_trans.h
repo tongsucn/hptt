@@ -7,12 +7,24 @@
 #include <memory>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/operations/operation_trans.h>
 #include <hptc/param/parameter_trans.h>
 
 
 namespace hptc {
+
+
+/*
+ * Forward declaration for friend classes of CGraphTrans
+ */
+template <typename ParamType>
+class PlanTrans;
+
+template <typename ParamType>
+class PlanTransOptimizer;
+
 
 template <typename ParamType>
 class CGraphTrans {
@@ -34,15 +46,15 @@ public:
 
   ~CGraphTrans();
 
-  INLINE void exec();
-  INLINE void operator()();
-  INLINE Descriptor get_descriptor() const;
+  HPTC_INL void exec();
+  HPTC_INL void operator()();
+  HPTC_INL Descriptor get_descriptor() const;
 
-protected:
+private:
   // Friend classes
-  template <typename ParamType>
+  template <typename Param>
   friend class PlanTrans;
-  template <typename ParamType>
+  template <typename Param>
   friend class PlanTransOptimizer;
 
   using For_ = OpForTrans<ORDER>;
@@ -54,8 +66,8 @@ protected:
 
   void release_();
 
-  INLINE void exec_general_();
-  INLINE void exec_common_leading_();
+  HPTC_INL void exec_general_();
+  HPTC_INL void exec_common_leading_();
 
 
   std::shared_ptr<ParamType> param_;

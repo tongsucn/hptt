@@ -65,7 +65,7 @@ std::vector<TensorUInt> approx_prod(const std::vector<TensorUInt> &integers,
     auto new_cand = CandNode(Cand(num, { num }));
 
     // Search among parents
-    auto parent_len = static_cast<TensorUInt>(parents.size());
+    auto parent_len = static_cast<TensorInt>(parents.size());
     for (auto node_idx = 0; node_idx < parent_len; ++node_idx) {
       if (num * parents[node_idx].cand.first > target) {
         if (parents.back().children.empty()) {
@@ -99,7 +99,7 @@ std::vector<TensorUInt> approx_prod(const std::vector<TensorUInt> &integers,
 
         // Search among children
         auto &children = parents[node_idx].children;
-        auto children_len = children.size();
+        auto children_len = static_cast<TensorInt>(children.size());
         for (auto child_idx = 0; child_idx < children_len; ++child_idx) {
           const auto &child = children[child_idx];
           if (num * child.first > target) {
@@ -160,7 +160,7 @@ std::vector<TensorUInt> flat_map(
     const std::unordered_map<TensorUInt, TensorUInt> &input_map) {
   std::vector<TensorUInt> result;
   for (auto kv : input_map)
-    for (auto freq = 0; freq < kv.second; ++freq)
+    for (TensorUInt freq = 0; freq < kv.second; ++freq)
       result.push_back(kv.first);
   return result;
 }

@@ -16,7 +16,7 @@ KernelPackTrans<FloatType, USAGE>::get_package() {
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-typename MacroTransVecFull<FloatType, USAGE, 1, 1>::RegType
+HPTC_INL typename MacroTransVecFull<FloatType, USAGE, 1, 1>::RegType
 KernelPackTrans<FloatType, USAGE>::reg_coef_full(
     const DeducedFloatType<FloatType> coef) {
   return MacroTransVecFull<FloatType, USAGE, 1, 1>::reg_coef(coef);
@@ -25,7 +25,7 @@ KernelPackTrans<FloatType, USAGE>::reg_coef_full(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-typename MacroTransVecHalf<FloatType, USAGE, 1, 1>::RegType
+HPTC_INL typename MacroTransVecHalf<FloatType, USAGE, 1, 1>::RegType
 KernelPackTrans<FloatType, USAGE>::reg_coef_half(
     const DeducedFloatType<FloatType> coef) {
   return MacroTransVecHalf<FloatType, USAGE, 1, 1>::reg_coef(coef);
@@ -34,7 +34,7 @@ KernelPackTrans<FloatType, USAGE>::reg_coef_half(
 
 template <typename FloatType,
           CoefUsageTrans USAGE>
-typename MacroTransLinear<FloatType, USAGE>::RegType
+HPTC_INL typename MacroTransLinear<FloatType, USAGE>::RegType
 KernelPackTrans<FloatType, USAGE>::reg_coef_linear(
     const DeducedFloatType<FloatType> coef) {
   return MacroTransLinear<FloatType, USAGE>::reg_coef(coef);

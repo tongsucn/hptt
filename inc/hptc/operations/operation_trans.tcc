@@ -44,10 +44,10 @@ void OpForTrans<ORDER>::init(const LoopOrderTrans<ORDER> &loop_order,
   this->init_loops_(loop_order, loops);
 
   // Initialize permutation array
-  for (auto idx = 0; idx < begin_order_idx; ++idx)
+  for (TensorUInt idx = 0; idx < begin_order_idx; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[idx];
 
-  for (auto idx = begin_order_idx; idx < ORDER; ++idx)
+  for (TensorUInt idx = begin_order_idx; idx < ORDER; ++idx)
     this->loop_perm_idx_[idx] = &this->loop_idx_[perm[idx] + begin_order_idx];
 }
 
@@ -56,7 +56,7 @@ template <TensorUInt ORDER>
 template <typename MacroType,
           typename TensorType,
           typename RegType>
-INLINE void OpForTrans<ORDER>::operator()(MacroType &macro_kernel,
+HPTC_INL void OpForTrans<ORDER>::operator()(const MacroType &macro_kernel,
     const TensorType &input_tensor, TensorType &output_tensor,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const RegType &reg_alpha, const RegType &reg_beta) {
@@ -73,8 +73,8 @@ void OpForTrans<ORDER>::init_disable_() {
   std::fill(this->loop_end_, this->loop_end_ + ORDER, 0);
   std::fill(this->loop_step_, this->loop_step_ + ORDER, 0);
 
-  for (auto idx = 0; idx < ORDER; ++idx)
-    this->loop_order_[idx] = idx;
+  for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
+    this->loop_order_[order_idx] = order_idx;
 }
 
 
@@ -96,8 +96,8 @@ template <typename MacroType,
           typename TensorType,
           typename RegType,
           TensorUInt UNROLL_NUM>
-INLINE void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
-    MacroType &macro_kernel, const TensorType &input_tensor,
+HPTC_INL void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
+    const MacroType &macro_kernel, const TensorType &input_tensor,
     TensorType &output_tensor, const TensorIdx input_stride,
     const TensorIdx output_stride, const RegType &reg_alpha,
     const RegType &reg_beta) {
@@ -114,10 +114,11 @@ template <TensorUInt ORDER>
 template <typename MacroType,
           typename TensorType,
           typename RegType>
-INLINE void OpForTrans<ORDER>::unroller_(GenCounter<0>, MacroType &macro_kernel,
-    const TensorType &input_tensor, TensorType &output_tensor,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) {
+HPTC_INL void OpForTrans<ORDER>::unroller_(GenCounter<0>,
+    const MacroType &macro_kernel, const TensorType &input_tensor,
+    TensorType &output_tensor, const TensorIdx input_stride,
+    const TensorIdx output_stride, const RegType &reg_alpha,
+    const RegType &reg_beta) {
   macro_kernel(&input_tensor[this->loop_idx_],
       &output_tensor[this->loop_perm_idx_], input_stride, output_stride,
       reg_alpha, reg_beta);

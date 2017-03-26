@@ -44,7 +44,7 @@ typename CGraphTrans<ParamType>::Descriptor PlanTrans<ParamType>::tuning_(
   this->param_->set_coef(0.0, 1.0);
 
   // Measure candidates
-  auto best_idx = 0;
+  TensorUInt best_idx = 0;
   auto best_time = DBL_MAX;
   CGraphTrans<ParamType> candidate(this->param_, descriptors[best_idx]);
 

@@ -13,7 +13,7 @@ class MacroTransVec<KernelFunc, 0, 0> {
 template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-typename KernelFunc::RegType
+HPTC_INL typename KernelFunc::RegType
 MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::reg_coef(
     const DeducedFloatType<typename KernelFunc::Float> coef) {
   return KernelFunc::reg_coef(coef);

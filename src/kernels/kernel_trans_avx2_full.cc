@@ -3,6 +3,7 @@
 #include <immintrin.h>
 
 #include <hptc/types.h>
+#include <hptc/compat.h>
 #include <hptc/util/util_trans.h>
 
 
@@ -16,14 +17,14 @@ using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_FULL>;
  * Implementation for class KernelTransAvx2
  */
 template <CoefUsageTrans USAGE>
-INLINE RegType<float>
+HPTC_INL RegType<float>
 KernelTransAvx2<float, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
     const DeducedFloatType<float> coef) {
   return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
-INLINE void KernelTransAvx2<float, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+HPTC_INL void KernelTransAvx2<float, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
     const float * RESTRICT input_data, float * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const RegType &reg_alpha, const RegType &reg_beta) {
@@ -129,14 +130,15 @@ INLINE void KernelTransAvx2<float, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <CoefUsageTrans USAGE>
-INLINE RegType<double>
+HPTC_INL RegType<double>
 KernelTransAvx2<double, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
     const DeducedFloatType<double> coef) {
   return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
-INLINE void KernelTransAvx2<double, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
+HPTC_INL void
+KernelTransAvx2<double, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
     const double * RESTRICT input_data, double * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const RegType &reg_alpha, const RegType &reg_beta) {
@@ -200,14 +202,14 @@ INLINE void KernelTransAvx2<double, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <CoefUsageTrans USAGE>
-INLINE RegType<FloatComplex>
+HPTC_INL RegType<FloatComplex>
 KernelTransAvx2<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
     const DeducedFloatType<FloatComplex> coef) {
   return _mm256_set1_ps(coef);
 }
 
 template <CoefUsageTrans USAGE>
-INLINE void
+HPTC_INL void
 KernelTransAvx2<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
     const FloatComplex * RESTRICT input_data,
     FloatComplex * RESTRICT output_data, const TensorIdx input_stride,
@@ -283,14 +285,14 @@ KernelTransAvx2<FloatComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <CoefUsageTrans USAGE>
-INLINE RegType<DoubleComplex>
+HPTC_INL RegType<DoubleComplex>
 KernelTransAvx2<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::reg_coef(
     const DeducedFloatType<DoubleComplex> coef) {
   return _mm256_set1_pd(coef);
 }
 
 template <CoefUsageTrans USAGE>
-INLINE void
+HPTC_INL void
 KernelTransAvx2<DoubleComplex, USAGE, KernelTypeTrans::KERNEL_FULL>::exec(
     const DoubleComplex * RESTRICT input_data,
     DoubleComplex * RESTRICT output_data, const TensorIdx input_stride,
