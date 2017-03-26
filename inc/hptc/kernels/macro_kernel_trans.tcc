@@ -15,7 +15,7 @@ template <typename KernelFunc,
           TensorUInt NCONT_LEN>
 typename KernelFunc::RegType
 MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::reg_coef(
-    const DeducedFloatType<typename KernelFunc::FloatType> coef) {
+    const DeducedFloatType<typename KernelFunc::Float> coef) {
   return KernelFunc::reg_coef(coef);
 }
 
@@ -42,19 +42,81 @@ template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
 void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
-    const typename KernelFunc::FloatType * RESTRICT input_data,
-    typename KernelFunc::FloatType * RESTRICT output_data,
+    const typename KernelFunc::Float * RESTRICT input_data,
+    typename KernelFunc::Float * RESTRICT output_data,
     const TensorIdx input_stride, const TensorIdx output_stride,
     const typename KernelFunc::RegType &reg_alpha,
     const typename KernelFunc::RegType &reg_beta) const {
-  constexpr auto kn_wd = KernelFunc::kn_width;
-#pragma unroll_and_jam(CONT_LEN)
-  for (auto cont = 0; cont < CONT_LEN; ++cont)
-#pragma unroll_and_jam(NCONT_LEN)
-    for (auto ncont = 0; ncont < NCONT_LEN; ++ncont)
-      this->kernel_(input_data + cont * kn_wd + ncont * kn_wd * input_stride,
-          output_data + ncont * kn_wd + cont * kn_wd * output_stride,
-          input_stride, output_stride, reg_alpha, reg_beta);
+  this->ncont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(), input_data,
+      output_data, input_stride, output_stride, reg_alpha, reg_beta);
+}
+
+
+template <typename KernelFunc,
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+template <TensorUInt CONT,
+         TensorUInt NCONT>
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
+    DualCounter<CONT, NCONT>,
+    const typename KernelFunc::Float * RESTRICT input_data,
+    typename KernelFunc::Float * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) const {
+  this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
+      input_stride, output_stride, reg_alpha, reg_beta);
+  this->cont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
+      input_stride, output_stride, reg_alpha, reg_beta);
+}
+
+
+template <typename KernelFunc,
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+template <TensorUInt CONT>
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
+    DualCounter<CONT, 0>,
+    const typename KernelFunc::Float * RESTRICT input_data,
+    typename KernelFunc::Float * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) const {
+}
+
+
+template <typename KernelFunc,
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+template <TensorUInt CONT,
+         TensorUInt NCONT>
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
+    DualCounter<CONT, NCONT>,
+    const typename KernelFunc::Float * RESTRICT input_data,
+    typename KernelFunc::Float * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) const {
+  this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
+      input_stride, output_stride, reg_alpha, reg_beta);
+  this->kernel_(input_data + CONT * KernelFunc::kn_width
+          + NCONT * KernelFunc::kn_width * input_stride,
+      output_data + NCONT * KernelFunc::kn_width
+          + CONT * KernelFunc::kn_width * output_stride,
+      input_stride, output_stride, reg_alpha, reg_beta);
+}
+
+
+template <typename KernelFunc,
+          TensorUInt CONT_LEN,
+          TensorUInt NCONT_LEN>
+template <TensorUInt NCONT>
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
+    DualCounter<0, NCONT>,
+    const typename KernelFunc::Float * RESTRICT input_data,
+    typename KernelFunc::Float * RESTRICT output_data,
+    const TensorIdx input_stride, const TensorIdx output_stride,
+    const RegType &reg_alpha, const RegType &reg_beta) const {
+  this->kernel_(input_data + NCONT * KernelFunc::kn_width * input_stride,
+      output_data + NCONT * KernelFunc::kn_width, input_stride, output_stride,
+      reg_alpha, reg_beta);
 }
 
 

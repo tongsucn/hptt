@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
-#define HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
+#ifndef HPTC_KERNELS_AVX2_KERNEL_TRANS_AVX2_H_
+#define HPTC_KERNELS_AVX2_KERNEL_TRANS_AVX2_H_
 
 #include <xmmintrin.h>
 #include <immintrin.h>
@@ -14,7 +14,7 @@
 
 namespace hptc {
 
-#define REG_SIZE_BYTE_AVX 32
+#define REG_SIZE_BYTE_AVX2 32
 
 
 template <typename FloatType,
@@ -75,21 +75,21 @@ struct RegTypeDeducer<FloatType, TYPE,
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
-struct KernelTransAvxBase {
+struct KernelTransAvx2Base {
   using Float = FloatType;
   using RegType = DeducedRegType<FloatType, TYPE>;
 
   static constexpr TensorUInt kn_width = KernelTypeTrans::KERNEL_FULL == TYPE
-      ? REG_SIZE_BYTE_AVX / sizeof(FloatType)
+      ? REG_SIZE_BYTE_AVX2 / sizeof(FloatType)
       : KernelTypeTrans::KERNEL_HALF == TYPE
-          ? REG_SIZE_BYTE_AVX / sizeof(FloatType) / 2 : 1;
+          ? REG_SIZE_BYTE_AVX2 / sizeof(FloatType) / 2 : 1;
 };
 
 
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
+struct KernelTransAvx2 final : public KernelTransAvx2Base<FloatType, TYPE> {
   using RegType = DeducedRegType<FloatType, TYPE>;
 
   static RegType reg_coef(const DeducedFloatType<FloatType> coef);
@@ -102,21 +102,21 @@ struct KernelTransAvx final : public KernelTransAvxBase<FloatType, TYPE> {
 
 
 /*
- * Type alias for AVX micro kernel
+ * Type alias for AVX2 micro kernel
  */
 template <typename FloatType,
           CoefUsageTrans USAGE,
           KernelTypeTrans TYPE>
-using KernelTrans = KernelTransAvx<FloatType, USAGE, TYPE>;
+using KernelTrans = KernelTransAvx2<FloatType, USAGE, TYPE>;
 
 
 
 /*
- * Import template class KernelTransAvx's partial specialization
+ * Import template class KernelTransAvx2's partial specialization
  * and explicit instantiation declaration
  */
-#include "kernel_trans_avx.tcc"
+#include "kernel_trans_avx2.tcc"
 
 }
 
-#endif // HPTC_KERNELS_AVX_KERNEL_TRANS_AVX_H_
+#endif // HPTC_KERNELS_AVX2_KERNEL_TRANS_AVX2_H_

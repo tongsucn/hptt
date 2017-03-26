@@ -27,7 +27,7 @@ struct RegTypeDeducer<FloatType, TYPE, void> {
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct KernelTransCommonBase {
-  using FloatType = FloatType;
+  using Float = FloatType;
   using RegType = DeducedRegType<FloatType, TYPE>;
 
   static constexpr TensorUInt kn_width = KernelTypeTrans::KERNEL_FULL == TYPE

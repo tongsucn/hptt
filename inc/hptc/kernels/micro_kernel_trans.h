@@ -11,7 +11,7 @@
 
 #elif defined(HPTC_ARCH_AVX2)
 // AVX2
-#include <hptc/kernels/avx/kernel_trans_avx.h>
+#include <hptc/kernels/avx2/kernel_trans_avx2.h>
 
 #else
 // Common, no specific architecture

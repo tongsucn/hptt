@@ -6,8 +6,6 @@
 #include <hptc/util/util_trans.h>
 
 
-#include <iostream>
-
 namespace hptc {
 
 /*
@@ -31,15 +29,15 @@ void MacroTransLinear<FloatType, USAGE>::operator()(
   if (USAGE == CoefUsageTrans::USE_NONE)
     std::copy(input_data, input_data + input_stride, output_data);
   else if (USAGE == CoefUsageTrans::USE_ALPHA)
-#pragma simd vectorlengthfor(FloatType)
+#pragma omp simd
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = alpha * input_data[idx];
   else if (USAGE == CoefUsageTrans::USE_BETA)
-#pragma simd vectorlengthfor(FloatType)
+#pragma omp simd
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = input_data[idx] + beta * output_data[idx];
   else
-#pragma simd vectorlengthfor(FloatType)
+#pragma omp simd
     for (TensorIdx idx = 0; idx < input_stride; ++idx)
       output_data[idx] = alpha * input_data[idx] + beta * output_data[idx];
 }
