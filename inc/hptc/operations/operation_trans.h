@@ -29,12 +29,10 @@ public:
       const std::array<TensorUInt, ORDER> &perm);
 
   template <typename MacroType,
-            typename TensorType,
-            typename RegType>
-  HPTC_INL void operator()(const MacroType &macro_kernel,
+            typename TensorType>
+  HPTC_INL void exec(const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta);
+      const TensorIdx input_stride, const TensorIdx output_stride);
 
   OpForTrans<ORDER> *next;
 
@@ -45,19 +43,15 @@ private:
 
   template <typename MacroType,
             typename TensorType,
-            typename RegType,
             TensorUInt UNROLL_NUM>
-  HPTC_INL void unroller_(GenCounter<UNROLL_NUM>, const MacroType &macro_kernel,
+  void unroller_(GenCounter<UNROLL_NUM>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta);
+      const TensorIdx input_stride, const TensorIdx output_stride);
   template <typename MacroType,
-            typename TensorType,
-            typename RegType>
-  HPTC_INL void unroller_(GenCounter<0>, const MacroType &macro_kernel,
+            typename TensorType>
+  void unroller_(GenCounter<0>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta);
+      const TensorIdx input_stride, const TensorIdx output_stride);
 
   TensorIdx loop_idx_[ORDER];
   TensorIdx *loop_perm_idx_[ORDER];

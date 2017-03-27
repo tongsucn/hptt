@@ -7,37 +7,22 @@
  */
 template <typename FloatType,
           CoefUsageTrans USAGE>
-typename MacroTransVecFull<FloatType, USAGE, 1, 1>::RegType
-KernelPackTrans<FloatType, USAGE>::set_coef_full(
-    DeducedFloatType<FloatType> coef) {
-  return KernelFull<1, 1>::reg_coef(coef);
-}
+void KernelPackTrans<FloatType, USAGE>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->knf_1x1.set_coef(alpha, beta), this->knf_1x2.set_coef(alpha, beta);
+  this->knf_1x3.set_coef(alpha, beta), this->knf_1x4.set_coef(alpha, beta);
+  this->knf_2x1.set_coef(alpha, beta), this->knf_2x2.set_coef(alpha, beta);
+  this->knf_2x3.set_coef(alpha, beta), this->knf_2x4.set_coef(alpha, beta);
+  this->knf_3x1.set_coef(alpha, beta), this->knf_3x2.set_coef(alpha, beta);
+  this->knf_3x3.set_coef(alpha, beta), this->knf_3x4.set_coef(alpha, beta);
+  this->knf_4x1.set_coef(alpha, beta), this->knf_4x2.set_coef(alpha, beta);
+  this->knf_4x3.set_coef(alpha, beta), this->knf_4x4.set_coef(alpha, beta);
 
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-typename MacroTransVecHalf<FloatType, USAGE, 1, 1>::RegType
-KernelPackTrans<FloatType, USAGE>::set_coef_half(
-    DeducedFloatType<FloatType> coef) {
-  return KernelHalf<1, 1>::reg_coef(coef);
-}
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-typename MacroTransLinear<FloatType, USAGE>::RegType
-KernelPackTrans<FloatType, USAGE>::set_coef_linear(
-    DeducedFloatType<FloatType> coef) {
-  return MacroTransLinear<FloatType, USAGE>::reg_coef(coef);
-}
-
-
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-KernelPackTrans<FloatType, USAGE> &
-KernelPackTrans<FloatType, USAGE>::get_package() {
-  static KernelPackTrans<FloatType, USAGE> package;
-  return package;
+  this->knh_1x1.set_coef(alpha, beta), this->knh_1x2.set_coef(alpha, beta);
+  this->knh_1x3.set_coef(alpha, beta), this->knh_1x4.set_coef(alpha, beta);
+  this->knh_2x1.set_coef(alpha, beta), this->knh_3x1.set_coef(alpha, beta);
+  this->knh_4x1.set_coef(alpha, beta), this->kn_lin.set_coef(alpha, beta);
 }
 
 
@@ -84,7 +69,7 @@ TensorUInt KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
 template <typename FloatType,
           CoefUsageTrans USAGE>
 KernelPackTrans<FloatType, USAGE>::KernelPackTrans()
-  : knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
+    : knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
     knh_giant(this->knh_1x4), knh_basic(this->knh_1x1) {
 }
 

@@ -107,133 +107,125 @@ void CGraphTrans<ParamType>::release_() {
 
 template <typename ParamType>
 HPTC_INL void CGraphTrans<ParamType>::exec_general_() {
-  const auto &kn = this->param_->kn;
-  auto &input_tensor = this->param_->input_tensor;
+  const auto &kn = this->param_->get_kernel();
+  const auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
   const auto input_stride = this->param_->input_stride;
   const auto output_stride = this->param_->output_stride;
-  const auto &reg_alpha_full = this->param_->reg_alpha_full;
-  const auto &reg_beta_full = this->param_->reg_beta_full;
-  const auto &reg_alpha_half = this->param_->reg_alpha_half;
-  const auto &reg_beta_half = this->param_->reg_beta_half;
-  const auto &reg_alpha_linear = this->param_->reg_alpha_linear;
-  const auto &reg_beta_linear = this->param_->reg_beta_linear;
 
 #pragma omp parallel for schedule(static)
   for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
     auto task = this->operations_ + th_idx;
-    (*task)(kn.knf_1x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_1x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_1x2, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_1x2, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_1x3, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_1x3, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_1x4, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_1x4, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_2x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_2x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_2x2, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_2x2, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_2x3, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_2x3, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_2x4, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_2x4, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_3x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_3x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_3x2, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_3x2, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_3x3, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_3x3, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_3x4, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_3x4, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_4x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_4x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_4x2, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_4x2, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_4x3, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_4x3, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knf_4x4, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_full, reg_beta_full);
+    task->exec(kn.knf_4x4, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_1x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_1x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_1x2, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_1x2, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_1x3, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_1x3, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_1x4, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_1x4, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_2x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_2x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_3x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_3x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.knh_4x1, input_tensor, output_tensor, input_stride,
-        output_stride, reg_alpha_half, reg_beta_half);
+    task->exec(kn.knh_4x1, input_tensor, output_tensor, input_stride,
+        output_stride);
 
     task = task->next;
-    (*task)(kn.kn_lin, input_tensor, output_tensor, 1, 0,
-        reg_alpha_linear, reg_beta_linear);
+    task->exec(kn.kn_lin, input_tensor, output_tensor, 1, 0);
 
     task = task->next;
-    (*task)(kn.kn_lin, input_tensor, output_tensor, 1, 0,
-        reg_alpha_linear, reg_beta_linear);
+    task->exec(kn.kn_lin, input_tensor, output_tensor, 1, 0);
   }
 }
 
 
 template <typename ParamType>
 HPTC_INL void CGraphTrans<ParamType>::exec_common_leading_() {
+  const auto &kn = this->param_->get_kernel().kn_lin;
+  const auto &input_tensor = this->param_->input_tensor;
+  auto &output_tensor = this->param_->output_tensor;
   const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
 
 #pragma omp parallel for schedule(static)
   for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx)
-    this->operations_[th_idx](this->param_->kn.kn_lin,
-        this->param_->input_tensor, this->param_->output_tensor,
-        ld_len, 0, this->param_->reg_alpha_linear,
-        this->param_->reg_beta_linear);
+    this->operations_[th_idx].exec(kn, input_tensor, output_tensor, ld_len, 0);
 }
 
 

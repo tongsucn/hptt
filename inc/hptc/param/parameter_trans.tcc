@@ -107,14 +107,7 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
     TensorType &output_tensor, const std::array<TensorUInt, ORDER> &perm,
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta)
-    : input_merge_set_(), output_merge_set_(),
-      perm(perm), alpha(alpha), beta(beta), kn(KernelPack::get_package()),
-      reg_alpha_full(this->kn.reg_alpha_full_),
-      reg_beta_full(this->kn.reg_beta_full_),
-      /*reg_alpha_half(KernelPack::set_coef_half(alpha)),
-      reg_beta_half(KernelPack::set_coef_half(beta)),
-      reg_alpha_linear(KernelPack::set_coef_linear(alpha)),
-      reg_beta_linear(KernelPack::set_coef_linear(beta)),*/
+    : input_merge_set_(), output_merge_set_(), kn_(), perm(perm),
       input_stride(1), output_stride(1),
       merged_order(this->merge_idx_(perm)),
       input_tensor(input_tensor, this->input_merge_set_),
@@ -156,12 +149,15 @@ HPTC_INL void ParamTrans<TensorType, USAGE>::set_coef(
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta) {
   this->alpha = alpha, this->beta = beta;
-  this->reg_alpha_full = KernelPack::set_coef_full(alpha);
-  this->reg_beta_full = KernelPack::set_coef_full(beta);
-  this->reg_alpha_half = KernelPack::set_coef_half(alpha);
-  this->reg_beta_half = KernelPack::set_coef_half(beta);
-  this->reg_alpha_linear = KernelPack::set_coef_linear(alpha);
-  this->reg_beta_linear = KernelPack::set_coef_linear(beta);
+  this->kn_.set_coef(alpha, beta);
+}
+
+
+template <typename TensorType,
+          CoefUsageTrans USAGE>
+HPTC_INL const KernelPackTrans<typename TensorType::Float, USAGE> &
+ParamTrans<TensorType, USAGE>::get_kernel() const {
+  return this->kn_;
 }
 
 

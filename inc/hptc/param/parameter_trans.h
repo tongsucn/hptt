@@ -51,13 +51,6 @@ struct ParamTrans {
   constexpr static auto ORDER = TensorType::TENSOR_ORDER;
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
-private:
-  TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
-
-  // They need to be initialized before merging
-  std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
-
-public:
   ParamTrans(const TensorType &input_tensor, TensorType &output_tensor,
       const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
       const Deduced beta);
@@ -65,19 +58,18 @@ public:
   HPTC_INL bool is_common_leading() const;
   HPTC_INL std::pair<TensorUInt, TensorUInt> get_leading() const;
   HPTC_INL void set_coef(const Deduced alpha, const Deduced beta);
+  HPTC_INL const KernelPack &get_kernel() const;
 
-  // Permutation
+private:
+  TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
+
+  // They need to be initialized before merging
+  std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
+  KernelPackTrans<typename TensorType::Float, USAGE> kn_;
+
+public:
   std::array<TensorUInt, ORDER> perm;
-
-  // Coefficients
   Deduced alpha, beta;
-
-  // Kernel package
-  KernelPack &kn;
-  typename KernelPack::RegTypeFull &reg_alpha_full, &reg_beta_full;
-  typename KernelPack::RegTypeHalf reg_alpha_half, reg_beta_half;
-  typename KernelPack::RegTypeLinear reg_alpha_linear, reg_beta_linear;
-
   TensorIdx input_stride, output_stride;
   TensorUInt begin_order_idx, merged_order;
 

@@ -14,44 +14,42 @@ template <typename KernelFunc,
           TensorUInt NCONT_LEN>
 class MacroTransVec {
 public:
-  using FloatType = typename KernelFunc::Float;
+  using Float = typename KernelFunc::Float;
   using RegType = typename KernelFunc::RegType;
 
-  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
-  constexpr TensorUInt get_cont_len() const;
-  constexpr TensorUInt get_ncont_len() const;
+  void set_coef(const DeducedFloatType<Float> alpha,
+      const DeducedFloatType<Float> beta);
 
-  void operator()(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, const RegType &reg_alpha,
-      const RegType &reg_beta) const;
+  TensorUInt get_cont_len() const;
+  TensorUInt get_ncont_len() const;
+
+  void exec(const Float * RESTRICT input_data, Float * RESTRICT output_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
 
 private:
   template <TensorUInt CONT,
             TensorUInt NCONT>
   void ncont_tiler_(DualCounter<CONT, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta) const;
+      const Float * RESTRICT input_data, Float * RESTRICT output_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
 
   template <TensorUInt CONT>
   void ncont_tiler_(DualCounter<CONT, 0>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta) const;
+      const Float * RESTRICT input_data, Float * RESTRICT output_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
 
   template <TensorUInt CONT,
             TensorUInt NCONT>
   void cont_tiler_(DualCounter<CONT, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta) const;
+      const Float * RESTRICT input_data, Float * RESTRICT output_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
 
   template <TensorUInt NCONT>
   void cont_tiler_(DualCounter<0, NCONT>,
-      const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride,
-      const RegType &reg_alpha, const RegType &reg_beta) const;
+      const Float * RESTRICT input_data, Float * RESTRICT output_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
+
+  RegType reg_alpha_, reg_beta_;
 };
 
 
@@ -61,11 +59,15 @@ class MacroTransLinear {
 public:
   using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_LINE>;
 
-  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
-  void operator()(const FloatType * RESTRICT input_data,
+  void set_coef(const DeducedFloatType<FloatType> alpha,
+      const DeducedFloatType<FloatType> beta);
+
+  void exec(const FloatType * RESTRICT input_data,
       FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, const RegType &alpha,
-      const RegType &beta) const;
+      const TensorIdx output_stride) const;
+
+private:
+  RegType reg_alpha_, reg_beta_;
 };
 
 

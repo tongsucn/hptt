@@ -13,18 +13,19 @@ class MacroTransVec<KernelFunc, 0, 0> {
 template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-HPTC_INL typename KernelFunc::RegType
-MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::reg_coef(
-    const DeducedFloatType<typename KernelFunc::Float> coef) {
-  return KernelFunc::reg_coef(coef);
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::set_coef(
+    const DeducedFloatType<typename KernelFunc::Float> alpha,
+    const DeducedFloatType<typename KernelFunc::Float> beta) {
+  this->reg_alpha_ = KernelFunc::reg_coef(alpha);
+  this->reg_beta_ = KernelFunc::reg_coef(beta);
 }
 
 
 template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-constexpr TensorUInt
-MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() const {
+TensorUInt MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len(
+    ) const {
   return CONT_LEN * KernelFunc::kn_width;
 }
 
@@ -32,8 +33,8 @@ MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_cont_len() const {
 template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-constexpr TensorUInt
-MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
+TensorUInt MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len(
+    ) const {
   return NCONT_LEN * KernelFunc::kn_width;
 }
 
@@ -41,14 +42,12 @@ MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
 template <typename KernelFunc,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::operator()(
+void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::exec(
     const typename KernelFunc::Float * RESTRICT input_data,
     typename KernelFunc::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const typename KernelFunc::RegType &reg_alpha,
-    const typename KernelFunc::RegType &reg_beta) const {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   this->ncont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(), input_data,
-      output_data, input_stride, output_stride, reg_alpha, reg_beta);
+      output_data, input_stride, output_stride);
 }
 
 
@@ -61,12 +60,11 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
     DualCounter<CONT, NCONT>,
     const typename KernelFunc::Float * RESTRICT input_data,
     typename KernelFunc::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) const {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
-      input_stride, output_stride, reg_alpha, reg_beta);
+      input_stride, output_stride);
   this->cont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
-      input_stride, output_stride, reg_alpha, reg_beta);
+      input_stride, output_stride);
 }
 
 
@@ -78,8 +76,7 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::ncont_tiler_(
     DualCounter<CONT, 0>,
     const typename KernelFunc::Float * RESTRICT input_data,
     typename KernelFunc::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) const {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
 }
 
 
@@ -92,15 +89,14 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
     DualCounter<CONT, NCONT>,
     const typename KernelFunc::Float * RESTRICT input_data,
     typename KernelFunc::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) const {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
-      input_stride, output_stride, reg_alpha, reg_beta);
+      input_stride, output_stride);
   KernelFunc::exec(input_data + CONT * KernelFunc::kn_width
           + NCONT * KernelFunc::kn_width * input_stride,
       output_data + NCONT * KernelFunc::kn_width
           + CONT * KernelFunc::kn_width * output_stride,
-      input_stride, output_stride, reg_alpha, reg_beta);
+      input_stride, output_stride, this->reg_alpha_, this->reg_beta_);
 }
 
 
@@ -112,11 +108,10 @@ void MacroTransVec<KernelFunc, CONT_LEN, NCONT_LEN>::cont_tiler_(
     DualCounter<0, NCONT>,
     const typename KernelFunc::Float * RESTRICT input_data,
     typename KernelFunc::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride,
-    const RegType &reg_alpha, const RegType &reg_beta) const {
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   KernelFunc::exec(input_data + NCONT * KernelFunc::kn_width * input_stride,
       output_data + NCONT * KernelFunc::kn_width, input_stride, output_stride,
-      reg_alpha, reg_beta);
+      this->reg_alpha_, this->reg_beta_);
 }
 
 

@@ -291,10 +291,12 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
    */
 
   // Prepare parameters for vectorization
-  const auto knf_basic_len = this->param_->kn.knf_basic.get_ncont_len();
-  const auto knh_basic_len = this->param_->kn.knh_basic.get_ncont_len();
+  const auto knf_basic_len
+      = this->param_->get_kernel().knf_basic.get_ncont_len();
+  const auto knh_basic_len
+      = this->param_->get_kernel().knh_basic.get_ncont_len();
   const TensorUInt knh_scale
-      = this->param_->kn.knh_giant.get_ncont_len() / knh_basic_len;
+      = this->param_->get_kernel().knh_giant.get_ncont_len() / knh_basic_len;
   const auto cont_len = this->param_->get_leading().first;
   const auto ncont_len = this->param_->get_leading().second;
 
@@ -308,7 +310,7 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
   if (cont_len >= knf_basic_len and ncont_len >= knf_basic_len) {
     // Leading orders can be vectorized by full kernel
     const TensorUInt knf_scale
-        = this->param_->kn.knf_giant.get_ncont_len() / knf_basic_len;
+        = this->param_->get_kernel().knf_giant.get_ncont_len() / knf_basic_len;
 
     // Create rest thread number factors vector
     auto factor_map = this->th_factor_map_;
@@ -483,7 +485,7 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
    */
   if (cont_offset_size > 0 and ncont_offset_size > 0) {
     // Locate kernel's position
-    const auto kernel_offset = this->param_->kn.kernel_offset(kn_type,
+    const auto kernel_offset = this->param_->get_kernel().kernel_offset(kn_type,
         kn_cont_size, kn_ncont_size, is_linh);
     auto &oper = this->template_descriptor_.description[0][kernel_offset];
 
@@ -491,17 +493,17 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
     if (oper.is_disabled()) {
       // Set up loops for leading orders
       oper.loop_begin[this->in_ld_idx_] = cont_begin_pos;
-      oper.loop_step[this->in_ld_idx_] = this->param_->kn.kn_cont_len(kn_type,
-          kn_cont_size);
+      oper.loop_step[this->in_ld_idx_]
+          = this->param_->get_kernel().kn_cont_len(kn_type, kn_cont_size);
 
       oper.loop_begin[this->out_ld_idx_] = ncont_begin_pos;
-      oper.loop_step[this->out_ld_idx_] = this->param_->kn.kn_ncont_len(kn_type,
-          kn_ncont_size);
+      oper.loop_step[this->out_ld_idx_]
+          = this->param_->get_kernel().kn_ncont_len(kn_type, kn_ncont_size);
     }
     oper.loop_end[this->in_ld_idx_] = cont_begin_pos
-      + cont_offset_size * this->param_->kn.kn_cont_len(kn_type, 1);
+      + cont_offset_size * this->param_->get_kernel().kn_cont_len(kn_type, 1);
     oper.loop_end[this->out_ld_idx_] = ncont_begin_pos
-      + ncont_offset_size * this->param_->kn.kn_ncont_len(kn_type, 1);
+      + ncont_offset_size * this->param_->get_kernel().kn_ncont_len(kn_type, 1);
 
     // Set up non leading order loops
     oper.set_pass(this->in_ld_idx_);
