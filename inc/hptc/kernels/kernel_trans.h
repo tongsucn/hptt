@@ -2,6 +2,8 @@
 #ifndef HPTC_KERNELS_KERNEL_TRANS_H_
 #define HPTC_KERNELS_KERNEL_TRANS_H_
 
+#include <immintrin.h>
+
 #include <hptc/types.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/kernels/macro_kernel_trans.h>
@@ -15,6 +17,7 @@ namespace hptc {
 template <typename FloatType,
           CoefUsageTrans USAGE>
 struct KernelPackTrans {
+  // Type alias
   template <TensorUInt CONT_LEN,
             TensorUInt NCONT_LEN>
   using KernelFull = MacroTransVecFull<FloatType, USAGE, CONT_LEN, NCONT_LEN>;
@@ -26,19 +29,18 @@ struct KernelPackTrans {
   using RegTypeHalf = typename KernelHalf<1, 1>::RegType;
   using RegTypeLinear = typename MacroTransLinear<FloatType, USAGE>::RegType;
 
+  // Kernel number (linear kernel is count for 2)
+  static constexpr TensorUInt KERNEL_NUM = 25;
+
+  static RegTypeFull set_coef_full(DeducedFloatType<FloatType> coef);
+  static RegTypeHalf set_coef_half(DeducedFloatType<FloatType> coef);
+  static RegTypeLinear set_coef_linear(DeducedFloatType<FloatType> coef);
+
+  static KernelPackTrans<FloatType, USAGE> &get_package();
 
   KernelPackTrans(const KernelPackTrans<FloatType, USAGE> &) = delete;
   KernelPackTrans<FloatType, USAGE> &operator=(
       const KernelPackTrans<FloatType, USAGE> &) = delete;
-
-  // Static member functions
-  static constexpr TensorUInt KERNEL_NUM = 25;
-  static KernelPackTrans<FloatType, USAGE> &get_package();
-
-  // Register types
-  static RegTypeFull reg_coef_full(const DeducedFloatType<FloatType> coef);
-  static RegTypeHalf reg_coef_half(const DeducedFloatType<FloatType> coef);
-  static RegTypeLinear reg_coef_linear(const DeducedFloatType<FloatType> coef);
 
   // Non-static member functions
   TensorUInt kernel_offset(const KernelTypeTrans kn_type,
@@ -86,6 +88,8 @@ struct KernelPackTrans {
   const KernelFull<1, 1> &knf_basic;
   const KernelHalf<1, 4> &knh_giant;
   const KernelHalf<1, 1> &knh_basic;
+
+  RegTypeFull reg_alpha_full_, reg_beta_full_;
 
 private:
   KernelPackTrans();

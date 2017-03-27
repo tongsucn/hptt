@@ -108,18 +108,18 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta)
     : input_merge_set_(), output_merge_set_(),
-      perm(perm), alpha(alpha), beta(beta),
-      reg_alpha_full(KernelPack::reg_coef_full(alpha)),
-      reg_beta_full(KernelPack::reg_coef_full(beta)),
-      reg_alpha_half(KernelPack::reg_coef_half(alpha)),
-      reg_beta_half(KernelPack::reg_coef_half(beta)),
-      reg_alpha_linear(KernelPack::reg_coef_linear(alpha)),
-      reg_beta_linear(KernelPack::reg_coef_linear(beta)),
+      perm(perm), alpha(alpha), beta(beta), kn(KernelPack::get_package()),
+      reg_alpha_full(this->kn.reg_alpha_full_),
+      reg_beta_full(this->kn.reg_beta_full_),
+      /*reg_alpha_half(KernelPack::set_coef_half(alpha)),
+      reg_beta_half(KernelPack::set_coef_half(beta)),
+      reg_alpha_linear(KernelPack::set_coef_linear(alpha)),
+      reg_beta_linear(KernelPack::set_coef_linear(beta)),*/
       input_stride(1), output_stride(1),
       merged_order(this->merge_idx_(perm)),
       input_tensor(input_tensor, this->input_merge_set_),
-      output_tensor(output_tensor, this->output_merge_set_),
-      kn(KernelPackTrans<typename TensorType::Float, USAGE>::get_package()) {
+      output_tensor(output_tensor, this->output_merge_set_) {
+  this->set_coef(alpha, beta);
   // Initialize access strides
   for (TensorUInt idx = 0; idx < perm[0]; ++idx)
     this->input_stride *= input_tensor.get_outer_size()[idx];
@@ -155,16 +155,13 @@ template <typename TensorType,
 HPTC_INL void ParamTrans<TensorType, USAGE>::set_coef(
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta) {
-  using FloatType = typename TensorType::Float;
-  using KernelPack = KernelPackTrans<FloatType, USAGE>;
-
   this->alpha = alpha, this->beta = beta;
-  this->reg_alpha_full = KernelPack::reg_coef_full(this->alpha);
-  this->reg_beta_full = KernelPack::reg_coef_full(this->beta);
-  this->reg_alpha_half = KernelPack::reg_coef_half(this->alpha);
-  this->reg_beta_half = KernelPack::reg_coef_half(this->beta);
-  this->reg_alpha_linear = KernelPack::reg_coef_linear(this->alpha);
-  this->reg_beta_linear = KernelPack::reg_coef_linear(this->beta);
+  this->reg_alpha_full = KernelPack::set_coef_full(alpha);
+  this->reg_beta_full = KernelPack::set_coef_full(beta);
+  this->reg_alpha_half = KernelPack::set_coef_half(alpha);
+  this->reg_beta_half = KernelPack::set_coef_half(beta);
+  this->reg_alpha_linear = KernelPack::set_coef_linear(alpha);
+  this->reg_beta_linear = KernelPack::set_coef_linear(beta);
 }
 
 

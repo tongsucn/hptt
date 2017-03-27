@@ -29,6 +29,12 @@ class PlanTransOptimizer;
 template <typename ParamType>
 class CGraphTrans {
 public:
+  // Friend classes
+  template <typename Param>
+  friend class PlanTrans;
+  template <typename Param>
+  friend class PlanTransOptimizer;
+
   static constexpr auto ORDER = ParamType::ORDER;
 
   struct Descriptor {
@@ -51,12 +57,6 @@ public:
   HPTC_INL Descriptor get_descriptor() const;
 
 private:
-  // Friend classes
-  template <typename Param>
-  friend class PlanTrans;
-  template <typename Param>
-  friend class PlanTransOptimizer;
-
   using For_ = OpForTrans<ORDER>;
 
   CGraphTrans(const std::shared_ptr<ParamType> &param,

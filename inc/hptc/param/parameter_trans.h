@@ -45,12 +45,8 @@ template <typename TensorType,
           CoefUsageTrans USAGE = CoefUsageTrans::USE_BOTH>
 struct ParamTrans {
   // Type alias and constant values
-  using FloatType = typename TensorType::Float;
-  using Deduced = DeducedFloatType<FloatType>;
-  using KernelPack = KernelPackTrans<FloatType, USAGE>;
-  using RegTypeFull = typename KernelPack::RegTypeFull;
-  using RegTypeHalf = typename KernelPack::RegTypeHalf;
-  using RegTypeLinear = typename KernelPack::RegTypeLinear;
+  using Deduced = DeducedFloatType<typename TensorType::Float>;
+  using KernelPack = KernelPackTrans<typename TensorType::Float, USAGE>;
 
   constexpr static auto ORDER = TensorType::TENSOR_ORDER;
   constexpr static CoefUsageTrans COEF_USAGE = USAGE;
@@ -70,21 +66,24 @@ public:
   HPTC_INL std::pair<TensorUInt, TensorUInt> get_leading() const;
   HPTC_INL void set_coef(const Deduced alpha, const Deduced beta);
 
+  // Permutation
   std::array<TensorUInt, ORDER> perm;
+
+  // Coefficients
   Deduced alpha, beta;
-  RegTypeFull reg_alpha_full, reg_beta_full;
-  RegTypeHalf reg_alpha_half, reg_beta_half;
-  RegTypeLinear reg_alpha_linear, reg_beta_linear;
+
+  // Kernel package
+  KernelPack &kn;
+  typename KernelPack::RegTypeFull &reg_alpha_full, &reg_beta_full;
+  typename KernelPack::RegTypeHalf reg_alpha_half, reg_beta_half;
+  typename KernelPack::RegTypeLinear reg_alpha_linear, reg_beta_linear;
 
   TensorIdx input_stride, output_stride;
   TensorUInt begin_order_idx, merged_order;
 
   // Put the merged tensors here, they must be initialized after merging
-  const TensorMergedWrapper<FloatType, ORDER> input_tensor;
-  TensorMergedWrapper<FloatType, ORDER> output_tensor;
-
-  // Kernels
-  const KernelPack &kn;
+  const TensorMergedWrapper<typename TensorType::Float, ORDER> input_tensor;
+  TensorMergedWrapper<typename TensorType::Float, ORDER> output_tensor;
 };
 
 

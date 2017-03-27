@@ -5,8 +5,6 @@
 // Force inline
 #if defined(__INTEL_COMPILER)
   #define HPTC_INL __forceinline
-#elif defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
-  #define HPTC_INL inline
 #else
   #define HPTC_INL inline
 #endif
