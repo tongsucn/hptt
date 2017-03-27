@@ -132,7 +132,7 @@ namespace hptc {
       temp_base_content += '''
 template class CGraphTransPackBase<%s>;
 template CGraphTransPack<%s> *create_cgraph_trans<%s>(
-    const %s *, %s *, const TensorUInt, const std::vector<TensorUInt> &,
+    const %s *, %s *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<%s>,
     const DeducedFloatType<%s>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);

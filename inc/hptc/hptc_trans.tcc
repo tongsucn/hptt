@@ -48,9 +48,8 @@ public:
  */
 template <typename FloatType>
 CGraphTransPack<FloatType> *create_cgraph_trans(
-    const FloatType *in_data, FloatType *out_data, const TensorUInt order,
-    const std::vector<TensorUInt> &in_size,
-    const std::vector<TensorUInt> &perm,
+    const FloatType *in_data, FloatType *out_data,
+    const std::vector<TensorUInt> &in_size, const std::vector<TensorUInt> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta,
     const TensorUInt num_threads, const double tuning_timeout,
@@ -62,6 +61,7 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
     return nullptr;
 
   // Check order value
+  auto order = static_cast<TensorUInt>(perm.size());
   if (order <= 1)
     return nullptr;
 
@@ -80,8 +80,6 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
       return nullptr;
 
   // Check permutation array
-  if (order != perm.size())
-    return nullptr;
   std::vector<bool> perm_verify_map(order, false);
   for (TensorUInt order_idx : perm) {
     if (order_idx >= order or perm_verify_map[order_idx])
@@ -90,12 +88,13 @@ CGraphTransPack<FloatType> *create_cgraph_trans(
       perm_verify_map[order_idx] = true;
   }
 
-  // For now, heuristic number will be limited to 640 (loop orders) x 640 (
+  // For now, heuristic number will be limited to 1000 (loop orders) x 1000 (
   // parallelization strategies) candidates.
-  constexpr auto heur_num = 64;
+  constexpr auto heur_num = 1000;
 
   // Set auto-tuning amount and convert timeout from second to millisecond.
-  const auto tune_num = 0.0 == tuning_timeout ? 0 : -1;
+  // 64 (loop orders) x 64 (parallelization strategies) will be tuned.
+  const auto tune_num = 0.0 == tuning_timeout ? 0 : 64;
   const auto tuning_timeout_ms = tuning_timeout * 1000;
 
   // Create transpose computational graph package
@@ -136,25 +135,25 @@ extern template class CGraphTransPack<DoubleComplex>;
  * create_cgraph_trans
  */
 extern template CGraphTransPack<float> *create_cgraph_trans<float>(
-    const float *, float *, const TensorUInt, const std::vector<TensorUInt> &,
+    const float *, float *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<float>,
     const DeducedFloatType<float>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
 extern template CGraphTransPack<double> *create_cgraph_trans<double>(
-    const double *, double *, const TensorUInt, const std::vector<TensorUInt> &,
+    const double *, double *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<double>,
     const DeducedFloatType<double>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
 extern template CGraphTransPack<FloatComplex> *
 create_cgraph_trans<FloatComplex>(const FloatComplex *, FloatComplex *,
-    const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
-    const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+    const DeducedFloatType<FloatComplex>, const DeducedFloatType<FloatComplex>,
+    const TensorUInt, const double, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &);
 extern template CGraphTransPack<DoubleComplex> *
 create_cgraph_trans<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
-    const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+    const DeducedFloatType<DoubleComplex>,
     const DeducedFloatType<DoubleComplex>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
 

@@ -20,8 +20,8 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
       test_case.size.end());
 
   auto graph = create_cgraph_trans<FloatType>(data_wrapper.org_in_data,
-      data_wrapper.act_data, ORDER, size_vec, perm,
-      static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA), 0);
+      data_wrapper.act_data, size_vec, perm, static_cast<Deduced>(ALPHA),
+      static_cast<Deduced>(BETA), 0);
 
   double time_ttc = DBL_MAX, time_hptc = DBL_MAX;
   for (auto times = 0; times < MEASURE_REPEAT; ++times) {

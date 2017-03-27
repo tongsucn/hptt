@@ -48,10 +48,10 @@ class CGraphTransPack;
  * \param[in] in_data Raw input tensor data, the tensor to be transposed;
  * \param[in,out] out_data Raw output tensor data, the destination for storing
  *     the transpose result.
- * \param[in] order Tensor order.
  * \param[in] in_size Vector for describing size of each order in input tensor.
  * \param[in] perm Vector used for describing permutation (e.g., perm = { 1, 0 }
- *     denotes a matrix transpose).
+ *     denotes a matrix transpose). The vector's size is used as the order of
+ *     tensor.
  * \param[in] alpha Coefficient for scaling all the elements in input tensor.
  *     When using complex type, its type will be deduced into float (for
  *     FloatComplex) or double (for DoubleComplex).
@@ -88,7 +88,7 @@ class CGraphTransPack;
  *
  * The returned pointer will be null, when:
  * 1. at least one of the two data pointers in function parameter list is null;
- * 2. tensor order is less than 2;
+ * 2. tensor order is less than 2 (the order value comes from perm's size);
  * 3. at least one of the tensor size vectors is incorrect, i.e. in_size's
  *    size is not tensor's order; in_outer_size's or out_outer_size's size is
  *    neither 0 nor tensor's order.
@@ -102,7 +102,7 @@ class CGraphTransPack;
  */
 template <typename FloatType>
 CGraphTransPack<FloatType> *create_cgraph_trans(
-    const FloatType *in_data, FloatType *out_data, const uint32_t order,
+    const FloatType *in_data, FloatType *out_data,
     const std::vector<uint32_t> &in_size, const std::vector<uint32_t> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta, const uint32_t num_threads,
