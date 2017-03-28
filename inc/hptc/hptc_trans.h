@@ -25,13 +25,15 @@ namespace hptc {
 template <typename FloatType>
 class CGraphTransPack;
 
+template <typename FloatType>
+using trans_plan = CGraphTransPack<FloatType>;
+
 
 /**
  * \brief Function for creating a tensor transpose.
  *
- * \details This function is used to create computational a graph for
- *     transposing a tensor. For the flexibility, the transpose has following
- *     form:
+ * \details This function is used to create a plan for transposing a tensor. For
+ *     the flexibility, the transpose has following form:
  *
  * $B_{perm(i1,i2,..., iN)} = \alpha \cdot A_{i_1,i_2,..., i_N} +
  *     \beta \cdot B_{perm(i_1,i_2,..., i_N)}$
@@ -75,15 +77,15 @@ class CGraphTransPack;
  * \param[in] out_outer_size An std::vector for output tensor outer size. It is
  *     an optional parameter, default is an empty std::initializer_list.
  *
- * \return A pointer to the computational graph for this transpose. It can be
+ * \return A pointer to the computational plan for this transpose. It can be
  *     used like this:
  * \code{.cpp}
- *   auto graph = create_cgraph_trans(...);  // Create graph
- *   if (nullptr != graph)
- *     graph->exec();   // call cgraph's member function exec()
+ *   auto plan = create_trans_plan(...);  // Create plan
+ *   if (nullptr != plan)
+ *     plan->exec();   // call plan's member function exec()
  *   // ...
- *   delete graph;
- *   graph = nullptr;
+ *   delete plan;
+ *   plan = nullptr;
  * \endcode
  *
  * The returned pointer will be null, when:
@@ -96,12 +98,11 @@ class CGraphTransPack;
  *    zero-value or the outer size is less than the inner size.
  * 5. the size and content of input permutation array is not valid.
  *
- * The returned graph must be released by user to avoid memory leak.
+ * The returned plan must be released by user to avoid memory leak.
  *
- * \sa CGraphTrans
  */
 template <typename FloatType>
-CGraphTransPack<FloatType> *create_cgraph_trans(
+trans_plan<FloatType> *create_trans_plan(
     const FloatType *in_data, FloatType *out_data,
     const std::vector<uint32_t> &in_size, const std::vector<uint32_t> &perm,
     const DeducedFloatType<FloatType> alpha,
