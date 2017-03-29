@@ -101,9 +101,8 @@ TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
 /*
  * Implementation for struct ParamTrans
  */
-template <typename TensorType,
-          CoefUsageTrans USAGE>
-ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
+template <typename TensorType>
+ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
     TensorType &output_tensor, const std::array<TensorUInt, ORDER> &perm,
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta)
@@ -121,19 +120,17 @@ ParamTrans<TensorType, USAGE>::ParamTrans(const TensorType &input_tensor,
 }
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE>
-HPTC_INL bool ParamTrans<TensorType, USAGE>::is_common_leading() const {
+template <typename TensorType>
+HPTC_INL bool ParamTrans<TensorType>::is_common_leading() const {
   if (0 == this->perm[this->begin_order_idx])
     return true;
   return false;
 }
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE>
+template <typename TensorType>
 HPTC_INL std::pair<TensorUInt, TensorUInt>
-ParamTrans<TensorType, USAGE>::get_leading() const {
+ParamTrans<TensorType>::get_leading() const {
   std::pair<TensorUInt, TensorUInt> result;
 
   result.first = this->input_tensor.get_size()[this->begin_order_idx];
@@ -143,9 +140,8 @@ ParamTrans<TensorType, USAGE>::get_leading() const {
 }
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE>
-HPTC_INL void ParamTrans<TensorType, USAGE>::set_coef(
+template <typename TensorType>
+HPTC_INL void ParamTrans<TensorType>::set_coef(
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta) {
   this->alpha = alpha, this->beta = beta;
@@ -153,17 +149,15 @@ HPTC_INL void ParamTrans<TensorType, USAGE>::set_coef(
 }
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE>
-HPTC_INL const KernelPackTrans<typename TensorType::Float, USAGE> &
-ParamTrans<TensorType, USAGE>::get_kernel() const {
+template <typename TensorType>
+HPTC_INL const KernelPackTrans<typename TensorType::Float> &
+ParamTrans<TensorType>::get_kernel() const {
   return this->kn_;
 }
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE>
-TensorUInt ParamTrans<TensorType, USAGE>::merge_idx_(
+template <typename TensorType>
+TensorUInt ParamTrans<TensorType>::merge_idx_(
     const std::array<TensorUInt, ORDER> &perm) {
   if (ORDER <= 1)
     return ORDER;

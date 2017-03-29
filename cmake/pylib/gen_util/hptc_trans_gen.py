@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from gen_util.gen_types import (FloatType, CoefTrans, FLOAT_MAP, COEF_TRANS_MAP)
+from gen_util.gen_types import (FloatType, FLOAT_MAP)
 
 
 TARGET_PREFIX = 'hptc_trans'
@@ -9,8 +9,10 @@ TARGET_PREFIX = 'hptc_trans'
 class IncTarget(object):
   def __init__(self, **kwargs):
     orders = kwargs['order']
+    dtypes = kwargs['dtype']
+    suffix = kwargs['suffix']
 
-    self.filename = ['%s_gen.tcc' % TARGET_PREFIX]
+    self.filename = ['%s_base_%s' % (TARGET_PREFIX, suffix)]
 
     # Constructor content
     constructor_content = ''
@@ -37,15 +39,30 @@ class IncTarget(object):
       this->cgraph_trans_ptr_%d_->exec();''' % (
     '' if order == orders[0] else 'else ', order, order)
 
+    # Explicit template instantiation declaration
+    extern_content = ''
+    for dtype in dtypes:
+      extern_content += '''
+extern template class CGraphTransPackBase<%s>;
+extern template class CGraphTransPack<%s>;
+extern template CGraphTransPack<%s> *create_trans_plan<%s>(
+    const %s *, %s *, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<%s>,
+    const DeducedFloatType<%s>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+''' % tuple(FLOAT_MAP[dtype].full for _ in range(8))
+
     # Member content
     member_content = ''
     for order in orders:
       member_content += '''
   CGraphType_<%d> *cgraph_trans_ptr_%d_;''' % (order, order)
 
+
+    # Base output
     self.content = ['''#pragma once
-#ifndef HPTC_GEN_%s_GEN_TCC_
-#define HPTC_GEN_%s_GEN_TCC_
+#ifndef HPTC_GEN_%s_BASE_GEN_TCC_
+#define HPTC_GEN_%s_BASE_GEN_TCC_
 
 #define HPTC_CGRAPH_TRANS_BASE_GEN(ORDER)                                     \\
   using TensorType = TensorWrapper<FloatType, ORDER>;                         \\
@@ -105,49 +122,32 @@ private:
   template <TensorUInt ORDER>
   using TensorType_ = TensorWrapper<FloatType, ORDER>;
   template <TensorUInt ORDER>
-  using ParamType_ = ParamTrans<TensorType_<ORDER>, CoefUsageTrans::USE_BOTH>;
+  using ParamType_ = ParamTrans<TensorType_<ORDER>>;
   template <TensorUInt ORDER>
   using CGraphType_ = CGraphTrans<ParamType_<ORDER>>;
 %s
 };
-
+%s
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(), constructor_content,
-    destructor_content, orders[0], orders[-1], exec_content, member_content)]
+    destructor_content, orders[0], orders[-1], exec_content, member_content,
+    extern_content)]
 
-class SrcTarget(object):
-  def __init__(self, **kwargs):
-    dtypes = kwargs['dtype']
-    suffix = kwargs['suffix']
-
-    self.filename = []
-    self.content = []
-
-    # Base + function
-    self.filename.append('%s_base_%s' % (TARGET_PREFIX, suffix))
-    temp_base_content = '''#include <hptc/hptc_trans.h>
-
-namespace hptc {
-'''
+    self.filename.append('%s_%s' % (TARGET_PREFIX, suffix))
+    inst_content = ''
     for dtype in dtypes:
-      temp_base_content += '''
+      inst_content += '''
 template class CGraphTransPackBase<%s>;
-template CGraphTransPack<%s> *create_cgraph_trans<%s>(
+template class CGraphTransPack<%s>;
+template CGraphTransPack<%s> *create_trans_plan<%s>(
     const %s *, %s *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<%s>,
     const DeducedFloatType<%s>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-''' % tuple(FLOAT_MAP[dtype].full for _ in range(7))
-    temp_base_content += '\n}'
-    self.content.append(temp_base_content)
+''' % tuple(FLOAT_MAP[dtype].full for _ in range(8))
 
-    # Rest
-    for dtype in dtypes:
-      self.filename.append('%s_%s_%s' % (TARGET_PREFIX,
-          FLOAT_MAP[dtype].abbrev, suffix))
-      self.content.append('''#include <hptc/hptc_trans.h>
-
-namespace hptc {
-
-template class CGraphTransPack<%s>;
-
-}''' % FLOAT_MAP[dtype].full)
+    self.content.append('''#pragma once
+#ifndef HPTC_GEN_%s_GEN_TCC_
+#define HPTC_GEN_%s_GEN_TCC_
+%s
+#endif
+''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(), inst_content))

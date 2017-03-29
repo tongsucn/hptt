@@ -9,8 +9,6 @@
 #include <memory>
 #include <algorithm>
 
-#include <immintrin.h>
-
 #include <hptc/types.h>
 #include <hptc/compat.h>
 #include <hptc/tensor.h>
@@ -18,7 +16,6 @@
 #include <hptc/plan/plan_trans.h>
 #include <hptc/cgraph/cgraph_trans.h>
 #include <hptc/param/parameter_trans.h>
-
 
 namespace hptc {
 

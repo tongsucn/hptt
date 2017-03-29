@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from gen_util.gen_types import (FloatType, CoefTrans, FLOAT_MAP, COEF_TRANS_MAP)
+from gen_util.gen_types import (FloatType, FLOAT_MAP)
 
 
 TARGET_PREFIX = 'operation_trans'
@@ -20,6 +20,7 @@ class IncTarget(object):
       temp_content += '\nextern template class OpForTrans<%d>;' % order
     temp_content += '\n\n#endif'
     self.content = [temp_content]
+
 
 class SrcTarget(object):
   def __init__(self, **kwargs):

@@ -2,121 +2,60 @@
 #ifndef HPTC_KERNELS_AVX2_KERNEL_TRANS_AVX2_H_
 #define HPTC_KERNELS_AVX2_KERNEL_TRANS_AVX2_H_
 
-#include <xmmintrin.h>
-#include <immintrin.h>
-
-#include <type_traits>
-
 #include <hptc/types.h>
-#include <hptc/util/util.h>
-#include <hptc/util/util_trans.h>
 
 
-namespace hptc {
+extern "C" {
 
-#define REG_SIZE_BYTE_AVX2 32
-
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<(std::is_same<FloatType, float>::value or
-            std::is_same<FloatType, FloatComplex>::value) and
-        TYPE == KernelTypeTrans::KERNEL_FULL>> {
-  using type = __m256;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<(std::is_same<FloatType, double>::value or
-            std::is_same<FloatType, DoubleComplex>::value) and
-        TYPE == KernelTypeTrans::KERNEL_FULL>> {
-  using type = __m256d;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<(std::is_same<FloatType, float>::value or
-            std::is_same<FloatType, FloatComplex>::value) and
-        TYPE == KernelTypeTrans::KERNEL_HALF>> {
-  using type = __m128;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<std::is_same<FloatType, double>::value and
-        TYPE == KernelTypeTrans::KERNEL_HALF>> {
-  using type = __m128d;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<TYPE == KernelTypeTrans::KERNEL_LINE and
-        (std::is_same<FloatType, float>::value or
-            std::is_same<FloatType, FloatComplex>::value)>> {
-  using type = float;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegTypeDeducer<FloatType, TYPE,
-    hptc::Enable<(TYPE == KernelTypeTrans::KERNEL_LINE and
-        (std::is_same<FloatType, double>::value or
-            std::is_same<FloatType, DoubleComplex>::value)) or
-        (TYPE == KernelTypeTrans::KERNEL_HALF and
-            std::is_same<FloatType, DoubleComplex>::value)>> {
-  using type = double;
-};
+extern constexpr hptc::TensorUInt REG_SIZE = 32;
 
 
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct KernelTransAvx2Base {
-  using Float = FloatType;
-  using RegType = DeducedRegType<FloatType, TYPE>;
-  constexpr KernelTransAvx2Base() = default;
-
-  static constexpr TensorUInt kn_width = KernelTypeTrans::KERNEL_FULL == TYPE
-      ? REG_SIZE_BYTE_AVX2 / sizeof(FloatType)
-      : KernelTypeTrans::KERNEL_HALF == TYPE
-          ? REG_SIZE_BYTE_AVX2 / sizeof(FloatType) / 2 : 1;
-};
+void set_trans_coef_full_s_(void *reg, const float coef);
+void set_trans_coef_half_s_(void *reg, const float coef);
+void set_trans_coef_linear_s_(void *reg, const float coef);
+void set_trans_coef_full_d_(void *reg, const double coef);
+void set_trans_coef_half_d_(void *reg, const double coef);
+void set_trans_coef_linear_d_(void *reg, const double coef);
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE,
-          KernelTypeTrans TYPE>
-struct KernelTransAvx2 final : public KernelTransAvx2Base<FloatType, TYPE> {
-  using RegType = typename KernelTransAvx2Base<FloatType, TYPE>::RegType;
+void exec_trans_full_s_(const float *input_data, float *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_full_d_(const double *input_data, double *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_full_c_(const hptc::FloatComplex *input_data,
+    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
+void exec_trans_full_z_(const hptc::DoubleComplex *input_data,
+    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
 
-  static RegType reg_coef(const DeducedFloatType<FloatType> coef);
+void exec_trans_half_s_(const float *input_data, float *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_half_d_(const double *input_data, double *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_half_c_(const hptc::FloatComplex *input_data,
+    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
+void exec_trans_half_z_(const hptc::DoubleComplex *input_data,
+    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
 
-  static void exec(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride, const RegType &reg_alpha,
-      const RegType &reg_beta);
-};
-
-
-/*
- * Type alias for AVX2 micro kernel
- */
-template <typename FloatType,
-          CoefUsageTrans USAGE,
-          KernelTypeTrans TYPE>
-using KernelTrans = KernelTransAvx2<FloatType, USAGE, TYPE>;
-
-
-
-/*
- * Import template class KernelTransAvx2's partial specialization
- * and explicit instantiation declaration
- */
-#include "kernel_trans_avx2.tcc"
+void exec_trans_linear_s_(const float *input_data, float *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_linear_d_(const double *input_data, double *output_data,
+    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
+    const void *alpha, const void *beta);
+void exec_trans_linear_c_(const hptc::FloatComplex *input_data,
+    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
+void exec_trans_linear_z_(const hptc::DoubleComplex *input_data,
+    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
+    const hptc::TensorIdx output_stride, const void *alpha, const void *beta);
 
 }
 

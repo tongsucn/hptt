@@ -18,15 +18,12 @@ set(HPTC_MSG_CODE_GEN_TRANS_DTYPE
   "Float type pre-compiled in transpose library, support: s (float), \
 d (double), c (FloatComplex), z (DoubleComplex)")
 
-set(HPTC_MSG_CODE_GEN_TRANS_COEF
-  "Coefficient usage pre-compiled in transpose library, support: alpha, beta, \
-both, none")
-
 
 # ----------------------------------------------------------------------------
 # Architecture detection variables
 # ----------------------------------------------------------------------------
-set(HPTC_ARCH_TYPE "")
+set(HPTC_ARCH_AVX2 "")
+set(HPTC_ARCH_AVX "")
 
 
 # ----------------------------------------------------------------------------
@@ -36,7 +33,6 @@ set(HPTC_CODE_GEN_TARGET_DIR_ARG "--target")
 set(HPTC_CODE_GEN_TRANS_ORDER_MIN_ARG "--order-min")
 set(HPTC_CODE_GEN_TRANS_ORDER_MAX_ARG "--order-max")
 set(HPTC_CODE_GEN_TRANS_DTYPE_ARG "--dtype")
-set(HPTC_CODE_GEN_TRANS_COEF_ARG "--coef")
 
 set(HPTC_CODE_GEN_TARGET_DIR "src/hptc/gen")
 
@@ -66,10 +62,6 @@ macro(hptc_set_options)
   # Data type of transpose pre-compiled in shared/static library.
   set(HPTC_CODE_GEN_TRANS_DTYPE "s,d,c,z" CACHE STRING
     ${HPTC_MSG_CODE_GEN_TRANS_DTYPE})
-
-  # Coefficient usage type of transpose pre-compiled in shared/static library.
-  set(HPTC_CODE_GEN_TRANS_COEF "both" CACHE STRING
-    ${HPTC_MSG_CODE_GEN_TRANS_COEF})
 
   string(CONCAT HPTC_CODE_GEN_TARGET_DIR ${CMAKE_CURRENT_SOURCE_DIR} "/"
     ${HPTC_CODE_GEN_TARGET_DIR})
@@ -103,11 +95,6 @@ macro(hptc_set_compiler)
     string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " " ${HPTC_RELEASE_FLAG})
   endif ()
   string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " " ${HPTC_CXX_FLAG})
-
-  # Add architecture macro definition
-  if (NOT ${HPTC_ARCH_TYPE} STREQUAL "")
-    string(CONCAT CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} " -D" ${HPTC_ARCH_TYPE})
-  endif ()
 
   message("-- Compiler flags:" ${CMAKE_CXX_FLAGS})
 endmacro()

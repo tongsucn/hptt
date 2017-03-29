@@ -3,19 +3,21 @@
 #define HPTC_KERNELS_MACRO_KERNEL_TRANS_H_
 
 #include <hptc/types.h>
+#include <hptc/util/util.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/kernels/micro_kernel_trans.h>
 
 
 namespace hptc {
 
-template <typename KernelFunc,
+template <typename MicroKernel,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-class MacroTransVec {
+class MacroTrans {
 public:
-  using Float = typename KernelFunc::Float;
-  using RegType = typename KernelFunc::RegType;
+  using Float = typename MicroKernel::Float;
+
+  MacroTrans();
 
   void set_coef(const DeducedFloatType<Float> alpha,
       const DeducedFloatType<Float> beta);
@@ -49,16 +51,14 @@ private:
       const Float * RESTRICT input_data, Float * RESTRICT output_data,
       const TensorIdx input_stride, const TensorIdx output_stride) const;
 
-  RegType reg_alpha_, reg_beta_;
+  MicroKernel kernel_;
+  const TensorUInt kn_width_;
 };
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
+template <typename FloatType>
 class MacroTransLinear {
 public:
-  using RegType = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_LINE>;
-
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
 
@@ -67,7 +67,7 @@ public:
       const TensorIdx output_stride) const;
 
 private:
-  RegType reg_alpha_, reg_beta_;
+  DeducedFloatType<FloatType> reg_alpha_, reg_beta_;
 };
 
 
@@ -75,19 +75,17 @@ private:
  * Alias of macro kernels
  */
 template <typename FloatType,
-          CoefUsageTrans USAGE,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-using MacroTransVecFull = MacroTransVec<KernelTransFull<FloatType, USAGE>,
-      CONT_LEN, NCONT_LEN>;
+using MacroTransFull = MacroTrans<KernelTransFull<FloatType>, CONT_LEN,
+    NCONT_LEN>;
 
 
 template <typename FloatType,
-          CoefUsageTrans USAGE,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-using MacroTransVecHalf = MacroTransVec<KernelTransHalf<FloatType, USAGE>,
-      CONT_LEN, NCONT_LEN>;
+using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType>, CONT_LEN,
+    NCONT_LEN>;
 
 
 /*

@@ -41,15 +41,13 @@ private:
 };
 
 
-template <typename TensorType,
-          CoefUsageTrans USAGE = CoefUsageTrans::USE_BOTH>
+template <typename TensorType>
 struct ParamTrans {
   // Type alias and constant values
   using Deduced = DeducedFloatType<typename TensorType::Float>;
-  using KernelPack = KernelPackTrans<typename TensorType::Float, USAGE>;
+  using KernelPack = KernelPackTrans<typename TensorType::Float>;
 
   constexpr static auto ORDER = TensorType::TENSOR_ORDER;
-  constexpr static CoefUsageTrans COEF_USAGE = USAGE;
 
   ParamTrans(const TensorType &input_tensor, TensorType &output_tensor,
       const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
@@ -65,7 +63,7 @@ private:
 
   // They need to be initialized before merging
   std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
-  KernelPackTrans<typename TensorType::Float, USAGE> kn_;
+  KernelPackTrans<typename TensorType::Float> kn_;
 
 public:
   std::array<TensorUInt, ORDER> perm;

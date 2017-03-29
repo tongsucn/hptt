@@ -21,16 +21,15 @@ def get_cpu_flags():
   return flags
 
 
-flag_map = [ ('avx2','HPTC_ARCH_AVX2'), ('avx', 'HPTC_ARCH_AVX') ]
+flag_list = [ 'avx2', 'avx']
 
 def main():
-  selected_arch = ''
   supported_flags = get_cpu_flags()
-  for flag in flag_map:
-    if flag[0] in supported_flags:
-      selected_arch = flag[1]
-      break
-  sys.stdout.write(selected_arch)
+  candidates = ''
+  for flag in flag_list:
+    if flag in supported_flags:
+      candidates += '%s ' % flag
+  sys.stdout.write(candidates[:-1])
 
 
 if __name__ == '__main__':

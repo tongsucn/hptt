@@ -13,17 +13,6 @@
 namespace hptc {
 
 /*
- * Transpose coefficients types
- */
-enum class CoefUsageTrans : TensorUInt {
-  USE_NONE  = 0x0,
-  USE_ALPHA = 0x1,
-  USE_BETA  = 0x2,
-  USE_BOTH  = 0x3
-};
-
-
-/*
  * Transpose kernel types
  */
 enum class KernelTypeTrans : TensorUInt {
@@ -67,8 +56,7 @@ template <TensorUInt ORDER>
 using ParaStrategyTrans = std::array<TensorUInt, ORDER>;
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
+template <typename FloatType>
 double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms);
 
 

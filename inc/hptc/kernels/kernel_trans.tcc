@@ -5,9 +5,8 @@
 /*
  * Implementation for struct KernelPackTrans
  */
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-void KernelPackTrans<FloatType, USAGE>::set_coef(
+template <typename FloatType>
+void KernelPackTrans<FloatType>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {
   this->knf_1x1.set_coef(alpha, beta), this->knf_1x2.set_coef(alpha, beta);
@@ -26,9 +25,8 @@ void KernelPackTrans<FloatType, USAGE>::set_coef(
 }
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-TensorUInt KernelPackTrans<FloatType, USAGE>::kernel_offset(
+template <typename FloatType>
+TensorUInt KernelPackTrans<FloatType>::kernel_offset(
     const KernelTypeTrans kn_type, const TensorUInt cont_size,
     const TensorUInt ncont_size, const bool is_tail) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
@@ -40,9 +38,8 @@ TensorUInt KernelPackTrans<FloatType, USAGE>::kernel_offset(
 }
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-TensorUInt KernelPackTrans<FloatType, USAGE>::kn_cont_len(
+template <typename FloatType>
+TensorUInt KernelPackTrans<FloatType>::kn_cont_len(
     const KernelTypeTrans kn_type, const TensorUInt cont_size) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return cont_size * this->knf_basic.get_cont_len();
@@ -53,9 +50,8 @@ TensorUInt KernelPackTrans<FloatType, USAGE>::kn_cont_len(
 }
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-TensorUInt KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
+template <typename FloatType>
+TensorUInt KernelPackTrans<FloatType>::kn_ncont_len(
     const KernelTypeTrans kn_type, const TensorUInt ncont_size) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return ncont_size * this->knf_basic.get_ncont_len();
@@ -66,9 +62,8 @@ TensorUInt KernelPackTrans<FloatType, USAGE>::kn_ncont_len(
 }
 
 
-template <typename FloatType,
-          CoefUsageTrans USAGE>
-KernelPackTrans<FloatType, USAGE>::KernelPackTrans()
+template <typename FloatType>
+KernelPackTrans<FloatType>::KernelPackTrans()
     : knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
     knh_giant(this->knh_1x4), knh_basic(this->knh_1x1) {
 }
@@ -77,25 +72,9 @@ KernelPackTrans<FloatType, USAGE>::KernelPackTrans()
 /*
  * Explicit instantiation declaration for struct KernelPackTrans
  */
-extern template struct KernelPackTrans<float, CoefUsageTrans::USE_NONE>;
-extern template struct KernelPackTrans<float, CoefUsageTrans::USE_ALPHA>;
-extern template struct KernelPackTrans<float, CoefUsageTrans::USE_BETA>;
-extern template struct KernelPackTrans<float, CoefUsageTrans::USE_BOTH>;
-
-extern template struct KernelPackTrans<double, CoefUsageTrans::USE_NONE>;
-extern template struct KernelPackTrans<double, CoefUsageTrans::USE_ALPHA>;
-extern template struct KernelPackTrans<double, CoefUsageTrans::USE_BETA>;
-extern template struct KernelPackTrans<double, CoefUsageTrans::USE_BOTH>;
-
-extern template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_NONE>;
-extern template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_ALPHA>;
-extern template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_BETA>;
-extern template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_BOTH>;
-
-extern template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_NONE>;
-extern template struct KernelPackTrans<DoubleComplex,
-    CoefUsageTrans::USE_ALPHA>;
-extern template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_BETA>;
-extern template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_BOTH>;
+extern template struct KernelPackTrans<float>;
+extern template struct KernelPackTrans<double>;
+extern template struct KernelPackTrans<FloatComplex>;
+extern template struct KernelPackTrans<DoubleComplex>;
 
 #endif // HPTC_KERNELS_KERNEL_TRANS_TCC_

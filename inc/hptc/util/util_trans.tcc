@@ -36,37 +36,13 @@ HPTC_INL bool LoopParamTrans<ORDER>::is_disabled() const {
 /*
  * Explicit template instantiation declaration for function calc_tp_trans
  */
-extern template double calc_tp_trans<float, CoefUsageTrans::USE_ALPHA>(
+extern template double calc_tp_trans<float>(const std::vector<TensorIdx> &,
+    double);
+extern template double calc_tp_trans<double>(const std::vector<TensorIdx> &,
+    double);
+extern template double calc_tp_trans<FloatComplex>(
     const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<float, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<float, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<float, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<double, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<double, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<double, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<double, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<FloatComplex, CoefUsageTrans::USE_NONE>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_ALPHA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_BETA>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_BOTH>(
-    const std::vector<TensorIdx> &, double);
-extern template double calc_tp_trans<DoubleComplex, CoefUsageTrans::USE_NONE>(
+extern template double calc_tp_trans<DoubleComplex>(
     const std::vector<TensorIdx> &, double);
 
 #endif // HPTC_UTIL_UTIL_TRANS_TCC_

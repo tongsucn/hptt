@@ -26,6 +26,17 @@ using DoubleComplex = double _Complex;
 
 
 /*
+ * Float type list
+ */
+enum class FloatList : TensorUInt {
+  FLOAT             = 0x0,
+  DOUBLE            = 0x1,
+  FLOAT_COMPLEX     = 0x2,
+  DOUBLE_COMPLEX    = 0x3
+};
+
+
+/*
  * Coefficients type deducer.
  */
 template <typename FloatType>

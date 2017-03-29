@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from gen_util.gen_types import (FloatType, CoefTrans, FLOAT_MAP, COEF_TRANS_MAP)
+from gen_util.gen_types import (FloatType, FLOAT_MAP)
 
 
 TARGET_PREFIX = 'tensor'
@@ -9,7 +9,6 @@ TARGET_PREFIX = 'tensor'
 class IncTarget(object):
   def __init__(self, **kwargs):
     dtypes = kwargs['dtype']
-    coefs = kwargs['coef']
     orders = kwargs['order']
 
     self.filename = ['%s_gen.tcc' % TARGET_PREFIX]
@@ -30,7 +29,6 @@ extern template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;''' % (
 class SrcTarget(object):
   def __init__(self, **kwargs):
     dtypes = kwargs['dtype']
-    coefs = kwargs['coef']
     orders = kwargs['order']
     suffix = kwargs['suffix']
 
@@ -38,12 +36,10 @@ class SrcTarget(object):
     self.content = []
 
     for dtype in dtypes:
-      for coef in coefs:
-        for order in orders:
-          self.filename.append('%s_%s_%s_%d_%s' % (TARGET_PREFIX,
-              FLOAT_MAP[dtype].abbrev, COEF_TRANS_MAP[coef].abbrev, order,
-              suffix))
-          self.content.append('''#include <hptc/tensor.h>
+      for order in orders:
+        self.filename.append('%s_%s_%d_%s' % (TARGET_PREFIX,
+           FLOAT_MAP[dtype].abbrev, order, suffix))
+        self.content.append('''#include <hptc/tensor.h>
 
 #include <hptc/types.h>
 #include <hptc/compat.h>

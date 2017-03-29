@@ -9,24 +9,9 @@ namespace hptc {
 /*
  * Explicit instantiation for struct KernelPackTrans
  */
-template struct KernelPackTrans<float, CoefUsageTrans::USE_NONE>;
-template struct KernelPackTrans<float, CoefUsageTrans::USE_ALPHA>;
-template struct KernelPackTrans<float, CoefUsageTrans::USE_BETA>;
-template struct KernelPackTrans<float, CoefUsageTrans::USE_BOTH>;
-
-template struct KernelPackTrans<double, CoefUsageTrans::USE_NONE>;
-template struct KernelPackTrans<double, CoefUsageTrans::USE_ALPHA>;
-template struct KernelPackTrans<double, CoefUsageTrans::USE_BETA>;
-template struct KernelPackTrans<double, CoefUsageTrans::USE_BOTH>;
-
-template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_NONE>;
-template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_ALPHA>;
-template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_BETA>;
-template struct KernelPackTrans<FloatComplex, CoefUsageTrans::USE_BOTH>;
-
-template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_NONE>;
-template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_ALPHA>;
-template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_BETA>;
-template struct KernelPackTrans<DoubleComplex, CoefUsageTrans::USE_BOTH>;
+template struct KernelPackTrans<float>;
+template struct KernelPackTrans<double>;
+template struct KernelPackTrans<FloatComplex>;
+template struct KernelPackTrans<DoubleComplex>;
 
 }

@@ -4,15 +4,12 @@
 
 #include <cfloat>
 
-#include <array>
 #include <vector>
-#include <memory>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
-#include <algorithm>
 
-#include <hptc/hptc_trans.h>
+#include <hptc/hptc.h>
 #include <hptc/test_util.h>
 #include <hptc/benchmark/benchmark_trans.h>
 
@@ -25,7 +22,6 @@ namespace hptc {
 
 template <typename FloatType,
           typename RefFuncType,
-          CoefUsageTrans USAGE,
           TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case);
 

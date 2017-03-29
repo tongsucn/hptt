@@ -4,7 +4,6 @@
 
 template <typename FloatType,
           typename RefFuncType,
-          CoefUsageTrans USAGE,
           TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   using Deduced = DeducedFloatType<FloatType>;
@@ -37,8 +36,8 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
     time_hptc = new_time_hptc < time_hptc ? new_time_hptc : time_hptc;
   }
 
-  auto tp_ttc = calc_tp_trans<FloatType, USAGE>(test_case.size, time_ttc);
-  auto tp_hptc = calc_tp_trans<FloatType, USAGE>(test_case.size, time_hptc);
+  auto tp_ttc = calc_tp_trans<FloatType>(test_case.size, time_ttc);
+  auto tp_hptc = calc_tp_trans<FloatType>(test_case.size, time_hptc);
 
   delete graph;
   graph = nullptr;
