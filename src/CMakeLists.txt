@@ -65,3 +65,4 @@ install(TARGETS
   ${HPTC_COMMON_LIB_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
+message("-- Libraries will be installed in " ${CMAKE_INSTALL_PREFIX}/lib)
