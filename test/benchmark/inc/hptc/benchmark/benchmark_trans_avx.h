@@ -5,7 +5,6 @@
 #include <vector>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
 #include <hptc/param/parameter_trans.h>
 #include <hptc/benchmark/benchmark_trans.h>
 

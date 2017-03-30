@@ -10,8 +10,8 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
 #include <hptc/tensor.h>
+#include <hptc/arch/compat.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/plan/plan_trans.h>
 #include <hptc/cgraph/cgraph_trans.h>
@@ -100,7 +100,7 @@ using trans_plan = CGraphTransPack<FloatType>;
  */
 template <typename FloatType>
 trans_plan<FloatType> *create_trans_plan(
-    const FloatType *in_data, FloatType *out_data,
+    const FloatType * RESTRICT in_data, FloatType * RESTRICT out_data,
     const std::vector<uint32_t> &in_size, const std::vector<uint32_t> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta, const uint32_t num_threads,

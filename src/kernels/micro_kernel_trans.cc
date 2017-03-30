@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include <hptc/kernels/arch.h>
+#include <hptc/arch/arch.h>
 #include <hptc/util/util_trans.h>
 
 

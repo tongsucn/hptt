@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <ccomplex>
 
-#include <hptc/compat.h>
-
 
 namespace hptc {
 
@@ -23,17 +21,6 @@ using TensorUInt = uint32_t;
  */
 using FloatComplex = float _Complex;
 using DoubleComplex = double _Complex;
-
-
-/*
- * Float type list
- */
-enum class FloatList : TensorUInt {
-  FLOAT             = 0x0,
-  DOUBLE            = 0x1,
-  FLOAT_COMPLEX     = 0x2,
-  DOUBLE_COMPLEX    = 0x3
-};
 
 
 /*

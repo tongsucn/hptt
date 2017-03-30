@@ -1,7 +1,7 @@
-#include <hptc/kernels/common/kernel_trans_common.h>
+#include <hptc/arch/common/kernel_trans_common.h>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
+#include <hptc/arch/compat.h>
 
 
 void set_trans_coef_full_s_(void *reg, const float coef) {

@@ -1,14 +1,13 @@
 #pragma once
-#ifndef HPTC_KERNELS_ARCH_H_
-#define HPTC_KERNELS_ARCH_H_
+#ifndef HPTC_ARCH_ARCH_H_
+#define HPTC_ARCH_ARCH_H_
 
 #include <immintrin.h>
 #include <xmmintrin.h>
 
+#include <vector>
 #include <string>
-
-#include <hptc/types.h>
-#include <hptc/util/util_trans.h>
+#include <unordered_map>
 
 
 namespace hptc {
@@ -41,11 +40,27 @@ public:
   void *dlsym(const char *symbol);
 
 private:
+  struct Arch_ {
+    Arch_() = default;
+    Arch_(bool found, const char *filename)
+        : found(found), filename(filename) {}
+    bool found;
+    const std::string filename;
+  };
+
   LibLoader();
 
+  void init_cpu_();
+  void init_path_();
+  void select_arch_();
+  void *search_(const std::string &filename);
+
   void *handler_;
+
+  std::unordered_map<std::string, Arch_> intrin_sets_;
+  std::vector<std::string> ld_list_;
 };
 
 }
 
-#endif // HPTC_KERNELS_MICRO_KERNEL_ARCH_H_
+#endif // HPTC_ARCH_ARCH_H_

@@ -1,4 +1,4 @@
-#include <hptc/kernels/avx/kernel_trans_avx.h>
+#include <hptc/arch/avx/kernel_trans_avx.h>
 
 #include <immintrin.h>
 #include <xmmintrin.h>

@@ -10,8 +10,9 @@ class IncTarget(object):
   def __init__(self, **kwargs):
     dtypes = kwargs['dtype']
     orders = kwargs['order']
+    suffix = kwargs['suffix']
 
-    self.filename = ['%s_gen.tcc' % TARGET_PREFIX]
+    self.filename = ['%s_%s' % (TARGET_PREFIX, suffix)]
     temp_content = '''#pragma once
 #ifndef HPTC_GEN_%s_GEN_TCC_
 #define HPTC_GEN_%s_GEN_TCC_
@@ -43,7 +44,7 @@ class SrcTarget(object):
       temp_content = '''#include <hptc/param/parameter_trans.h>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
+#include <hptc/arch/compat.h>
 #include <hptc/tensor.h>
 
 namespace hptc {

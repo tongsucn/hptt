@@ -53,9 +53,9 @@ CGraphTransPack<FloatType> *create_trans_plan(
       perm_verify_map[order_idx] = true;
   }
 
-  // For now, heuristic number will be limited to 1000 (loop orders) x 1000 (
-  // parallelization strategies) candidates.
-  constexpr auto heur_num = 1000;
+  // For now, heuristic number will be limited to 7! (loop orders) x 7!
+  // (parallelization strategies) candidates.
+  constexpr auto heur_num = 5040;
 
   // Set auto-tuning amount and convert timeout from second to millisecond.
   // 64 (loop orders) x 64 (parallelization strategies) will be tuned.

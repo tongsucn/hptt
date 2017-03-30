@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/compat.h>
+#include <hptc/arch/compat.h>
 #include <hptc/util/util.h>
 #include <hptc/util/util_trans.h>
 

@@ -2,6 +2,9 @@
 #ifndef HPTC_COMPAT_H_
 #define HPTC_COMPAT_H_
 
+#include <cstdint>
+
+
 // Force inline
 #if defined(__INTEL_COMPILER)
   #define HPTC_INL __forceinline
@@ -19,6 +22,9 @@ enum class MemLayout : bool {
   COL_MAJOR = true,
   ROW_MAJOR = false
 };
+
+
+void hptc_cpuid(const uint32_t input, uint32_t output[4]);
 
 }
 

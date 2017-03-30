@@ -8,9 +8,9 @@
 #include <unordered_set>
 #include <algorithm>
 
-#include <hptc/compat.h>
 #include <hptc/types.h>
 #include <hptc/tensor.h>
+#include <hptc/arch/compat.h>
 #include <hptc/util/util_trans.h>
 #include <hptc/kernels/kernel_trans.h>
 

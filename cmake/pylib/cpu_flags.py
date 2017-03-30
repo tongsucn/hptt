@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess, sys
+from gen_util import gen_types
 
 def get_cpu_flags():
   pipe = subprocess.Popen(['cat', '/proc/cpuinfo'], stdout=subprocess.PIPE)
@@ -21,7 +22,7 @@ def get_cpu_flags():
   return flags
 
 
-flag_list = [ 'avx2', 'avx']
+flag_list = gen_types.arch_list
 
 def main():
   supported_flags = get_cpu_flags()

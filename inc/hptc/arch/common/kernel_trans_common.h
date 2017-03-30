@@ -1,6 +1,6 @@
 #pragma once
-#ifndef HPTC_KERNELS_COMMON_KERNEL_TRANS_COMMON_H_
-#define HPTC_KERNELS_COMMON_KERNEL_TRANS_COMMON_H_
+#ifndef HPTC_ARCH_COMMON_KERNEL_TRANS_COMMON_H_
+#define HPTC_ARCH_COMMON_KERNEL_TRANS_COMMON_H_
 
 #include <hptc/types.h>
 
@@ -59,4 +59,4 @@ void exec_trans_linear_z_(const hptc::DoubleComplex *input_data,
 
 }
 
-#endif // HPTC_KERNELS_COMMON_KERNEL_TRANS_COMMON_H_
+#endif // HPTC_ARCH_COMMON_KERNEL_TRANS_COMMON_H_
