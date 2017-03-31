@@ -23,6 +23,10 @@ macro(hptc_detect_arch)
   else ()
     message("-- Enabled architecture kernels: common " ${DETECT_STDOUT})
 
+    if (NOT ${DETECT_STDOUT} STREQUAL "")
+      string(REPLACE " " ";" ARCH_ABBREV_LIST ${DETECT_STDOUT})
+    endif ()
+
     # Set architecture C++ macros
     foreach (ARCH ${ARCH_ABBREV_LIST})
       if (${ARCH} STREQUAL "avx2")

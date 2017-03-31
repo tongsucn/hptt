@@ -35,13 +35,9 @@ LibLoader::LibLoader()
       intrin_sets_{ { "avx2", Arch_(false, "libhptc_avx2.so") },
           { "avx", Arch_(false, "libhptc_avx.so") },
           { "fma3", Arch_(false, "libhptc_fma3.so") },
-          { "common", Arch_(true, "libhptc_common.so") } },
-      ld_list_{ "" } {
+          { "common", Arch_(true, "libhptc_common.so") } } {
   // Detect CPU features
   this->init_cpu_();
-
-  // Parse environment variable LD_LIBRARY_PATH
-  this->init_path_();
 
   // Select and load shared library
   this->select_arch_();
@@ -77,18 +73,6 @@ void LibLoader::init_cpu_() {
 }
 
 
-void LibLoader::init_path_() {
-  std::stringstream ld_env_str_stream;
-  ld_env_str_stream << std::getenv("LD_LIBRARY_PATH");
-
-  while (std::getline(ld_env_str_stream, this->ld_list_.back(), ':')) {
-    this->ld_list_.back() += 0 == this->ld_list_.back().length() ? "./" : "/";
-    this->ld_list_.emplace_back();
-  }
-  this->ld_list_.back() = "./";
-}
-
-
 void LibLoader::select_arch_() {
   if (nullptr == this->handler_ and this->intrin_sets_["avx2"].found)
     this->handler_ = this->search_(this->intrin_sets_["avx2"].filename);
@@ -100,14 +84,10 @@ void LibLoader::select_arch_() {
 
 
 void *LibLoader::search_(const std::string &filename) {
-  std::string buffer;
-  for (const auto &ld_path : this->ld_list_) {
-    buffer = ld_path + filename;
-    auto result_ptr = dlopen(buffer.c_str(), RTLD_NOW);
-    if (nullptr != result_ptr)
-      return result_ptr;
-  }
-  return nullptr;
+  auto result_ptr = dlopen(filename.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  if (nullptr == result_ptr)
+    result_ptr = dlopen(("./" + filename).c_str(), RTLD_NOW | RTLD_GLOBAL);
+  return result_ptr;
 }
 
 }

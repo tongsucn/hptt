@@ -40,14 +40,12 @@ private:
   LibLoader();
 
   void init_cpu_();
-  void init_path_();
   void select_arch_();
   void *search_(const std::string &filename);
 
   void *handler_;
 
   std::unordered_map<std::string, Arch_> intrin_sets_;
-  std::vector<std::string> ld_list_;
 };
 
 }
