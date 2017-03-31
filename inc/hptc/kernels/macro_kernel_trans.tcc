@@ -114,4 +114,13 @@ extern template class MacroTransLinear<double>;
 extern template class MacroTransLinear<FloatComplex>;
 extern template class MacroTransLinear<DoubleComplex>;
 
+
+/*
+ * Explicit template instantiation declaration for class MacroTransScalar
+ */
+extern template class MacroTransScalar<float>;
+extern template class MacroTransScalar<double>;
+extern template class MacroTransScalar<FloatComplex>;
+extern template class MacroTransScalar<DoubleComplex>;
+
 #endif // HPTC_KERNELS_MACRO_KERNEL_TRANS_TCC_

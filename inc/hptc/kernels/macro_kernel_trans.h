@@ -25,30 +25,30 @@ public:
   TensorUInt get_cont_len() const;
   TensorUInt get_ncont_len() const;
 
-  void exec(const Float *input_data, Float *output_data,
+  void exec(const Float *in_data, Float *out_data,
       const TensorIdx input_stride, const TensorIdx output_stride) const;
 
 private:
   template <TensorUInt CONT,
             TensorUInt NCONT>
-  void ncont_tiler_(DualCounter<CONT, NCONT>, const Float *input_data,
-      Float *output_data, const TensorIdx input_stride,
+  void ncont_tiler_(DualCounter<CONT, NCONT>, const Float *in_data,
+      Float *out_data, const TensorIdx input_stride,
       const TensorIdx output_stride) const;
 
   template <TensorUInt CONT>
-  void ncont_tiler_(DualCounter<CONT, 0>, const Float *input_data,
-      Float *output_data, const TensorIdx input_stride,
+  void ncont_tiler_(DualCounter<CONT, 0>, const Float *in_data,
+      Float *out_data, const TensorIdx input_stride,
       const TensorIdx output_stride) const;
 
   template <TensorUInt CONT,
             TensorUInt NCONT>
-  void cont_tiler_(DualCounter<CONT, NCONT>, const Float *input_data,
-      Float *output_data, const TensorIdx input_stride,
+  void cont_tiler_(DualCounter<CONT, NCONT>, const Float *in_data,
+      Float *out_data, const TensorIdx input_stride,
       const TensorIdx output_stride) const;
 
   template <TensorUInt NCONT>
-  void cont_tiler_(DualCounter<0, NCONT>, const Float *input_data,
-      Float *output_data, const TensorIdx input_stride,
+  void cont_tiler_(DualCounter<0, NCONT>, const Float *in_data,
+      Float *out_data, const TensorIdx input_stride,
       const TensorIdx output_stride) const;
 
   MicroKernel kernel_;
@@ -62,12 +62,25 @@ public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
 
-  void exec(const FloatType *input_data,
-      FloatType *output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  void exec(const FloatType *in_data, FloatType *out_data,
+      const TensorIdx input_stride, const TensorIdx output_stride) const;
 
 private:
   DeducedFloatType<FloatType> reg_alpha_, reg_beta_;
+};
+
+
+template <typename FloatType>
+class MacroTransScalar {
+public:
+  void set_coef(const DeducedFloatType<FloatType> alpha,
+      const DeducedFloatType<FloatType> beta);
+
+  void exec(const FloatType *in_data, FloatType *out_data,
+      const TensorIdx input_size, const TensorIdx output_size) const;
+
+private:
+  DeducedFloatType<FloatType> alpha_, beta_;
 };
 
 
