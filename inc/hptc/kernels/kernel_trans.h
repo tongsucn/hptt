@@ -43,10 +43,8 @@ struct KernelPackTrans {
   TensorUInt kernel_offset(const KernelTypeTrans kn_type,
       const TensorUInt cont_size, const TensorUInt ncont_size,
       const bool is_tail = false) const;
-  TensorUInt kn_cont_len(const KernelTypeTrans kn_type,
-      const TensorUInt cont_size) const;
-  TensorUInt kn_ncont_len(const KernelTypeTrans kn_type,
-      const TensorUInt ncont_size) const;
+  TensorUInt kn_cont_len(const KernelTypeTrans kn_type) const;
+  TensorUInt kn_ncont_len(const KernelTypeTrans kn_type) const;
 
 
   // Non-linear full kernels
@@ -78,6 +76,9 @@ struct KernelPackTrans {
 
   // Linear kernel
   MacroTransLinear<FloatType> kn_lin;
+
+  // Scalar kernel
+  MacroTransScalar<FloatType> kn_scl;
 
   // Reference kernels
   const MacroTransFull<FloatType, 4, 4> &knf_giant;

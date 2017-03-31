@@ -170,9 +170,27 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::get_size() const {
 template <typename FloatType,
           TensorUInt ORDER,
           MemLayout LAYOUT>
+TensorIdx TensorWrapper<FloatType, ORDER, LAYOUT>::get_size(
+    const TensorUInt order) const {
+  return this->size_[order];
+}
+
+
+template <typename FloatType,
+          TensorUInt ORDER,
+          MemLayout LAYOUT>
 const TensorSize<ORDER> &
 TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() const {
   return this->outer_size_;
+}
+
+
+template <typename FloatType,
+          TensorUInt ORDER,
+          MemLayout LAYOUT>
+TensorIdx TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size(
+    const TensorUInt order) const {
+  return this->outer_size_[order];
 }
 
 

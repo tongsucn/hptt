@@ -57,8 +57,6 @@ public:
   HPTC_INL Descriptor get_descriptor() const;
 
 private:
-  using For_ = OpForTrans<ORDER>;
-
   CGraphTrans(const std::shared_ptr<ParamType> &param,
       const Descriptor &descriptor);
 
@@ -73,7 +71,7 @@ private:
   std::shared_ptr<ParamType> param_;
   TensorUInt threads_;
   Descriptor descriptor_;
-  For_ *operations_;
+  OpForTrans<ORDER> *operations_;
 };
 
 

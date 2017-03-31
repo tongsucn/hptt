@@ -55,7 +55,11 @@ public:
   const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
 
   const TensorSize<ORDER> &get_size() const;
+  TensorIdx get_size(const TensorUInt order) const;
+
   const TensorSize<ORDER> &get_outer_size() const;
+  TensorIdx get_outer_size(const TensorUInt order) const;
+
   FloatType *get_data();
   const FloatType *get_data() const;
 

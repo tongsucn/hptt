@@ -22,6 +22,7 @@ void KernelPackTrans<FloatType>::set_coef(
   this->knh_1x3.set_coef(alpha, beta), this->knh_1x4.set_coef(alpha, beta);
   this->knh_2x1.set_coef(alpha, beta), this->knh_3x1.set_coef(alpha, beta);
   this->knh_4x1.set_coef(alpha, beta), this->kn_lin.set_coef(alpha, beta);
+  this->kn_scl.set_coef(alpha, beta);
 }
 
 
@@ -40,25 +41,25 @@ TensorUInt KernelPackTrans<FloatType>::kernel_offset(
 
 template <typename FloatType>
 TensorUInt KernelPackTrans<FloatType>::kn_cont_len(
-    const KernelTypeTrans kn_type, const TensorUInt cont_size) const {
+    const KernelTypeTrans kn_type) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
-    return cont_size * this->knf_basic.get_cont_len();
+    return this->knf_basic.get_cont_len();
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)
-    return cont_size * this->knh_basic.get_cont_len();
+    return this->knh_basic.get_cont_len();
   else
-    return cont_size;
+    return 1;
 }
 
 
 template <typename FloatType>
 TensorUInt KernelPackTrans<FloatType>::kn_ncont_len(
-    const KernelTypeTrans kn_type, const TensorUInt ncont_size) const {
+    const KernelTypeTrans kn_type) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
-    return ncont_size * this->knf_basic.get_ncont_len();
+    return this->knf_basic.get_ncont_len();
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)
-    return ncont_size * this->knh_basic.get_ncont_len();
+    return this->knh_basic.get_ncont_len();
   else
-    return ncont_size;
+    return 1;
 }
 
 

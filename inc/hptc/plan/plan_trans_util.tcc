@@ -85,8 +85,8 @@ void PlanTransOptimizer<ParamType>::init_config_() {
   // Initialize available parallelism at every loop with input tensor size
   this->avail_parallel_.fill(1);
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
-    this->avail_parallel_[loop_idx]
-        = this->param_->input_tensor.get_size()[loop_idx];
+    this->avail_parallel_[loop_idx] = this->param_->input_tensor.get_size(
+        loop_idx);
 
   // Initialize loop evaluator's parameters
   this->init_loop_evaluator_param_();
@@ -494,16 +494,16 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
       // Set up loops for leading orders
       oper.loop_begin[this->in_ld_idx_] = cont_begin_pos;
       oper.loop_step[this->in_ld_idx_]
-          = this->param_->get_kernel().kn_cont_len(kn_type, kn_cont_size);
+          = this->param_->get_kernel().kn_cont_len(kn_type) * kn_cont_size;
 
       oper.loop_begin[this->out_ld_idx_] = ncont_begin_pos;
       oper.loop_step[this->out_ld_idx_]
-          = this->param_->get_kernel().kn_ncont_len(kn_type, kn_ncont_size);
+          = this->param_->get_kernel().kn_ncont_len(kn_type) * kn_ncont_size;
     }
     oper.loop_end[this->in_ld_idx_] = cont_begin_pos
-      + cont_offset_size * this->param_->get_kernel().kn_cont_len(kn_type, 1);
+      + cont_offset_size * this->param_->get_kernel().kn_cont_len(kn_type);
     oper.loop_end[this->out_ld_idx_] = ncont_begin_pos
-      + ncont_offset_size * this->param_->get_kernel().kn_ncont_len(kn_type, 1);
+      + ncont_offset_size * this->param_->get_kernel().kn_ncont_len(kn_type);
 
     // Set up non leading order loops
     oper.set_pass(this->in_ld_idx_);
@@ -512,7 +512,7 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
         continue;
 
       oper.loop_begin[loop_idx] = 0;
-      oper.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+      oper.loop_end[loop_idx] = this->param_->input_tensor.get_size(loop_idx);
       oper.loop_step[loop_idx] = 1;
     }
   }
@@ -526,7 +526,7 @@ void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
   loop.set_pass(ORDER);
   this->avail_parallel_[this->in_ld_idx_] = 1;
   for (auto loop_idx = this->in_ld_idx_ + 1; loop_idx < ORDER; ++loop_idx)
-    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size()[loop_idx];
+    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(loop_idx);
 }
 
 

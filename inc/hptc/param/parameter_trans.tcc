@@ -113,30 +113,25 @@ ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
       output_tensor(output_tensor, this->output_merge_set_) {
   this->set_coef(alpha, beta);
   // Initialize access strides
-  for (TensorUInt idx = 0; idx < perm[0]; ++idx)
-    this->input_stride *= input_tensor.get_outer_size()[idx];
-  for (TensorUInt idx = 0; 0 != perm[idx]; ++idx)
-    this->output_stride *= output_tensor.get_outer_size()[idx];
+  for (TensorUInt order_idx = 0; order_idx < perm[0]; ++order_idx)
+    this->input_stride *= input_tensor.get_outer_size(order_idx);
+  for (TensorUInt order_idx = 0; 0 != perm[order_idx]; ++order_idx)
+    this->output_stride *= output_tensor.get_outer_size(order_idx);
 }
 
 
 template <typename TensorType>
 HPTC_INL bool ParamTrans<TensorType>::is_common_leading() const {
-  if (0 == this->perm[this->begin_order_idx])
-    return true;
-  return false;
+  return 0 == this->perm[this->begin_order_idx];
 }
 
 
 template <typename TensorType>
 HPTC_INL std::pair<TensorUInt, TensorUInt>
 ParamTrans<TensorType>::get_leading() const {
-  std::pair<TensorUInt, TensorUInt> result;
-
-  result.first = this->input_tensor.get_size()[this->begin_order_idx];
-  result.second = this->output_tensor.get_size()[this->begin_order_idx];
-
-  return result;
+  return std::make_pair<TensorUInt, TensorUInt>(
+      this->input_tensor.get_size(this->begin_order_idx),
+      this->input_tensor.get_size(this->perm[this->begin_order_idx]));
 }
 
 
@@ -168,15 +163,15 @@ TensorUInt ParamTrans<TensorType>::merge_idx_(
   const auto &output_outer_size = this->output_tensor.get_outer_size();
 
   // Create permutation set
-  for (TensorUInt idx = 1; idx < ORDER; ++idx) {
+  for (TensorUInt order_idx = 1; order_idx < ORDER; ++order_idx) {
     // If current order ID does not equal to previous order ID plus one, or
     // the previous order size does not equal to the outer size, then push
     // previous ID into set.
-    if (perm[idx] != perm[idx - 1] + 1 or
-        input_size[perm[idx - 1]] != input_outer_size[perm[idx - 1]] or
-        output_size[idx - 1] != output_outer_size[idx - 1]) {
-      this->input_merge_set_.insert(perm[idx - 1]);
-      this->output_merge_set_.insert(idx - 1);
+    if (perm[order_idx] != perm[order_idx - 1] + 1 or
+        input_size[perm[order_idx - 1]] != input_outer_size[perm[order_idx - 1]]
+        or output_size[order_idx - 1] != output_outer_size[order_idx - 1]) {
+      this->input_merge_set_.insert(perm[order_idx - 1]);
+      this->output_merge_set_.insert(order_idx - 1);
     }
   }
 
@@ -201,8 +196,8 @@ TensorUInt ParamTrans<TensorType>::merge_idx_(
   // Create an unordered map to store the mapping from original order ID to
   // updated order ID.
   std::unordered_map<TensorUInt, TensorUInt> perm_map;
-  for (TensorUInt idx = 0; idx < merged; ++idx)
-    perm_map[sorted_perm_arr[idx]] = idx;
+  for (TensorUInt order_idx = 0; order_idx < merged; ++order_idx)
+    perm_map[sorted_perm_arr[order_idx]] = order_idx;
 
   // Update permutation array
   for (TensorInt order_idx = ORDER - 1, update_idx = ORDER - 1;
