@@ -2,30 +2,19 @@
 #ifndef HPTC_ARCH_ARCH_H_
 #define HPTC_ARCH_ARCH_H_
 
-#include <immintrin.h>
-#include <xmmintrin.h>
+#include <cstdint>
 
 #include <vector>
 #include <string>
 #include <unordered_map>
 
+#include <immintrin.h>
+#include <xmmintrin.h>
+
 
 namespace hptc {
 
-union RegType {
-  __m256  reg_avx2_fs;
-  __m256d reg_avx2_fd;
-  __m128  reg_avx2_hs;
-  __m128d reg_avx2_hd;
-  __m256  reg_avx_fs;
-  __m256d reg_avx_fd;
-  __m128  reg_avx_hs;
-  __m128d reg_avx_hd;
-  float   reg_common_fs;
-  double  reg_common_fd;
-  float   reg_common_hs;
-  double  reg_common_hd;
-};
+void hptc_cpuid(const uint32_t input, uint32_t output[4]);
 
 
 class LibLoader {

@@ -4,44 +4,33 @@
 #include <xmmintrin.h>
 
 #include <hptc/types.h>
+#include <hptc/arch/compat.h>
+#include <hptc/util/util_trans.h>
 
 
-void set_trans_coef_full_s_(void *reg, const float coef) {
-  *reinterpret_cast<__m256 *>(reg) = _mm256_set1_ps(coef);
+namespace hptc {
+
+template <>
+void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::set_coef(
+    const DeducedFloatType<float> alpha, const DeducedFloatType<float> beta) {
+  this->reg_alpha_ = _mm256_set1_ps(alpha);
+  this->reg_beta_ = _mm256_set1_ps(beta);
 }
 
-
-void set_trans_coef_full_d_(void *reg, const double coef) {
-  *reinterpret_cast<__m256d *>(reg) = _mm256_set1_pd(coef);
-}
-
-
-void set_trans_coef_half_s_(void *reg, const float coef) {
-  *reinterpret_cast<__m128 *>(reg) = _mm_set1_ps(coef);
-}
-
-
-void set_trans_coef_half_d_(void *reg, const double coef) {
-  *reinterpret_cast<__m128d *>(reg) = _mm_set1_pd(coef);
-}
-
-
-void exec_trans_full_s_(const float *input_data, float *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m256 *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m256 *>(beta);
-
+template <>
+void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
+    const float * RESTRICT in_data, float * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m256 reg_input[8];
-  reg_input[0] = _mm256_loadu_ps(input_data);
-  reg_input[1] = _mm256_loadu_ps(input_data + input_stride);
-  reg_input[2] = _mm256_loadu_ps(input_data + 2 * input_stride);
-  reg_input[3] = _mm256_loadu_ps(input_data + 3 * input_stride);
-  reg_input[4] = _mm256_loadu_ps(input_data + 4 * input_stride);
-  reg_input[5] = _mm256_loadu_ps(input_data + 5 * input_stride);
-  reg_input[6] = _mm256_loadu_ps(input_data + 6 * input_stride);
-  reg_input[7] = _mm256_loadu_ps(input_data + 7 * input_stride);
+  reg_input[0] = _mm256_loadu_ps(in_data);
+  reg_input[1] = _mm256_loadu_ps(in_data + input_stride);
+  reg_input[2] = _mm256_loadu_ps(in_data + 2 * input_stride);
+  reg_input[3] = _mm256_loadu_ps(in_data + 3 * input_stride);
+  reg_input[4] = _mm256_loadu_ps(in_data + 4 * input_stride);
+  reg_input[5] = _mm256_loadu_ps(in_data + 5 * input_stride);
+  reg_input[6] = _mm256_loadu_ps(in_data + 6 * input_stride);
+  reg_input[7] = _mm256_loadu_ps(in_data + 7 * input_stride);
 
   // 8x8 in-register transpose
   __m256 reg[16];
@@ -73,35 +62,35 @@ void exec_trans_full_s_(const float *input_data, float *output_data,
   reg_input[7] = _mm256_permute2f128_ps(reg[15], reg[11], 0x13);
 
   // Rescale transposed input data
-  reg_input[0] = _mm256_mul_ps(reg_input[0], *reg_alpha);
-  reg_input[1] = _mm256_mul_ps(reg_input[1], *reg_alpha);
-  reg_input[2] = _mm256_mul_ps(reg_input[2], *reg_alpha);
-  reg_input[3] = _mm256_mul_ps(reg_input[3], *reg_alpha);
-  reg_input[4] = _mm256_mul_ps(reg_input[4], *reg_alpha);
-  reg_input[5] = _mm256_mul_ps(reg_input[5], *reg_alpha);
-  reg_input[6] = _mm256_mul_ps(reg_input[6], *reg_alpha);
-  reg_input[7] = _mm256_mul_ps(reg_input[7], *reg_alpha);
+  reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha_);
+  reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha_);
+  reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha_);
+  reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha_);
+  reg_input[4] = _mm256_mul_ps(reg_input[4], this->reg_alpha_);
+  reg_input[5] = _mm256_mul_ps(reg_input[5], this->reg_alpha_);
+  reg_input[6] = _mm256_mul_ps(reg_input[6], this->reg_alpha_);
+  reg_input[7] = _mm256_mul_ps(reg_input[7], this->reg_alpha_);
 
   // Load output data into registers
   __m256 reg_output[8];
-  reg_output[0] = _mm256_loadu_ps(output_data);
-  reg_output[1] = _mm256_loadu_ps(output_data + output_stride);
-  reg_output[2] = _mm256_loadu_ps(output_data + 2 * output_stride);
-  reg_output[3] = _mm256_loadu_ps(output_data + 3 * output_stride);
-  reg_output[4] = _mm256_loadu_ps(output_data + 4 * output_stride);
-  reg_output[5] = _mm256_loadu_ps(output_data + 5 * output_stride);
-  reg_output[6] = _mm256_loadu_ps(output_data + 6 * output_stride);
-  reg_output[7] = _mm256_loadu_ps(output_data + 7 * output_stride);
+  reg_output[0] = _mm256_loadu_ps(out_data);
+  reg_output[1] = _mm256_loadu_ps(out_data + output_stride);
+  reg_output[2] = _mm256_loadu_ps(out_data + 2 * output_stride);
+  reg_output[3] = _mm256_loadu_ps(out_data + 3 * output_stride);
+  reg_output[4] = _mm256_loadu_ps(out_data + 4 * output_stride);
+  reg_output[5] = _mm256_loadu_ps(out_data + 5 * output_stride);
+  reg_output[6] = _mm256_loadu_ps(out_data + 6 * output_stride);
+  reg_output[7] = _mm256_loadu_ps(out_data + 7 * output_stride);
 
   // Update output data
-  reg_output[0] = _mm256_mul_ps(reg_output[0], *reg_beta);
-  reg_output[1] = _mm256_mul_ps(reg_output[1], *reg_beta);
-  reg_output[2] = _mm256_mul_ps(reg_output[2], *reg_beta);
-  reg_output[3] = _mm256_mul_ps(reg_output[3], *reg_beta);
-  reg_output[4] = _mm256_mul_ps(reg_output[4], *reg_beta);
-  reg_output[5] = _mm256_mul_ps(reg_output[5], *reg_beta);
-  reg_output[6] = _mm256_mul_ps(reg_output[6], *reg_beta);
-  reg_output[7] = _mm256_mul_ps(reg_output[7], *reg_beta);
+  reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta_);
+  reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta_);
+  reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta_);
+  reg_output[4] = _mm256_mul_ps(reg_output[4], this->reg_beta_);
+  reg_output[5] = _mm256_mul_ps(reg_output[5], this->reg_beta_);
+  reg_output[6] = _mm256_mul_ps(reg_output[6], this->reg_beta_);
+  reg_output[7] = _mm256_mul_ps(reg_output[7], this->reg_beta_);
 
   // Add updated result into input registers
   reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -114,29 +103,34 @@ void exec_trans_full_s_(const float *input_data, float *output_data,
   reg_input[7] = _mm256_add_ps(reg_output[7], reg_input[7]);
 
   // Write back in-register result into output data
-  _mm256_storeu_ps(output_data, reg_input[0]);
-  _mm256_storeu_ps(output_data + output_stride, reg_input[1]);
-  _mm256_storeu_ps(output_data + 2 * output_stride, reg_input[2]);
-  _mm256_storeu_ps(output_data + 3 * output_stride, reg_input[3]);
-  _mm256_storeu_ps(output_data + 4 * output_stride, reg_input[4]);
-  _mm256_storeu_ps(output_data + 5 * output_stride, reg_input[5]);
-  _mm256_storeu_ps(output_data + 6 * output_stride, reg_input[6]);
-  _mm256_storeu_ps(output_data + 7 * output_stride, reg_input[7]);
+  _mm256_storeu_ps(out_data, reg_input[0]);
+  _mm256_storeu_ps(out_data + output_stride, reg_input[1]);
+  _mm256_storeu_ps(out_data + 2 * output_stride, reg_input[2]);
+  _mm256_storeu_ps(out_data + 3 * output_stride, reg_input[3]);
+  _mm256_storeu_ps(out_data + 4 * output_stride, reg_input[4]);
+  _mm256_storeu_ps(out_data + 5 * output_stride, reg_input[5]);
+  _mm256_storeu_ps(out_data + 6 * output_stride, reg_input[6]);
+  _mm256_storeu_ps(out_data + 7 * output_stride, reg_input[7]);
 }
 
 
-void exec_trans_full_d_(const double *input_data, double *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m256d *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m256d *>(beta);
+template <>
+void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::set_coef(
+    const DeducedFloatType<double> alpha, const DeducedFloatType<double> beta) {
+  this->reg_alpha_ = _mm256_set1_pd(alpha);
+  this->reg_beta_ = _mm256_set1_pd(beta);
+}
 
+template <>
+void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
+    const double * RESTRICT in_data, double * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m256d reg_input[4];
-  reg_input[0] = _mm256_loadu_pd(input_data);
-  reg_input[1] = _mm256_loadu_pd(input_data + input_stride);
-  reg_input[2] = _mm256_loadu_pd(input_data + 2 * input_stride);
-  reg_input[3] = _mm256_loadu_pd(input_data + 3 * input_stride);
+  reg_input[0] = _mm256_loadu_pd(in_data);
+  reg_input[1] = _mm256_loadu_pd(in_data + input_stride);
+  reg_input[2] = _mm256_loadu_pd(in_data + 2 * input_stride);
+  reg_input[3] = _mm256_loadu_pd(in_data + 3 * input_stride);
 
   // 4x4 in-register transpose
   __m256d reg[4];
@@ -150,23 +144,23 @@ void exec_trans_full_d_(const double *input_data, double *output_data,
   reg_input[3] = _mm256_permute2f128_pd(reg[3], reg[1], 0x13);
 
   // Rescale transposed input data
-  reg_input[0] = _mm256_mul_pd(reg_input[0], *reg_alpha);
-  reg_input[1] = _mm256_mul_pd(reg_input[1], *reg_alpha);
-  reg_input[2] = _mm256_mul_pd(reg_input[2], *reg_alpha);
-  reg_input[3] = _mm256_mul_pd(reg_input[3], *reg_alpha);
+  reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha_);
+  reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha_);
+  reg_input[2] = _mm256_mul_pd(reg_input[2], this->reg_alpha_);
+  reg_input[3] = _mm256_mul_pd(reg_input[3], this->reg_alpha_);
 
   // Load output data into registers
   __m256d reg_output[4];
-  reg_output[0] = _mm256_loadu_pd(output_data);
-  reg_output[1] = _mm256_loadu_pd(output_data + output_stride);
-  reg_output[2] = _mm256_loadu_pd(output_data + 2 * output_stride);
-  reg_output[3] = _mm256_loadu_pd(output_data + 3 * output_stride);
+  reg_output[0] = _mm256_loadu_pd(out_data);
+  reg_output[1] = _mm256_loadu_pd(out_data + output_stride);
+  reg_output[2] = _mm256_loadu_pd(out_data + 2 * output_stride);
+  reg_output[3] = _mm256_loadu_pd(out_data + 3 * output_stride);
 
   // Update output data
-  reg_output[0] = _mm256_mul_pd(reg_output[0], *reg_beta);
-  reg_output[1] = _mm256_mul_pd(reg_output[1], *reg_beta);
-  reg_output[2] = _mm256_mul_pd(reg_output[2], *reg_beta);
-  reg_output[3] = _mm256_mul_pd(reg_output[3], *reg_beta);
+  reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta_);
+  reg_output[2] = _mm256_mul_pd(reg_output[2], this->reg_beta_);
+  reg_output[3] = _mm256_mul_pd(reg_output[3], this->reg_beta_);
 
   // Add updated result into input registers
   reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);
@@ -175,28 +169,34 @@ void exec_trans_full_d_(const double *input_data, double *output_data,
   reg_input[3] = _mm256_add_pd(reg_output[3], reg_input[3]);
 
   // Write back in-register result into output data
-  _mm256_storeu_pd(output_data, reg_input[0]);
-  _mm256_storeu_pd(output_data + output_stride, reg_input[1]);
-  _mm256_storeu_pd(output_data + 2 * output_stride, reg_input[2]);
-  _mm256_storeu_pd(output_data + 3 * output_stride, reg_input[3]);
+  _mm256_storeu_pd(out_data, reg_input[0]);
+  _mm256_storeu_pd(out_data + output_stride, reg_input[1]);
+  _mm256_storeu_pd(out_data + 2 * output_stride, reg_input[2]);
+  _mm256_storeu_pd(out_data + 3 * output_stride, reg_input[3]);
 }
 
 
-void exec_trans_full_c_(const hptc::FloatComplex *input_data,
-    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m256 *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m256 *>(beta);
+template <>
+void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::set_coef(
+    const DeducedFloatType<FloatComplex> alpha,
+    const DeducedFloatType<FloatComplex> beta) {
+  this->reg_alpha_ = _mm256_set1_ps(alpha);
+  this->reg_beta_ = _mm256_set1_ps(beta);
+}
 
+template <>
+void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
+    const FloatComplex * RESTRICT in_data, FloatComplex * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m256 reg_input[4];
-  reg_input[0] = _mm256_loadu_ps(reinterpret_cast<const float *>(input_data));
+  reg_input[0] = _mm256_loadu_ps(reinterpret_cast<const float *>(in_data));
   reg_input[1] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(input_data + input_stride));
+      reinterpret_cast<const float *>(in_data + input_stride));
   reg_input[2] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(input_data + 2 * input_stride));
+      reinterpret_cast<const float *>(in_data + 2 * input_stride));
   reg_input[3] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(input_data + 3 * input_stride));
+      reinterpret_cast<const float *>(in_data + 3 * input_stride));
 
   // 4x4 in-register transpose
   __m256 reg[4];
@@ -210,27 +210,27 @@ void exec_trans_full_c_(const hptc::FloatComplex *input_data,
   reg_input[3] = _mm256_permute2f128_ps(reg[3], reg[1], 0x13);
 
   // Rescale transposed input data
-  reg_input[0] = _mm256_mul_ps(reg_input[0], *reg_alpha);
-  reg_input[1] = _mm256_mul_ps(reg_input[1], *reg_alpha);
-  reg_input[2] = _mm256_mul_ps(reg_input[2], *reg_alpha);
-  reg_input[3] = _mm256_mul_ps(reg_input[3], *reg_alpha);
+  reg_input[0] = _mm256_mul_ps(reg_input[0], this->reg_alpha_);
+  reg_input[1] = _mm256_mul_ps(reg_input[1], this->reg_alpha_);
+  reg_input[2] = _mm256_mul_ps(reg_input[2], this->reg_alpha_);
+  reg_input[3] = _mm256_mul_ps(reg_input[3], this->reg_alpha_);
 
   // Load output data into registers
   __m256 reg_output[4];
   reg_output[0] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(output_data));
+      reinterpret_cast<const float *>(out_data));
   reg_output[1] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(output_data + output_stride));
+      reinterpret_cast<const float *>(out_data + output_stride));
   reg_output[2] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(output_data + 2 * output_stride));
+      reinterpret_cast<const float *>(out_data + 2 * output_stride));
   reg_output[3] = _mm256_loadu_ps(
-      reinterpret_cast<const float *>(output_data + 3 * output_stride));
+      reinterpret_cast<const float *>(out_data + 3 * output_stride));
 
   // Update output data
-  reg_output[0] = _mm256_mul_ps(reg_output[0], *reg_beta);
-  reg_output[1] = _mm256_mul_ps(reg_output[1], *reg_beta);
-  reg_output[2] = _mm256_mul_ps(reg_output[2], *reg_beta);
-  reg_output[3] = _mm256_mul_ps(reg_output[3], *reg_beta);
+  reg_output[0] = _mm256_mul_ps(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm256_mul_ps(reg_output[1], this->reg_beta_);
+  reg_output[2] = _mm256_mul_ps(reg_output[2], this->reg_beta_);
+  reg_output[3] = _mm256_mul_ps(reg_output[3], this->reg_beta_);
 
   // Add updated result into input registers
   reg_input[0] = _mm256_add_ps(reg_output[0], reg_input[0]);
@@ -239,27 +239,33 @@ void exec_trans_full_c_(const hptc::FloatComplex *input_data,
   reg_input[3] = _mm256_add_ps(reg_output[3], reg_input[3]);
 
   // Write back in-register result into output data
-  _mm256_storeu_ps(reinterpret_cast<float *>(output_data), reg_input[0]);
-  _mm256_storeu_ps(reinterpret_cast<float *>(output_data + output_stride),
+  _mm256_storeu_ps(reinterpret_cast<float *>(out_data), reg_input[0]);
+  _mm256_storeu_ps(reinterpret_cast<float *>(out_data + output_stride),
       reg_input[1]);
-  _mm256_storeu_ps(reinterpret_cast<float *>(output_data + 2 * output_stride),
+  _mm256_storeu_ps(reinterpret_cast<float *>(out_data + 2 * output_stride),
       reg_input[2]);
-  _mm256_storeu_ps(reinterpret_cast<float *>(output_data + 3 * output_stride),
+  _mm256_storeu_ps(reinterpret_cast<float *>(out_data + 3 * output_stride),
       reg_input[3]);
 }
 
 
-void exec_trans_full_z_(const hptc::DoubleComplex *input_data,
-    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m256d *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m256d *>(beta);
+template <>
+void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::set_coef(
+    const DeducedFloatType<DoubleComplex> alpha,
+    const DeducedFloatType<DoubleComplex> beta) {
+  this->reg_alpha_ = _mm256_set1_pd(alpha);
+  this->reg_beta_ = _mm256_set1_pd(beta);
+}
 
+template <>
+void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
+    const DoubleComplex * RESTRICT in_data, DoubleComplex * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m256d reg_input[2];
-  reg_input[0] = _mm256_loadu_pd(reinterpret_cast<const double *>(input_data));
+  reg_input[0] = _mm256_loadu_pd(reinterpret_cast<const double *>(in_data));
   reg_input[1] = _mm256_loadu_pd(
-      reinterpret_cast<const double *>(input_data + input_stride));
+      reinterpret_cast<const double *>(in_data + input_stride));
 
   // 2x2 in-register transpose
   __m256d reg[2];
@@ -269,43 +275,48 @@ void exec_trans_full_z_(const hptc::DoubleComplex *input_data,
   reg_input[1] = reg[1];
 
   // Rescale transposed input data
-  reg_input[0] = _mm256_mul_pd(reg_input[0], *reg_alpha);
-  reg_input[1] = _mm256_mul_pd(reg_input[1], *reg_alpha);
+  reg_input[0] = _mm256_mul_pd(reg_input[0], this->reg_alpha_);
+  reg_input[1] = _mm256_mul_pd(reg_input[1], this->reg_alpha_);
 
   // Load output data into registers
   __m256d reg_output[2];
   reg_output[0] = _mm256_loadu_pd(
-      reinterpret_cast<const double *>(output_data));
+      reinterpret_cast<const double *>(out_data));
   reg_output[1] = _mm256_loadu_pd(
-      reinterpret_cast<const double *>(output_data + output_stride));
+      reinterpret_cast<const double *>(out_data + output_stride));
 
   // Update output data
-  reg_output[0] = _mm256_mul_pd(reg_output[0], *reg_beta);
-  reg_output[1] = _mm256_mul_pd(reg_output[1], *reg_beta);
+  reg_output[0] = _mm256_mul_pd(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm256_mul_pd(reg_output[1], this->reg_beta_);
 
   // Add updated result into input registers
   reg_input[0] = _mm256_add_pd(reg_output[0], reg_input[0]);
   reg_input[1] = _mm256_add_pd(reg_output[1], reg_input[1]);
 
   // Write back in-register result into output data
-  _mm256_storeu_pd(reinterpret_cast<double *>(output_data), reg_input[0]);
-  _mm256_storeu_pd(reinterpret_cast<double *>(output_data + output_stride),
+  _mm256_storeu_pd(reinterpret_cast<double *>(out_data), reg_input[0]);
+  _mm256_storeu_pd(reinterpret_cast<double *>(out_data + output_stride),
       reg_input[1]);
 }
 
 
-void exec_trans_half_s_(const float *input_data, float *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m128 *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m128 *>(beta);
+template <>
+void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::set_coef(
+    const DeducedFloatType<float> alpha, const DeducedFloatType<float> beta) {
+  this->reg_alpha_ = _mm_set1_ps(alpha);
+  this->reg_beta_ = _mm_set1_ps(beta);
+}
 
+template <>
+void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
+    const float * RESTRICT in_data, float * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m128 reg_input[4];
-  reg_input[0] = _mm_loadu_ps(input_data);
-  reg_input[1] = _mm_loadu_ps(input_data + input_stride);
-  reg_input[2] = _mm_loadu_ps(input_data + 2 * input_stride);
-  reg_input[3] = _mm_loadu_ps(input_data + 3 * input_stride);
+  reg_input[0] = _mm_loadu_ps(in_data);
+  reg_input[1] = _mm_loadu_ps(in_data + input_stride);
+  reg_input[2] = _mm_loadu_ps(in_data + 2 * input_stride);
+  reg_input[3] = _mm_loadu_ps(in_data + 3 * input_stride);
 
   // 4x4 in-register transpose
   __m128 reg[4];
@@ -318,24 +329,24 @@ void exec_trans_half_s_(const float *input_data, float *output_data,
   reg_input[2] = _mm_movelh_ps(reg[1], reg[3]);
   reg_input[3] = _mm_movehl_ps(reg[3], reg[1]);
 
-  // Rescale transposed input_data
-  reg_input[0] = _mm_mul_ps(reg_input[0], *reg_alpha);
-  reg_input[1] = _mm_mul_ps(reg_input[1], *reg_alpha);
-  reg_input[2] = _mm_mul_ps(reg_input[2], *reg_alpha);
-  reg_input[3] = _mm_mul_ps(reg_input[3], *reg_alpha);
+  // Rescale transposed in_data
+  reg_input[0] = _mm_mul_ps(reg_input[0], this->reg_alpha_);
+  reg_input[1] = _mm_mul_ps(reg_input[1], this->reg_alpha_);
+  reg_input[2] = _mm_mul_ps(reg_input[2], this->reg_alpha_);
+  reg_input[3] = _mm_mul_ps(reg_input[3], this->reg_alpha_);
 
   // Load output data into registers
   __m128 reg_output[4];
-  reg_output[0] = _mm_loadu_ps(output_data);
-  reg_output[1] = _mm_loadu_ps(output_data + output_stride);
-  reg_output[2] = _mm_loadu_ps(output_data + 2 * output_stride);
-  reg_output[3] = _mm_loadu_ps(output_data + 3 * output_stride);
+  reg_output[0] = _mm_loadu_ps(out_data);
+  reg_output[1] = _mm_loadu_ps(out_data + output_stride);
+  reg_output[2] = _mm_loadu_ps(out_data + 2 * output_stride);
+  reg_output[3] = _mm_loadu_ps(out_data + 3 * output_stride);
 
   // Update output data
-  reg_output[0] = _mm_mul_ps(reg_output[0], *reg_beta);
-  reg_output[1] = _mm_mul_ps(reg_output[1], *reg_beta);
-  reg_output[2] = _mm_mul_ps(reg_output[2], *reg_beta);
-  reg_output[3] = _mm_mul_ps(reg_output[3], *reg_beta);
+  reg_output[0] = _mm_mul_ps(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm_mul_ps(reg_output[1], this->reg_beta_);
+  reg_output[2] = _mm_mul_ps(reg_output[2], this->reg_beta_);
+  reg_output[3] = _mm_mul_ps(reg_output[3], this->reg_beta_);
 
   // Add updated result into input registers
   reg_input[0] = _mm_add_ps(reg_output[0], reg_input[0]);
@@ -344,99 +355,169 @@ void exec_trans_half_s_(const float *input_data, float *output_data,
   reg_input[3] = _mm_add_ps(reg_output[3], reg_input[3]);
 
   // Write back in-register result into output data
-  _mm_storeu_ps(output_data, reg_input[0]);
-  _mm_storeu_ps(output_data + output_stride, reg_input[1]);
-  _mm_storeu_ps(output_data + 2 * output_stride, reg_input[2]);
-  _mm_storeu_ps(output_data + 3 * output_stride, reg_input[3]);
+  _mm_storeu_ps(out_data, reg_input[0]);
+  _mm_storeu_ps(out_data + output_stride, reg_input[1]);
+  _mm_storeu_ps(out_data + 2 * output_stride, reg_input[2]);
+  _mm_storeu_ps(out_data + 3 * output_stride, reg_input[3]);
 }
 
 
-void exec_trans_half_d_(const double *input_data, double *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m128d *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m128d *>(beta);
+template <>
+void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::set_coef(
+    const DeducedFloatType<double> alpha, const DeducedFloatType<double> beta) {
+  this->reg_alpha_ = _mm_set1_pd(alpha);
+  this->reg_beta_ = _mm_set1_pd(beta);
+}
 
+template <>
+void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
+    const double * RESTRICT in_data, double * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m128d reg_input[2];
-  reg_input[0] = _mm_loadu_pd(input_data);
-  reg_input[1] = _mm_loadu_pd(input_data + input_stride);
+  reg_input[0] = _mm_loadu_pd(in_data);
+  reg_input[1] = _mm_loadu_pd(in_data + input_stride);
 
   // 2x2 in-register transpose
   __m128d reg[2];
   reg[0] = _mm_unpacklo_pd(reg_input[0], reg_input[1]);
   reg[1] = _mm_unpackhi_pd(reg_input[0], reg_input[1]);
 
-  // Rescale transposed input_data
-  reg[0] = _mm_mul_pd(reg[0], *reg_alpha);
-  reg[1] = _mm_mul_pd(reg[1], *reg_alpha);
+  // Rescale transposed in_data
+  reg[0] = _mm_mul_pd(reg[0], this->reg_alpha_);
+  reg[1] = _mm_mul_pd(reg[1], this->reg_alpha_);
 
   // Load output data into registers
   __m128d reg_output[2];
-  reg_output[0] = _mm_loadu_pd(output_data);
-  reg_output[1] = _mm_loadu_pd(output_data + output_stride);
+  reg_output[0] = _mm_loadu_pd(out_data);
+  reg_output[1] = _mm_loadu_pd(out_data + output_stride);
 
   // Update output data
-  reg_output[0] = _mm_mul_pd(reg_output[0], *reg_beta);
-  reg_output[1] = _mm_mul_pd(reg_output[1], *reg_beta);
+  reg_output[0] = _mm_mul_pd(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm_mul_pd(reg_output[1], this->reg_beta_);
 
   // Add updated result into input registers
   reg[0] = _mm_add_pd(reg_output[0], reg[0]);
   reg[1] = _mm_add_pd(reg_output[1], reg[1]);
 
   // Write back in-register result into output data
-  _mm_storeu_pd(output_data, reg[0]);
-  _mm_storeu_pd(output_data + output_stride, reg[1]);
+  _mm_storeu_pd(out_data, reg[0]);
+  _mm_storeu_pd(out_data + output_stride, reg[1]);
 }
 
 
-void exec_trans_half_c_(const hptc::FloatComplex *input_data,
-    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha, const void *beta) {
-  auto reg_alpha = reinterpret_cast<const __m128 *>(alpha);
-  auto reg_beta = reinterpret_cast<const __m128 *>(beta);
+template <>
+void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::set_coef(
+    const DeducedFloatType<FloatComplex> alpha,
+    const DeducedFloatType<FloatComplex> beta) {
+  this->reg_alpha_ = _mm_set1_ps(alpha);
+  this->reg_beta_ = _mm_set1_ps(beta);
+}
 
+template <>
+void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
+    const FloatComplex * RESTRICT in_data, FloatComplex * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
   // Load input data into registers
   __m128 reg_input[2];
-  reg_input[0] = _mm_loadu_ps(reinterpret_cast<const float *>(input_data));
+  reg_input[0] = _mm_loadu_ps(reinterpret_cast<const float *>(in_data));
   reg_input[1] = _mm_loadu_ps(
-      reinterpret_cast<const float *>(input_data + input_stride));
+      reinterpret_cast<const float *>(in_data + input_stride));
 
   // 2x2 in-register transpose
   __m128 reg[2];
   reg[0] = _mm_movelh_ps(reg_input[0], reg_input[1]);
   reg[1] = _mm_movehl_ps(reg_input[1], reg_input[0]);
 
-  // Rescale transposed input_data
-  reg[0] = _mm_mul_ps(reg[0], *reg_alpha);
-  reg[1] = _mm_mul_ps(reg[1], *reg_alpha);
+  // Rescale transposed in_data
+  reg[0] = _mm_mul_ps(reg[0], this->reg_alpha_);
+  reg[1] = _mm_mul_ps(reg[1], this->reg_alpha_);
 
   // Load output data into registers
   __m128 reg_output[2];
-  reg_output[0] = _mm_loadu_ps(reinterpret_cast<float *>(output_data));
+  reg_output[0] = _mm_loadu_ps(reinterpret_cast<float *>(out_data));
   reg_output[1] = _mm_loadu_ps(
-      reinterpret_cast<float *>(output_data + output_stride));
+      reinterpret_cast<float *>(out_data + output_stride));
 
   // Update output data
-  reg_output[0] = _mm_mul_ps(reg_output[0], *reg_beta);
-  reg_output[1] = _mm_mul_ps(reg_output[1], *reg_beta);
+  reg_output[0] = _mm_mul_ps(reg_output[0], this->reg_beta_);
+  reg_output[1] = _mm_mul_ps(reg_output[1], this->reg_beta_);
 
   // Add updated result into input registers
   reg[0] = _mm_add_ps(reg_output[0], reg[0]);
   reg[1] = _mm_add_ps(reg_output[1], reg[1]);
 
   // Write back in-register result into output data
-  _mm_storeu_ps(reinterpret_cast<float *>(output_data), reg[0]);
-  _mm_storeu_ps(reinterpret_cast<float *>(output_data + output_stride),
-      reg[1]);
+  _mm_storeu_ps(reinterpret_cast<float *>(out_data), reg[0]);
+  _mm_storeu_ps(reinterpret_cast<float *>(out_data + output_stride), reg[1]);
 }
 
 
-void exec_trans_half_z_(const hptc::DoubleComplex *input_data,
-    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha, const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const double *>(alpha);
-  auto reg_beta = *reinterpret_cast<const double *>(beta);
+template <>
+void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::set_coef(
+    const DeducedFloatType<DoubleComplex> alpha,
+    const DeducedFloatType<DoubleComplex> beta) {
+  this->reg_alpha_ = alpha;
+  this->reg_beta_ = beta;
+}
 
-  *output_data = reg_alpha * *input_data + reg_beta * *output_data;
+template <>
+void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::exec(
+    const DoubleComplex * RESTRICT in_data, DoubleComplex * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
+  *out_data = this->reg_alpha_ * *in_data + this->reg_beta_ * *out_data;
+}
+
+
+template <typename FloatType>
+void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->reg_alpha_ = alpha;
+  this->reg_beta_ = beta;
+}
+
+
+template <typename FloatType>
+void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
+    const FloatType * RESTRICT in_data, FloatType * RESTRICT out_data,
+    const TensorIdx input_stride, const TensorIdx output_stride) const {
+}
+
+
+/*
+ * Explicit template instantiation definition for class KernelTransData and
+ * KernelTrans
+ */
+template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
+
+template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+
+template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
+
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
+
 }

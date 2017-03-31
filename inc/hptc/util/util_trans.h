@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #include <hptc/types.h>
-#include <hptc/arch/compat.h>
 
 
 namespace hptc {
@@ -22,25 +21,13 @@ enum class KernelTypeTrans : TensorUInt {
 };
 
 
-template <typename FloatType,
-          KernelTypeTrans TYPE,
-          typename Enable = void>
-struct RegTypeDeducer {
-};
-
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-using DeducedRegType = typename RegTypeDeducer<FloatType, TYPE>::type;
-
-
 template <TensorUInt ORDER>
 struct LoopParamTrans {
   LoopParamTrans();
 
-  HPTC_INL void set_pass(TensorUInt order);
-  HPTC_INL void set_disable();
-  HPTC_INL bool is_disabled() const;
+  void set_pass(TensorUInt order);
+  void set_disable();
+  bool is_disabled() const;
 
   TensorIdx loop_begin[ORDER];
   TensorIdx loop_end[ORDER];

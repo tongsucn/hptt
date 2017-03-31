@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Architecture detection configuration
 # ----------------------------------------------------------------------------
-string(CONCAT HPTC_ARCH_DETECT_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}
+string(CONCAT HPTC_ARCH_DETECT_SCRIPT ${CMAKE_SOURCE_DIR}
   "/cmake/pylib/cpu_flags.py")
 
 # ----------------------------------------------------------------------------
@@ -21,8 +21,7 @@ macro(hptc_detect_arch)
     message("!! Detection script stderr:\n" ${DETECT_STDERR})
     message(WARNING "!! HPTC will enable trivial implementation.")
   else ()
-    message("-- Enabled architecture kernels: " ${DETECT_STDOUT})
-    string(REPLACE " " ";" ARCH_ABBREV_LIST ${DETECT_STDOUT})
+    message("-- Enabled architecture kernels: common " ${DETECT_STDOUT})
 
     # Set architecture C++ macros
     foreach (ARCH ${ARCH_ABBREV_LIST})

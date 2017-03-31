@@ -7,6 +7,8 @@
 #include <utility>
 #include <unordered_map>
 
+#include <hptc/types.h>
+
 
 namespace hptc {
 

@@ -2,9 +2,8 @@
 #ifndef HPTC_PLAN_PLAN_TRANS_UTIL_H_
 #define HPTC_PLAN_PLAN_TRANS_UTIL_H_
 
-#include <omp.h>
-
 #include <cmath>
+
 #include <vector>
 #include <stack>
 #include <queue>
@@ -14,6 +13,8 @@
 #include <algorithm>
 #include <functional>
 #include <unordered_set>
+
+#include <omp.h>
 
 #include <hptc/types.h>
 #include <hptc/util/util.h>

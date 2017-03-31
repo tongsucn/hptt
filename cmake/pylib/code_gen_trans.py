@@ -3,8 +3,8 @@
 
 import os, shutil, sys, argparse
 
-from gen_util import (tensor_gen, cgraph_trans_gen, operation_trans_gen,
-    param_trans_gen, plan_trans_gen, plan_trans_util_gen, hptc_trans_gen)
+from gen_util import (tensor_gen, core_trans_gen, operation_trans_gen,
+    param_trans_gen, hptc_trans_gen)
 from gen_util.gen_types import (FloatType, FLOAT_MAP)
 
 
@@ -19,9 +19,9 @@ class GenTarget(object):
 
     # Check limit values
     if order_min < 2:
-        order_min = 2
+      order_min = 2
     if order_max <= order_min:
-        order_max = order_min + 1
+      order_max = order_min + 1
     self.order_range = list(range(order_min, order_max))
     self.target_suffix = target_suffix
 
@@ -30,24 +30,16 @@ class GenTarget(object):
       shutil.rmtree(self.target_dir)
     os.makedirs(self.target_dir)
 
-    self.inc_targets = [
-        tensor_gen.IncTarget,
-        cgraph_trans_gen.IncTarget,
+    self.inc_targets = [ tensor_gen.IncTarget,
+        core_trans_gen.IncTarget,
         operation_trans_gen.IncTarget,
         param_trans_gen.IncTarget,
-        plan_trans_gen.IncTarget,
-        plan_trans_util_gen.IncTarget,
-        hptc_trans_gen.IncTarget
-        ]
+        hptc_trans_gen.IncTarget ]
 
-    self.src_targets = [
-        tensor_gen.SrcTarget,
-        cgraph_trans_gen.SrcTarget,
+    self.src_targets = [ tensor_gen.SrcTarget,
+        core_trans_gen.SrcTarget,
         operation_trans_gen.SrcTarget,
-        param_trans_gen.SrcTarget,
-        plan_trans_gen.SrcTarget,
-        plan_trans_util_gen.SrcTarget,
-        ]
+        param_trans_gen.SrcTarget ]
 
   def gen(self):
     self.gen_(self.inc_targets, 'gen.tcc')
@@ -68,17 +60,12 @@ class GenTarget(object):
 
 
 def arg_parser(argv):
-  dtype_dict = { 's' : FloatType.FLOAT, 'd' : FloatType.DOUBLE,
-      'c' : FloatType.FLOAT_COMPLEX, 'z' : FloatType.DOUBLE_COMPLEX }
-
   parser = argparse.ArgumentParser()
   parser.add_argument('--target', action='store', dest='target_dir')
-  parser.add_argument('--dtype', action='store', dest='dtype')
   parser.add_argument('--order-min', action='store', dest='order_min')
   parser.add_argument('--order-max', action='store', dest='order_max')
 
   parsed = parser.parse_args(argv[1:])
-  parsed.dtype = map(lambda x: dtype_dict[x.lower()], parsed.dtype.split(','))
   parsed.order_min = int(parsed.order_min)
   parsed.order_max = int(parsed.order_max) + 1
 
@@ -87,9 +74,11 @@ def arg_parser(argv):
 
 def main():
   parsed = arg_parser(sys.argv)
+  dtype = [ FloatType.FLOAT, FloatType.DOUBLE, FloatType.FLOAT_COMPLEX,
+          FloatType.DOUBLE_COMPLEX ]
 
-  gen_target = GenTarget(parsed.target_dir, parsed.dtype, parsed.order_min,
-      parsed.order_max)
+  gen_target = GenTarget(parsed.target_dir, dtype, parsed.order_min,
+    parsed.order_max)
   gen_target.gen()
 
 

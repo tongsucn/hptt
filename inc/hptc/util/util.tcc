@@ -7,7 +7,7 @@
  */
 template <typename Callable,
           typename... Args>
-HPTC_INL double TimerWrapper::operator()(Callable &target, Args&&... args) {
+double TimerWrapper::operator()(Callable &target, Args&&... args) {
   if (0 == this->times_)
     return 0.0;
   else if (this->is_timeout())
@@ -32,7 +32,7 @@ HPTC_INL double TimerWrapper::operator()(Callable &target, Args&&... args) {
  * Implementation for struct ModCmp
  */
 template <typename ValType>
-HPTC_INL bool ModCmp<ValType>::operator()(const ValType &first,
+bool ModCmp<ValType>::operator()(const ValType &first,
     const ValType &second) {
   return 0 == first % second;
 }

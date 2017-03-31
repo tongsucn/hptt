@@ -25,31 +25,31 @@ public:
   TensorUInt get_cont_len() const;
   TensorUInt get_ncont_len() const;
 
-  void exec(const Float * RESTRICT input_data, Float * RESTRICT output_data,
+  void exec(const Float *input_data, Float *output_data,
       const TensorIdx input_stride, const TensorIdx output_stride) const;
 
 private:
   template <TensorUInt CONT,
             TensorUInt NCONT>
-  void ncont_tiler_(DualCounter<CONT, NCONT>,
-      const Float * RESTRICT input_data, Float * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+  void ncont_tiler_(DualCounter<CONT, NCONT>, const Float *input_data,
+      Float *output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) const;
 
   template <TensorUInt CONT>
-  void ncont_tiler_(DualCounter<CONT, 0>,
-      const Float * RESTRICT input_data, Float * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+  void ncont_tiler_(DualCounter<CONT, 0>, const Float *input_data,
+      Float *output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) const;
 
   template <TensorUInt CONT,
             TensorUInt NCONT>
-  void cont_tiler_(DualCounter<CONT, NCONT>,
-      const Float * RESTRICT input_data, Float * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+  void cont_tiler_(DualCounter<CONT, NCONT>, const Float *input_data,
+      Float *output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) const;
 
   template <TensorUInt NCONT>
-  void cont_tiler_(DualCounter<0, NCONT>,
-      const Float * RESTRICT input_data, Float * RESTRICT output_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+  void cont_tiler_(DualCounter<0, NCONT>, const Float *input_data,
+      Float *output_data, const TensorIdx input_stride,
+      const TensorIdx output_stride) const;
 
   MicroKernel kernel_;
   const TensorUInt kn_width_;
@@ -62,8 +62,8 @@ public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
 
-  void exec(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
+  void exec(const FloatType *input_data,
+      FloatType *output_data, const TensorIdx input_stride,
       const TensorIdx output_stride) const;
 
 private:

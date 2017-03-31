@@ -27,6 +27,7 @@ extern template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;''' % (
     temp_content += '\n\n#endif'
     self.content = [temp_content]
 
+
 class SrcTarget(object):
   def __init__(self, **kwargs):
     dtypes = kwargs['dtype']
@@ -37,18 +38,19 @@ class SrcTarget(object):
     self.content = []
 
     for dtype in dtypes:
-      for order in orders:
-        self.filename.append('%s_%s_%d_%s' % (TARGET_PREFIX,
-           FLOAT_MAP[dtype].abbrev, order, suffix))
-        self.content.append('''#include <hptc/tensor.h>
+      self.filename.append('%s_%s_%s' % (TARGET_PREFIX, FLOAT_MAP[dtype].abbrev,
+          suffix))
+      self.content.append('''#include <hptc/tensor.h>
 
 #include <hptc/types.h>
 #include <hptc/arch/compat.h>
 
 namespace hptc {
-
+''')
+      for order in orders:
+        self.content[-1] += '''
 template class TensorWrapper<%s, %d, MemLayout::COL_MAJOR>;
-template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;
+template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;''' % (
+    FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order)
 
-}
-''' % (FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order))
+      self.content[-1] += '\n\n}'

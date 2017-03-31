@@ -29,7 +29,7 @@ def main():
   candidates = ''
   for flag in flag_list:
     if flag in supported_flags:
-      candidates += '%s ' % flag
+      candidates += '%s;' % flag
   sys.stdout.write(candidates[:-1])
 
 

@@ -1,23 +1,27 @@
 # ----------------------------------------------------------------------------
 # Code generation configuration
 # ----------------------------------------------------------------------------
-string(CONCAT HPTC_CODE_GEN_SCRIPT_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-  "/cmake/pylib")
+string(CONCAT HPTC_CODE_GEN_SCRIPT_DIR ${CMAKE_SOURCE_DIR}/cmake/pylib)
 string(CONCAT HPTC_CODE_GEN_TRANS_SCRIPT ${HPTC_CODE_GEN_SCRIPT_DIR}
   "/code_gen_trans.py")
+
+set(HPTC_CODE_GEN_TRANS_ORDER_MIN_ARG "--order-min")
+set(HPTC_CODE_GEN_TRANS_ORDER_MAX_ARG "--order-max")
+set(HPTC_CODE_GEN_TARGET_DIR_ARG "--target")
+string(CONCAT HPTC_CODE_GEN_TARGET_DIR ${CMAKE_SOURCE_DIR} "/src/hptc/gen")
+
 
 # ----------------------------------------------------------------------------
 # Code generation
 # ----------------------------------------------------------------------------
-macro(hptc_code_gen_trans GEN_SCRIPT WORKING_DIR)
+macro(hptc_code_gen_trans WORKING_DIR)
   message("-- Generating transpose library template explicit instantation. "
     "Target directory: " ${HPTC_CODE_GEN_TARGET_DIR})
   execute_process(
-    COMMAND ${HPTC_PYTHON_EXEC} ${GEN_SCRIPT}
+    COMMAND ${HPTC_PYTHON_EXEC} ${HPTC_CODE_GEN_TRANS_SCRIPT}
     ${HPTC_CODE_GEN_TARGET_DIR_ARG} ${HPTC_CODE_GEN_TARGET_DIR}
     ${HPTC_CODE_GEN_TRANS_ORDER_MIN_ARG} ${HPTC_CODE_GEN_TRANS_ORDER_MIN}
     ${HPTC_CODE_GEN_TRANS_ORDER_MAX_ARG} ${HPTC_CODE_GEN_TRANS_ORDER_MAX}
-    ${HPTC_CODE_GEN_TRANS_DTYPE_ARG} ${HPTC_CODE_GEN_TRANS_DTYPE}
     WORKING_DIRECTORY ${WORKING_DIR}
     OUTPUT_VARIABLE CODE_GEN_STDOUT
     ERROR_VARIABLE CODE_GEN_STDERR
@@ -33,5 +37,5 @@ macro(hptc_code_gen_trans GEN_SCRIPT WORKING_DIR)
 endmacro()
 
 macro(hptc_code_gen_all WORKING_DIR)
-  hptc_code_gen_trans(${HPTC_CODE_GEN_TRANS_SCRIPT} ${WORKING_DIR})
+  hptc_code_gen_trans(${WORKING_DIR})
 endmacro()

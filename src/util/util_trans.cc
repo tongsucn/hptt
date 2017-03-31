@@ -4,6 +4,8 @@
 #include <numeric>
 #include <functional>
 
+#include <hptc/types.h>
+
 
 namespace hptc {
 

@@ -29,6 +29,7 @@ extern template class ParamTrans<
     temp_content += '\n\n#endif'
     self.content = [temp_content]
 
+
 class SrcTarget(object):
   def __init__(self, **kwargs):
     dtypes = kwargs['dtype']

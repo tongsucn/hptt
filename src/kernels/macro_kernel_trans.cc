@@ -21,7 +21,7 @@ template <typename MicroKernel,
           TensorUInt NCONT_LEN>
 MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::MacroTrans()
     : kernel_(),
-      kn_width_(this->kernel_.kn_width()) {
+      kn_width_(MicroKernel::KN_WIDTH) {
 }
 
 
@@ -38,18 +38,16 @@ void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::set_coef(
 template <typename MicroKernel,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_cont_len(
-    ) const {
-  return CONT_LEN * this->kn_width_;
+TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_cont_len() const {
+  return CONT_LEN *this->kn_width_;
 }
 
 
 template <typename MicroKernel,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
-TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_ncont_len(
-    ) const {
-  return NCONT_LEN * this->kn_width_;
+TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
+  return NCONT_LEN *this->kn_width_;
 }
 
 
@@ -57,9 +55,9 @@ template <typename MicroKernel,
           TensorUInt CONT_LEN,
           TensorUInt NCONT_LEN>
 void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::exec(
-    const typename MicroKernel::Float * RESTRICT input_data,
-    typename MicroKernel::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    const typename MicroKernel::Float *input_data,
+    typename MicroKernel::Float *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
   this->ncont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(), input_data,
       output_data, input_stride, output_stride);
 }
@@ -71,10 +69,9 @@ template <typename MicroKernel,
 template <TensorUInt CONT,
          TensorUInt NCONT>
 void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, NCONT>,
-    const typename MicroKernel::Float * RESTRICT input_data,
-    typename MicroKernel::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    DualCounter<CONT, NCONT>, const typename MicroKernel::Float *input_data,
+    typename MicroKernel::Float *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
   this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), input_data, output_data,
       input_stride, output_stride);
   this->cont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), input_data, output_data,
@@ -87,10 +84,9 @@ template <typename MicroKernel,
           TensorUInt NCONT_LEN>
 template <TensorUInt CONT>
 void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, 0>,
-    const typename MicroKernel::Float * RESTRICT input_data,
-    typename MicroKernel::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    DualCounter<CONT, 0>, const typename MicroKernel::Float *input_data,
+    typename MicroKernel::Float *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
 }
 
 
@@ -100,16 +96,15 @@ template <typename MicroKernel,
 template <TensorUInt CONT,
          TensorUInt NCONT>
 void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<CONT, NCONT>,
-    const typename MicroKernel::Float * RESTRICT input_data,
-    typename MicroKernel::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    DualCounter<CONT, NCONT>, const typename MicroKernel::Float *input_data,
+    typename MicroKernel::Float *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
   this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), input_data, output_data,
       input_stride, output_stride);
-  this->kernel_.exec(input_data + CONT * this->kn_width_
-          + NCONT * this->kn_width_ * input_stride,
-      output_data + NCONT * this->kn_width_
-          + CONT * this->kn_width_ * output_stride,
+  this->kernel_.exec(input_data + CONT *this->kn_width_
+          + NCONT *this->kn_width_ *input_stride,
+      output_data + NCONT *this->kn_width_
+          + CONT *this->kn_width_ *output_stride,
       input_stride, output_stride);
 }
 
@@ -119,12 +114,11 @@ template <typename MicroKernel,
           TensorUInt NCONT_LEN>
 template <TensorUInt NCONT>
 void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<0, NCONT>,
-    const typename MicroKernel::Float * RESTRICT input_data,
-    typename MicroKernel::Float * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
-  this->kernel_.exec(input_data + NCONT * this->kn_width_ * input_stride,
-      output_data + NCONT * this->kn_width_, input_stride, output_stride);
+    DualCounter<0, NCONT>, const typename MicroKernel::Float *input_data,
+    typename MicroKernel::Float *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
+  this->kernel_.exec(input_data + NCONT *this->kn_width_ *input_stride,
+      output_data + NCONT *this->kn_width_, input_stride, output_stride);
 }
 
 
@@ -140,9 +134,9 @@ void MacroTransLinear<FloatType>::set_coef(
 
 
 template <typename FloatType>
-void MacroTransLinear<FloatType>::exec(
-    const FloatType * RESTRICT input_data, FloatType * RESTRICT output_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+void MacroTransLinear<FloatType>::exec(const FloatType *input_data,
+    FloatType *output_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
 #pragma omp simd
   for (TensorIdx idx = 0; idx < input_stride; ++idx)
     output_data[idx] = this->reg_alpha_ * input_data[idx]

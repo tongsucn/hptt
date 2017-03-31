@@ -12,7 +12,7 @@ LoopParamTrans<ORDER>::LoopParamTrans() {
 
 
 template <TensorUInt ORDER>
-HPTC_INL void LoopParamTrans<ORDER>::set_pass(TensorUInt order) {
+void LoopParamTrans<ORDER>::set_pass(TensorUInt order) {
   std::fill(this->loop_begin, this->loop_begin + order, 0);
   std::fill(this->loop_end, this->loop_end + order, 1);
   std::fill(this->loop_step, this->loop_step + order, 1);
@@ -20,7 +20,7 @@ HPTC_INL void LoopParamTrans<ORDER>::set_pass(TensorUInt order) {
 
 
 template <TensorUInt ORDER>
-HPTC_INL void LoopParamTrans<ORDER>::set_disable() {
+void LoopParamTrans<ORDER>::set_disable() {
   std::fill(this->loop_begin, this->loop_begin + ORDER, 1);
   std::fill(this->loop_end, this->loop_end + ORDER, 0);
   std::fill(this->loop_step, this->loop_step + ORDER, 1);
@@ -28,7 +28,7 @@ HPTC_INL void LoopParamTrans<ORDER>::set_disable() {
 
 
 template <TensorUInt ORDER>
-HPTC_INL bool LoopParamTrans<ORDER>::is_disabled() const {
+bool LoopParamTrans<ORDER>::is_disabled() const {
   return this->loop_begin[0] >= this->loop_end[0];
 }
 

@@ -12,7 +12,7 @@ project (HPTC)
 set(HPTC_CMAKE_SCRIPT_DIR "cmake")
 
 # Find dependencies
-find_package(Doxygen)
+# find_package(Doxygen)
 find_package(GTest)
 
 # Setting options
@@ -25,6 +25,10 @@ hptc_set_compiler()
 # Call code generation script
 include(${HPTC_CMAKE_SCRIPT_DIR}/hptc_code_gen.cmake)
 hptc_code_gen_all(${CMAKE_CURRENT_SOURCE_DIR})
+
+# Initialize build targets setting
+include(${HPTC_CMAKE_SCRIPT_DIR}/hptc_lib_setting.cmake)
+hptc_init_lib_setting()
 
 # Directory setting
 include(cmake/hptc_dir_setting.cmake)

@@ -2,155 +2,55 @@
 
 #include <hptc/types.h>
 #include <hptc/arch/compat.h>
+#include <hptc/util/util_trans.h>
 
 
-void set_trans_coef_full_s_(void *reg, const float coef) {
-  *reinterpret_cast<float *>(reg) = coef;
+namespace hptc {
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTrans<FloatType, TYPE>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->reg_alpha_ = alpha, this->reg_beta_ = beta;
 }
 
 
-void set_trans_coef_full_d_(void *reg, const double coef) {
-  *reinterpret_cast<double *>(reg) = coef;
-}
-
-
-void set_trans_coef_half_s_(void *reg, const float coef) {
-  *reinterpret_cast<float *>(reg) = coef;
-}
-
-
-void set_trans_coef_half_d_(void *reg, const double coef) {
-  *reinterpret_cast<double *>(reg) = coef;
-}
-
-
-template <typename FloatType>
-HPTC_INL static void trans_impl_full_(const FloatType * RESTRICT input_data,
-    FloatType * RESTRICT output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride,
-    const hptc::DeducedFloatType<FloatType> reg_alpha,
-    const hptc::DeducedFloatType<FloatType> reg_beta) {
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTrans<FloatType, TYPE>::exec(const FloatType * RESTRICT in_data,
+    FloatType * RESTRICT out_data, const TensorIdx input_stride,
+    const TensorIdx output_stride) const {
   // Get number of elements to be processed in on row
-  constexpr auto KN_WIDTH = REG_SIZE / sizeof(FloatType);
+  constexpr auto WIDTH = KernelTrans<FloatType, TYPE>::KN_WIDTH;
 
-  for (hptc::TensorUInt ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
-    for (hptc::TensorUInt cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
+  for (hptc::TensorUInt ncont_idx = 0; ncont_idx < WIDTH; ++ncont_idx) {
+    for (hptc::TensorUInt cont_idx = 0; cont_idx < WIDTH; ++cont_idx) {
       const auto input_idx = cont_idx + ncont_idx * input_stride,
             output_idx = ncont_idx + cont_idx * output_stride;
-      output_data[output_idx] = reg_alpha * input_data[input_idx]
-            + reg_beta * output_data[output_idx];
+      out_data[output_idx] = this->reg_alpha_ * in_data[input_idx]
+            + this->reg_beta_ * out_data[output_idx];
     }
   }
 }
 
 
-void exec_trans_full_s_(const float *input_data, float *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const float *>(alpha);
-  auto reg_beta = *reinterpret_cast<const float *>(beta);
+/*
+ * Explicit template instantiation definition for class KernelTrans
+ */
+template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
 
-  trans_impl_full_<float>(input_data, output_data, input_stride, output_stride,
-      reg_alpha, reg_beta);
-}
+template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
 
+template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
 
-void exec_trans_full_d_(const double *input_data, double *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const double *>(alpha);
-  auto reg_beta = *reinterpret_cast<const double *>(beta);
-
-  trans_impl_full_<double>(input_data, output_data, input_stride, output_stride,
-      reg_alpha, reg_beta);
-}
-
-
-void exec_trans_full_c_(const hptc::FloatComplex *input_data,
-    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha,
-    const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const float *>(alpha);
-  auto reg_beta = *reinterpret_cast<const float *>(beta);
-
-  trans_impl_full_<hptc::FloatComplex>(input_data, output_data, input_stride,
-      output_stride, reg_alpha, reg_beta);
-}
-
-
-void exec_trans_full_z_(const hptc::DoubleComplex *input_data,
-    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha,
-    const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const double *>(alpha);
-  auto reg_beta = *reinterpret_cast<const double *>(beta);
-
-  trans_impl_full_<hptc::DoubleComplex>(input_data, output_data, input_stride,
-      output_stride, reg_alpha, reg_beta);
-}
-
-
-template <typename FloatType>
-HPTC_INL static void trans_impl_half_(const FloatType * RESTRICT input_data,
-    FloatType * RESTRICT output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride,
-    const hptc::DeducedFloatType<FloatType> reg_alpha,
-    const hptc::DeducedFloatType<FloatType> reg_beta) {
-  // Get number of elements to be processed in on row
-  constexpr auto KN_WIDTH = REG_SIZE / sizeof(FloatType) / 2;
-
-  for (hptc::TensorUInt ncont_idx = 0; ncont_idx < KN_WIDTH; ++ncont_idx) {
-    for (hptc::TensorUInt cont_idx = 0; cont_idx < KN_WIDTH; ++cont_idx) {
-      const auto input_idx = cont_idx + ncont_idx * input_stride,
-            output_idx = ncont_idx + cont_idx * output_stride;
-      output_data[output_idx] = reg_alpha * input_data[input_idx]
-            + reg_beta * output_data[output_idx];
-    }
-  }
-}
-
-
-void exec_trans_half_s_(const float *input_data, float *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const float *>(alpha);
-  auto reg_beta = *reinterpret_cast<const float *>(beta);
-
-  trans_impl_half_<float>(input_data, output_data, input_stride, output_stride,
-      reg_alpha, reg_beta);
-}
-
-
-void exec_trans_half_d_(const double *input_data, double *output_data,
-    const hptc::TensorIdx input_stride, const hptc::TensorIdx output_stride,
-    const void *alpha, const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const double *>(alpha);
-  auto reg_beta = *reinterpret_cast<const double *>(beta);
-
-  trans_impl_half_<double>(input_data, output_data, input_stride, output_stride,
-      reg_alpha, reg_beta);
-}
-
-
-void exec_trans_half_c_(const hptc::FloatComplex *input_data,
-    hptc::FloatComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha,
-    const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const float *>(alpha);
-  auto reg_beta = *reinterpret_cast<const float *>(beta);
-
-  trans_impl_half_<hptc::FloatComplex>(input_data, output_data, input_stride,
-      output_stride, reg_alpha, reg_beta);
-}
-
-
-void exec_trans_half_z_(const hptc::DoubleComplex *input_data,
-    hptc::DoubleComplex *output_data, const hptc::TensorIdx input_stride,
-    const hptc::TensorIdx output_stride, const void *alpha,
-    const void *beta) {
-  auto reg_alpha = *reinterpret_cast<const double *>(alpha);
-  auto reg_beta = *reinterpret_cast<const double *>(beta);
-
-  trans_impl_half_<hptc::DoubleComplex>(input_data, output_data, input_stride,
-      output_stride, reg_alpha, reg_beta);
 }
