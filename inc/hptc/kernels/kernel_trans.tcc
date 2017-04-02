@@ -21,7 +21,10 @@ void KernelPackTrans<FloatType>::set_coef(
   this->knh_1x1.set_coef(alpha, beta), this->knh_1x2.set_coef(alpha, beta);
   this->knh_1x3.set_coef(alpha, beta), this->knh_1x4.set_coef(alpha, beta);
   this->knh_2x1.set_coef(alpha, beta), this->knh_3x1.set_coef(alpha, beta);
-  this->knh_4x1.set_coef(alpha, beta), this->kn_lin.set_coef(alpha, beta);
+  this->knh_4x1.set_coef(alpha, beta), this->kn_lin_core.set_coef(alpha, beta);
+  this->kn_lin_right.set_coef(alpha, beta);
+  this->kn_lin_bottom.set_coef(alpha, beta);
+  this->kn_lin_scalar.set_coef(alpha, beta);
   this->kn_scl.set_coef(alpha, beta);
 }
 
@@ -65,8 +68,9 @@ TensorUInt KernelPackTrans<FloatType>::kn_ncont_len(
 
 template <typename FloatType>
 KernelPackTrans<FloatType>::KernelPackTrans()
-    : knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
-    knh_giant(this->knh_1x4), knh_basic(this->knh_1x1) {
+    : linear_loop_max(MacroTransLinear<FloatType>::LOOP_MAX),
+      knf_giant(this->knf_4x4), knf_basic(this->knf_1x1),
+      knh_giant(this->knh_1x4), knh_basic(this->knh_1x1) {
 }
 
 

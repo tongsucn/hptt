@@ -108,30 +108,51 @@ ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
     const DeducedFloatType<typename TensorType::Float> beta)
     : input_merge_set_(), output_merge_set_(), kn_(), perm(perm),
       input_stride(1), output_stride(1),
+      stride_in_in(1), stride_in_out(1), stride_out_in(1), stride_out_out(1),
       merged_order(this->merge_idx_(perm)),
       input_tensor(input_tensor, this->input_merge_set_),
       output_tensor(output_tensor, this->output_merge_set_) {
+  // Initialize coefficients
   this->set_coef(alpha, beta);
+
   // Initialize access strides
-  for (TensorUInt order_idx = 0; order_idx < perm[0]; ++order_idx)
-    this->input_stride *= input_tensor.get_outer_size(order_idx);
-  for (TensorUInt order_idx = 0; 0 != perm[order_idx]; ++order_idx)
-    this->output_stride *= output_tensor.get_outer_size(order_idx);
+  if (this->is_common_leading()) {
+    // Common leading case
+    // stride of input tensor's 2nd order in input tensor
+    this->stride_in_in = this->input_tensor.get_outer_size(
+        this->begin_order_idx);
+
+    // stride of output tensor's 2nd-order in input tensor
+    for (auto order_idx = this->begin_order_idx;
+        order_idx != perm[this->begin_order_idx + 1] + this->begin_order_idx;
+        ++order_idx)
+      this->stride_in_out *= this->input_tensor.get_outer_size(order_idx);
+
+    // stride of input tensor's 2nd-order in output tensor
+    for (auto order_idx = this->begin_order_idx; 1 != perm[order_idx];
+        ++order_idx)
+      this->stride_out_in *= this->output_tensor.get_outer_size(order_idx);
+
+    // stride of output tensor's 2nd-order in output tensor
+    this->stride_out_out = this->output_tensor.get_outer_size(
+        this->begin_order_idx);
+  }
+  else {
+    // Non-common leading case
+    for (auto order_idx = this->begin_order_idx;
+        order_idx != perm[this->begin_order_idx] + this->begin_order_idx;
+        ++order_idx)
+      this->input_stride *= input_tensor.get_outer_size(order_idx);
+    for (auto order_idx = this->begin_order_idx;
+        0 != perm[order_idx]; ++order_idx)
+      this->output_stride *= output_tensor.get_outer_size(order_idx);
+  }
 }
 
 
 template <typename TensorType>
 HPTC_INL bool ParamTrans<TensorType>::is_common_leading() const {
   return 0 == this->perm[this->begin_order_idx];
-}
-
-
-template <typename TensorType>
-HPTC_INL std::pair<TensorUInt, TensorUInt>
-ParamTrans<TensorType>::get_leading() const {
-  return std::make_pair<TensorUInt, TensorUInt>(
-      this->input_tensor.get_size(this->begin_order_idx),
-      this->input_tensor.get_size(this->perm[this->begin_order_idx]));
 }
 
 
@@ -148,6 +169,21 @@ template <typename TensorType>
 HPTC_INL const KernelPackTrans<typename TensorType::Float> &
 ParamTrans<TensorType>::get_kernel() const {
   return this->kn_;
+}
+
+
+template <typename TensorType>
+void ParamTrans<TensorType>::set_lin_wrapper_loop(const TensorUInt ld_in_size,
+    const TensorUInt ld_out_size) {
+  this->kn_.kn_lin_core.set_wrapper_loop(this->stride_in_in,
+      this->stride_in_out, this->stride_out_in, this->stride_out_out,
+      ld_in_size, ld_out_size);
+  this->kn_.kn_lin_right.set_wrapper_loop(this->stride_in_in,
+      this->stride_in_out, this->stride_out_in, this->stride_out_out, 1,
+      ld_out_size);
+  this->kn_.kn_lin_bottom.set_wrapper_loop(this->stride_in_in,
+      this->stride_in_out, this->stride_out_in, this->stride_out_out,
+      ld_in_size, 1);
 }
 
 

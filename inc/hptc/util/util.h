@@ -66,7 +66,7 @@ std::unordered_map<TensorUInt, TensorUInt> factorize(TensorUInt target);
 
 template <typename TargetFunc>
 std::vector<TensorUInt> assign_factor(
-    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorUInt &target,
+    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorIdx &target,
     TensorUInt &accumulate, TargetFunc cmp);
 
 

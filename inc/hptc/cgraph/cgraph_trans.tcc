@@ -208,24 +208,41 @@ HPTC_INL void CGraphTrans<ParamType>::exec_general_() {
         output_stride);
 
     task = task->next;
-    task->exec(kn.kn_lin, input_tensor, output_tensor, 1, 0);
+    task->exec(kn.kn_scl, input_tensor, output_tensor, 1, 0);
 
     task = task->next;
-    task->exec(kn.kn_lin, input_tensor, output_tensor, 1, 0);
+    task->exec(kn.kn_scl, input_tensor, output_tensor, 1, 0);
   }
 }
 
 
 template <typename ParamType>
 HPTC_INL void CGraphTrans<ParamType>::exec_common_leading_() {
-  const auto &kn = this->param_->get_kernel().kn_lin;
+  const auto &kn_core = this->param_->get_kernel().kn_lin_core;
+  const auto &kn_right = this->param_->get_kernel().kn_lin_right;
+  const auto &kn_bottom = this->param_->get_kernel().kn_lin_bottom;
+  const auto &kn_scalar = this->param_->get_kernel().kn_lin_scalar;
   const auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
-  const auto ld_len = static_cast<TensorIdx>(this->param_->get_leading().first);
+  const auto ld_in_len = static_cast<TensorIdx>(
+      this->param_->input_tensor.get_size(this->param_->begin_order_idx));
+  const auto ld_out_len = static_cast<TensorIdx>(
+      this->param_->output_tensor.get_size(this->param_->begin_order_idx));
 
 #pragma omp parallel for schedule(static)
-  for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx)
-    this->operations_[th_idx].exec(kn, input_tensor, output_tensor, ld_len, 0);
+  for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
+    auto task = this->operations_ + th_idx;
+    task->exec(kn_core, input_tensor, output_tensor, ld_in_len, ld_out_len);
+
+    task = task->next;
+    task->exec(kn_right, input_tensor, output_tensor, ld_in_len, ld_out_len);
+
+    task = task->next;
+    task->exec(kn_bottom, input_tensor, output_tensor, ld_in_len, ld_out_len);
+
+    task = task->next;
+    task->exec(kn_scalar, input_tensor, output_tensor, ld_in_len, ld_out_len);
+  }
 }
 
 

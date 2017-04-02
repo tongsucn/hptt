@@ -131,17 +131,44 @@ template <typename FloatType>
 void MacroTransLinear<FloatType>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {
-  this->reg_alpha_ = alpha, this->reg_beta_ = beta;
+  this->alpha_ = alpha, this->beta_ = beta;
+}
+
+
+template <typename FloatType>
+void MacroTransLinear<FloatType>::set_wrapper_loop(const TensorIdx stride_in_in,
+    const TensorIdx stride_in_out, const TensorIdx stride_out_in,
+    const TensorIdx stride_out_out, const TensorUInt ld_in_size,
+    const TensorUInt ld_out_size) {
+  this->stride_in_in_ = stride_in_in, this->stride_in_out_ = stride_in_out;
+  this->stride_out_in_ = stride_out_in, this->stride_out_out_ = stride_out_out;
+  this->ld_in_size_ = ld_in_size > 0 ? ld_in_size : 1;
+  this->ld_out_size_ = ld_out_size > 0 ? ld_out_size : 1;
 }
 
 
 template <typename FloatType>
 void MacroTransLinear<FloatType>::exec(const FloatType *in_data,
-    FloatType *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
-  for (TensorIdx idx = 0; idx < input_stride; ++idx)
-    out_data[idx] = this->reg_alpha_ * in_data[idx]
-        + this->reg_beta_ * out_data[idx];
+    FloatType *out_data, const TensorIdx in_size,
+    const TensorIdx out_size) const {
+  using Deduced = DeducedFloatType<FloatType>;
+  constexpr TensorUInt scale = sizeof(FloatType) / sizeof(Deduced);
+
+  for (TensorUInt out_ld_idx = 0; out_ld_idx < this->ld_out_size_;
+      ++out_ld_idx) {
+    for (TensorUInt in_ld_idx = 0; in_ld_idx < this->ld_in_size_; ++in_ld_idx) {
+      const TensorIdx in_offset = this->stride_in_in_ * in_ld_idx
+          + this->stride_in_out_ * out_ld_idx;
+      const TensorIdx out_offset = this->stride_out_in_ * in_ld_idx
+          + this->stride_out_out_ * out_ld_idx;
+
+#pragma omp simd
+      for (TensorIdx idx = 0; idx < scale * in_size; ++idx)
+        reinterpret_cast<Deduced *>(out_data)[idx + out_offset]
+            = this->alpha_ * reinterpret_cast<const Deduced *>(in_data)[idx + in_offset]
+                + this->beta_ * reinterpret_cast<Deduced *>(out_data)[idx + out_offset];
+    }
+  }
 }
 
 
@@ -275,9 +302,6 @@ template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 3>;
 template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 2>;
 template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 1>;
 
-/*
- * Explicit template instantiation for class MacroTransLinear
- */
 template class MacroTransLinear<float>;
 template class MacroTransLinear<double>;
 template class MacroTransLinear<FloatComplex>;

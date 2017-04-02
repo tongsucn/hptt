@@ -105,10 +105,6 @@ extern template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 3>;
 extern template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 2>;
 extern template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 1>;
 
-
-/*
- * Explicit template instantiation declaration for class MacroTransLinear
- */
 extern template class MacroTransLinear<float>;
 extern template class MacroTransLinear<double>;
 extern template class MacroTransLinear<FloatComplex>;

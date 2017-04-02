@@ -82,9 +82,12 @@ void PlanTransOptimizer<ParamType>::init_(TensorInt tune_loop_num,
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_config_() {
-  // Initialize available parallelism at every loop with input tensor size
+  // Initialize available parallelism at every loop with input tensor size.
+  // In common leading case, leading's available parallelism will be 1.
   this->avail_parallel_.fill(1);
-  for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx)
+  for (auto loop_idx = this->in_ld_idx_
+          + (this->param_->is_common_leading() ? 1 : 0); loop_idx < ORDER;
+      ++loop_idx)
     this->avail_parallel_[loop_idx] = this->param_->input_tensor.get_size(
         loop_idx);
 
@@ -138,9 +141,10 @@ void PlanTransOptimizer<ParamType>::init_loop_rule_() {
   scores[this->out_ld_idx_].second *= this->heur_loop_out_ld_award;
 
   // Sort orders according to the scores, if two orders have same score, then
-  // they will be sorted by their available parallelism
+  // they will be sorted by their available parallelism. The loop with lowest
+  // scores tend to be placed at inner most loop.
   std::sort(scores.begin() + this->in_ld_idx_, scores.end(),
-      [this] (const LoopScore &a, const LoopScore &b) {
+      [this] (const LoopScore &a, const LoopScore &b) -> bool {
           return a.second > b.second or (a.second == b.second and
           this->avail_parallel_[a.first] < this->avail_parallel_[b.first]); });
 
@@ -196,26 +200,40 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_(
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_threads_() {
-  // If the input thread number is zero, set thread number to maximum
+  // If the input thread number is zero, set thread number according to OpenMP's
+  // available thread number
+  auto omp_threads = static_cast<TensorInt>(this->threads_);
   if (0 == this->threads_)
-    this->threads_ = omp_get_max_threads();
+    omp_threads = omp_get_max_threads();
+
   // If OpenMP returns bad number, set to single thread
-  if (this->threads_ <= 0)
+  if (omp_threads <= 0)
     this->threads_ = 1;
+  else
+    this->threads_ = omp_threads;
 
   // Integer factorization of thread number
   this->th_factor_map_ = hptc::factorize(this->threads_);
   this->template_descriptor_.parallel_strategy.fill(1);
 
   // Parallel non-leading order loops that can be exactly divided, begin from
-  // outer most loop in the arranged loop order
+  // outer most loop.
+  const auto out_2nd = this->param_->perm[this->in_ld_idx_ + 1]
+      + this->in_ld_idx_;
   for (auto loop_idx = this->in_ld_idx_; loop_idx < ORDER; ++loop_idx) {
-    const auto target_idx = this->loop_order_candidates_.front()[loop_idx];
-    if (this->in_ld_idx_ == target_idx or this->out_ld_idx_ == target_idx)
+    // The order of current loop
+    const auto order_idx = this->loop_order_candidates_.front()[loop_idx];
+
+    // Leading order will not be parallelized here. In common leading case, the
+    // second order in input/output tensors will not be parallelize here either.
+    if ((this->in_ld_idx_ == order_idx or this->out_ld_idx_ == order_idx) or
+        ((this->in_ld_idx_ + 1 == order_idx or out_2nd == order_idx) and
+            this->param_->is_common_leading()))
       continue;
+
     // Try to parallelize current non-leading order loop
-    hptc::assign_factor(this->th_factor_map_, this->avail_parallel_[target_idx],
-        this->template_descriptor_.parallel_strategy[target_idx],
+    hptc::assign_factor(this->th_factor_map_, this->avail_parallel_[order_idx],
+        this->template_descriptor_.parallel_strategy[order_idx],
         hptc::ModCmp<TensorUInt>());
   }
 
@@ -281,6 +299,8 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
    *    memory in input tensor, but NOT continuous in output tensor
    * **_ncont_**: output leading order related variables, it is NOT continuous
    *    in memory in input tensor, but continuous in output tensor
+   * **_num: kernel numbers, e.g. cont_num, number of kernels in input leading
+   *    order.
    * **_len: element numbers, e.g. cont_len, number of elements in input leading
    *    order.
    * **_size: macro kernel's size, i.e. number of micro kernels tiled in a row
@@ -297,15 +317,14 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
       = this->param_->get_kernel().knh_basic.get_ncont_len();
   const TensorUInt knh_scale
       = this->param_->get_kernel().knh_giant.get_ncont_len() / knh_basic_len;
-  const auto cont_len = this->param_->get_leading().first;
-  const auto ncont_len = this->param_->get_leading().second;
+  const auto cont_len = this->param_->input_tensor.get_size(this->in_ld_idx_);
+  const auto ncont_len = this->param_->input_tensor.get_size(this->out_ld_idx_);
 
   // Lambda for calculating kernel size
   auto kn_size = [] (TensorUInt size, const TensorUInt chunk_size) {
     while (size > 1 and 0 != chunk_size % size)
       --size;
-    return size;
-  };
+    return size; };
 
   if (cont_len >= knf_basic_len and ncont_len >= knf_basic_len) {
     // Leading orders can be vectorized by full kernel
@@ -316,9 +335,9 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     auto factor_map = this->th_factor_map_;
 
     // Assign threads factors to all loops as many as possible, large prime
-    // factors may not be taken into account here
-    TensorUInt non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
-        this->avail_parallel_.end(), 1, std::multiplies<TensorUInt>());
+    // factors may not be taken into account here.
+    TensorIdx non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
+        this->avail_parallel_.end(), 1, std::multiplies<TensorIdx>());
     auto rest_factors = hptc::flat_map(factor_map);
     std::sort(rest_factors.begin(), rest_factors.end());
     rest_factors = hptc::approx_prod(rest_factors, non_ld_avail);
@@ -326,11 +345,11 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     // Get available product of non leading order loops' parallelism
     non_ld_avail /= this->avail_parallel_[this->in_ld_idx_];
     non_ld_avail /= this->avail_parallel_[this->out_ld_idx_];
-    const TensorUInt knf_ncont_size = ncont_len / knf_basic_len,
-        knf_cont_size = cont_len / knf_basic_len;
+    const TensorUInt knf_ncont_num = ncont_len / knf_basic_len,
+        knf_cont_num = cont_len / knf_basic_len;
     std::vector<LoopParaStrategy_> loops{
-        { knf_cont_size, 1, this->in_ld_idx_ },
-        { knf_ncont_size, 1, this->out_ld_idx_ },
+        { knf_cont_num, 1, this->in_ld_idx_ },
+        { knf_ncont_num, 1, this->out_ld_idx_ },
         { non_ld_avail, 1, ORDER } };
 
     // Assign threads to leading loops and non-leading loops
@@ -356,7 +375,7 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
         // The second largest loop can be exactly divided by the factor
         loops[2].size /= factor, loops[2].th_num *= factor;
       else
-        // None of the above conditions is satisfied, pick up the largest loop
+        // None of the above conditions is satisfied, assign to the largest loop
         loops[0].size /= factor, loops[0].th_num *= factor;
     }
 
@@ -370,62 +389,62 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
 
     // Vectorization on core region
     // Split core region, small core could have zero-sizes, but big core always
-    // has non-zero-sizes, because *_assigned are always <= knf_*_size
-    const TensorUInt small_core_cont_size = knf_cont_size % cont_assigned,
-        small_core_ncont_size = knf_ncont_size % ncont_assigned;
-    const TensorUInt big_core_cont_size = knf_cont_size - small_core_cont_size,
-        big_core_ncont_size = knf_ncont_size - small_core_ncont_size;
+    // has non-zero-sizes, because *_assigned are always <= knf_*_num
+    const TensorUInt small_core_cont_num = knf_cont_num % cont_assigned,
+        small_core_ncont_num = knf_ncont_num % ncont_assigned;
+    const TensorUInt big_core_cont_num = knf_cont_num - small_core_cont_num,
+        big_core_ncont_num = knf_ncont_num - small_core_ncont_num;
 
     // Calculate big core region macro kernel's size
     const auto big_core_kn_cont_size = kn_size(knf_scale,
-        big_core_cont_size / cont_assigned);
+        big_core_cont_num / cont_assigned);
     const auto big_core_kn_ncont_size = kn_size(knf_scale,
-        big_core_ncont_size / ncont_assigned);
+        big_core_ncont_num / ncont_assigned);
 
     // Update available parallelism at input and output leading order loop
     this->avail_parallel_[this->in_ld_idx_]
-        = big_core_cont_size / big_core_kn_cont_size;
+        = big_core_cont_num / big_core_kn_cont_size;
     this->avail_parallel_[this->out_ld_idx_]
-        = big_core_ncont_size / big_core_kn_ncont_size;
+        = big_core_ncont_num / big_core_kn_ncont_size;
 
     // Vectorize big core region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_FULL,
-        big_core_kn_cont_size, big_core_kn_ncont_size, 0, 0, big_core_cont_size,
-        big_core_ncont_size);
+        big_core_kn_cont_size, big_core_kn_ncont_size, 0, 0, big_core_cont_num,
+        big_core_ncont_num);
 
     // Vectorize vertical core region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_FULL, 1,
-        big_core_kn_ncont_size, big_core_cont_size * knf_basic_len, 0,
-        small_core_cont_size, big_core_ncont_size);
+        big_core_kn_ncont_size, big_core_cont_num * knf_basic_len, 0,
+        small_core_cont_num, big_core_ncont_num);
 
     // Vectorize horizontal core region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_FULL,
-        big_core_kn_cont_size, 1, 0, big_core_ncont_size * knf_basic_len,
-        big_core_cont_size, small_core_ncont_size);
+        big_core_kn_cont_size, 1, 0, big_core_ncont_num * knf_basic_len,
+        big_core_cont_num, small_core_ncont_num);
 
     // Vectorize small core region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_FULL, 1, 1,
-        big_core_cont_size * knf_basic_len, big_core_ncont_size * knf_basic_len,
-        small_core_cont_size, small_core_ncont_size);
+        big_core_cont_num * knf_basic_len, big_core_ncont_num * knf_basic_len,
+        small_core_cont_num, small_core_ncont_num);
 
     // Vectorization on side region
     // Calculate side region macro kernel size
-    const auto horiz_side_kn_cont_size = kn_size(knh_scale, knf_cont_size * 2);
-    const auto vert_side_kn_ncont_size = kn_size(knh_scale, knf_ncont_size * 2);
+    const auto horiz_side_kn_cont_size = kn_size(knh_scale, knf_cont_num * 2);
+    const auto vert_side_kn_ncont_size = kn_size(knh_scale, knf_ncont_num * 2);
 
     // Vectorize vertical side region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF, 1,
-        vert_side_kn_ncont_size, knf_cont_size * knf_basic_len, 0,
-        (cont_len % knf_basic_len) / knh_basic_len, knf_ncont_size * 2);
+        vert_side_kn_ncont_size, knf_cont_num * knf_basic_len, 0,
+        (cont_len % knf_basic_len) / knh_basic_len, knf_ncont_num * 2);
 
     // Vectorize horizontal side region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF,
-        horiz_side_kn_cont_size, 1, 0, knf_ncont_size * knf_basic_len,
-        knf_cont_size * 2, (ncont_len % knf_basic_len) / knh_basic_len);
+        horiz_side_kn_cont_size, 1, 0, knf_ncont_num * knf_basic_len,
+        knf_cont_num * 2, (ncont_len % knf_basic_len) / knh_basic_len);
 
     // Vectorize small side region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF, 1, 1,
-        knf_cont_size * knf_basic_len, knf_ncont_size * knf_basic_len,
+        knf_cont_num * knf_basic_len, knf_ncont_num * knf_basic_len,
         (cont_len % knf_basic_len) / knh_basic_len,
         (ncont_len % knf_basic_len) / knh_basic_len);
 
@@ -441,27 +460,27 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
   }
   else if (cont_len >= knh_basic_len and ncont_len >= knh_basic_len) {
     // Leading orders are too small for full kernels, use half kernels
-    const TensorUInt knh_cont_size = cont_len / knh_basic_len,
-        knh_ncont_size = ncont_len / knh_basic_len;
-    const auto kn_cont_size = kn_size(knh_scale, knh_cont_size);
-    const auto kn_ncont_size = kn_size(knh_scale, knh_ncont_size);
+    const TensorUInt knh_cont_num = cont_len / knh_basic_len,
+        knh_ncont_num = ncont_len / knh_basic_len;
+    const auto kn_cont_size = kn_size(knh_scale, knh_cont_num);
+    const auto kn_ncont_size = kn_size(knh_scale, knh_ncont_num);
 
     // Update available parallelism at input and output leading order loop
-    this->avail_parallel_[this->in_ld_idx_] = knh_cont_size / kn_cont_size;
-    this->avail_parallel_[this->out_ld_idx_] = knh_ncont_size / kn_ncont_size;
+    this->avail_parallel_[this->in_ld_idx_] = knh_cont_num / kn_cont_size;
+    this->avail_parallel_[this->out_ld_idx_] = knh_ncont_num / kn_ncont_size;
 
     // Vectorize side region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF, kn_cont_size,
-        kn_ncont_size, 0, 0, knh_cont_size, knh_ncont_size);
+        kn_ncont_size, 0, 0, knh_cont_num, knh_ncont_num);
 
     // Set up vertical scalar region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1,
-        knh_cont_size * knh_basic_len, 0, cont_len % knh_basic_len,
-        knh_ncont_size * knh_basic_len);
+        knh_cont_num * knh_basic_len, 0, cont_len % knh_basic_len,
+        knh_ncont_num * knh_basic_len);
 
     // Set up horizontal scalar region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1, 0,
-        knh_ncont_size * knh_basic_len, cont_len, ncont_len % knh_basic_len,
+        knh_ncont_num * knh_basic_len, cont_len, ncont_len % knh_basic_len,
         true);
   }
   else {
@@ -480,9 +499,6 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
     const TensorUInt kn_ncont_size, const TensorUInt cont_begin_pos,
     const TensorUInt ncont_begin_pos, const TensorUInt cont_offset_size,
     const TensorUInt ncont_offset_size, const bool is_linh) {
-  /*
-   * Naming convention follows the rule described in function init_vec_
-   */
   if (cont_offset_size > 0 and ncont_offset_size > 0) {
     // Locate kernel's position
     const auto kernel_offset = this->param_->get_kernel().kernel_offset(kn_type,
@@ -521,12 +537,135 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
 
 template <typename ParamType>
 void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
-  auto &loop = this->template_descriptor_.description[0][0];
-  // Set loops for non-leading orders
-  loop.set_pass(ORDER);
-  this->avail_parallel_[this->in_ld_idx_] = 1;
+  // Prepare parameters for vectorization
+  const auto cl_in_ld_idx = this->in_ld_idx_ + 1;
+  const auto cl_out_ld_idx = this->in_ld_idx_
+      + this->param_->perm[this->in_ld_idx_ + 1];
+  const auto cl_in_ld_len = this->param_->input_tensor.get_size(cl_in_ld_idx);
+  const auto cl_out_ld_len = this->param_->input_tensor.get_size(cl_out_ld_idx);
+  auto factor_map = this->th_factor_map_;
+
+  // Assign threads factors to all loops as many as possible, large prime
+  // factors may not be taken into account here.
+  TensorIdx non_ld_avail = std::accumulate(this->avail_parallel_.begin(),
+      this->avail_parallel_.end(), 1, std::multiplies<TensorIdx>());
+  auto rest_factors = hptc::flat_map(factor_map);
+  std::sort(rest_factors.begin(), rest_factors.end());
+  rest_factors = hptc::approx_prod(rest_factors, non_ld_avail);
+
+  // Get available product of non leading order loops' parallelism
+  non_ld_avail /= this->avail_parallel_[cl_in_ld_idx];
+  non_ld_avail /= this->avail_parallel_[cl_out_ld_idx];
+  std::vector<LoopParaStrategy_> loops{
+      { this->avail_parallel_[cl_in_ld_idx], 1, cl_in_ld_idx },
+      { this->avail_parallel_[cl_out_ld_idx], 1, cl_out_ld_idx },
+      { non_ld_avail, 1, ORDER } };
+
+  // Assign threads to leading loops and non-leading loops
+  for (auto factor : rest_factors) {
+    // Sort in descending order of available parallelism, if two loops have
+    // the same parallelism, put the non-leading loop or the output leading
+    // loop on the left
+    std::sort(loops.begin(), loops.end(), [this, cl_out_ld_idx] (
+          const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
+            return a.size > b.size or (a.size == b.size and
+            (ORDER == a.loop_idx or cl_out_ld_idx == a.loop_idx)); });
+
+    if (0 == loops[0].size % factor or loops[0].size / factor > loops[1].size)
+      // The largest loop can be exactly divided by the factor or after force
+      // dividing, it's still larger than the second largest
+      loops[0].size /= factor, loops[0].th_num *= factor;
+    else if (0 == loops[1].size % factor or
+        loops[1].size / factor > loops[2].size)
+      // The second largest loop can be exactly divided by the factor or
+      // after force dividing, it's still larger than the third largest
+      loops[1].size /= factor, loops[1].th_num *= factor;
+    else if (0 == loops[2].size % factor)
+      // The second largest loop can be exactly divided by the factor
+      loops[2].size /= factor, loops[2].th_num *= factor;
+    else
+      // None of the above conditions is satisfied, assign to the largest loop
+      loops[0].size /= factor, loops[0].th_num *= factor;
+  }
+
+  // Get the number of threads assigned to the two 2nd leading orders
+  TensorUInt cl_in_ld_assigned = 1, cl_out_ld_assigned = 1;
+  for (auto &loop : loops) {
+    if (cl_in_ld_idx == loop.loop_idx)
+      cl_in_ld_assigned = loop.th_num;
+    else if (cl_out_ld_idx == loop.loop_idx)
+      cl_out_ld_assigned = loop.th_num;
+  }
+
+  // Split
+  // Lambda for calculating kernel size
+  auto kn_size = [] (TensorUInt size, const TensorUInt chunk_size) {
+    while (size > 1 and 0 != chunk_size % size)
+      --size;
+    return size; };
+
+  const TensorUInt cl_in_ld_rest = cl_in_ld_len % cl_in_ld_assigned,
+      cl_out_ld_rest = cl_out_ld_len % cl_out_ld_assigned;
+  const TensorIdx cl_in_ld_num = cl_in_ld_len - cl_in_ld_rest,
+      cl_out_ld_num = cl_out_ld_len - cl_out_ld_rest;
+  auto cl_in_ld_size = kn_size(this->param_->get_kernel().linear_loop_max,
+      cl_in_ld_num);
+  auto cl_out_ld_size = kn_size(this->param_->get_kernel().linear_loop_max,
+      cl_out_ld_num);
+
+  // Update available parallelism at the two 2nd-leading orders
+  this->avail_parallel_[cl_in_ld_idx] = cl_in_ld_num / cl_in_ld_size;
+  this->avail_parallel_[cl_out_ld_idx] = cl_out_ld_num / cl_out_ld_size;
+
+  // Set linear kernels
+  this->param_->set_lin_wrapper_loop(cl_in_ld_size, cl_out_ld_size);
+
+  // Set loops
+  // Set core loop
+  auto &core_loop = this->template_descriptor_.description[0][0];
+  core_loop.set_pass(ORDER);
   for (auto loop_idx = this->in_ld_idx_ + 1; loop_idx < ORDER; ++loop_idx)
-    loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(loop_idx);
+    core_loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(
+        loop_idx);
+  core_loop.loop_end[cl_in_ld_idx] = cl_in_ld_num;
+  core_loop.loop_step[cl_in_ld_idx] = cl_in_ld_size;
+  core_loop.loop_end[cl_out_ld_idx] = cl_out_ld_num;
+  core_loop.loop_step[cl_out_ld_idx] = cl_out_ld_size;
+
+  // Set right side loop
+  if (0 != cl_in_ld_rest) {
+    auto &right_loop = this->template_descriptor_.description[0][1];
+    right_loop.set_pass(ORDER);
+    for (auto loop_idx = this->in_ld_idx_ + 1; loop_idx < ORDER; ++loop_idx)
+      right_loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(
+          loop_idx);
+    right_loop.loop_begin[cl_in_ld_idx] = cl_in_ld_num;
+    right_loop.loop_end[cl_out_ld_idx] = cl_out_ld_num;
+    right_loop.loop_step[cl_out_ld_idx] = cl_out_ld_size;
+  }
+
+  // Set bottom side loop
+  if (0 != cl_out_ld_rest) {
+    auto &bottom_loop = this->template_descriptor_.description[0][2];
+    bottom_loop.set_pass(ORDER);
+    for (auto loop_idx = this->in_ld_idx_ + 1; loop_idx < ORDER; ++loop_idx)
+      bottom_loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(
+          loop_idx);
+    bottom_loop.loop_end[cl_in_ld_idx] = cl_in_ld_num;
+    bottom_loop.loop_step[cl_in_ld_idx] = cl_in_ld_size;
+    bottom_loop.loop_begin[cl_out_ld_idx] = cl_out_ld_num;
+  }
+
+  // Set scalar loop
+  if (0 != cl_in_ld_rest and 0 != cl_out_ld_rest) {
+    auto &scalar_loop = this->template_descriptor_.description[0][3];
+    scalar_loop.set_pass(ORDER);
+    for (auto loop_idx = this->in_ld_idx_ + 1; loop_idx < ORDER; ++loop_idx)
+      scalar_loop.loop_end[loop_idx] = this->param_->input_tensor.get_size(
+          loop_idx);
+    scalar_loop.loop_begin[cl_in_ld_idx] = cl_in_ld_num;
+    scalar_loop.loop_begin[cl_out_ld_idx] = cl_out_ld_num;
+  }
 }
 
 
@@ -552,7 +691,8 @@ void PlanTransOptimizer<ParamType>::init_parallel_rule_general_() {
 
   // Assign rest threads' prime factors that can be exactly divided to leadings
   const bool out_ld_large
-      = this->param_->get_leading().first <= this->param_->get_leading().second;
+      = this->param_->input_tensor.get_size(this->in_ld_idx_)
+      <= this->param_->input_tensor.get_size(this->out_ld_idx_);
   auto &larger_loop = out_ld_large ? loop_out_ld : loop_in_ld;
   auto &smaller_loop = out_ld_large ? loop_in_ld : loop_out_ld;
 

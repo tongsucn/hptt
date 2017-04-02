@@ -1,5 +1,7 @@
 #include <hptc/arch/avx2/kernel_trans_avx2.h>
 
+#include <algorithm>
+
 #include <immintrin.h>
 #include <xmmintrin.h>
 
@@ -9,13 +11,6 @@
 
 
 namespace hptc {
-
-template <>
-void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::set_coef(
-    const DeducedFloatType<float> alpha, const DeducedFloatType<float> beta) {
-  this->reg_alpha_ = _mm256_set1_ps(alpha);
-  this->reg_beta_ = _mm256_set1_ps(beta);
-}
 
 template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
@@ -115,13 +110,6 @@ void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::set_coef(
-    const DeducedFloatType<double> alpha, const DeducedFloatType<double> beta) {
-  this->reg_alpha_ = _mm256_set1_pd(alpha);
-  this->reg_beta_ = _mm256_set1_pd(beta);
-}
-
-template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
     const double * RESTRICT in_data, double * RESTRICT out_data,
     const TensorIdx input_stride, const TensorIdx output_stride) const {
@@ -175,14 +163,6 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
   _mm256_storeu_pd(out_data + 3 * output_stride, reg_input[3]);
 }
 
-
-template <>
-void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::set_coef(
-    const DeducedFloatType<FloatComplex> alpha,
-    const DeducedFloatType<FloatComplex> beta) {
-  this->reg_alpha_ = _mm256_set1_ps(alpha);
-  this->reg_beta_ = _mm256_set1_ps(beta);
-}
 
 template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
@@ -250,14 +230,6 @@ void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <>
-void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::set_coef(
-    const DeducedFloatType<DoubleComplex> alpha,
-    const DeducedFloatType<DoubleComplex> beta) {
-  this->reg_alpha_ = _mm256_set1_pd(alpha);
-  this->reg_beta_ = _mm256_set1_pd(beta);
-}
-
-template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
     const DoubleComplex * RESTRICT in_data, DoubleComplex * RESTRICT out_data,
     const TensorIdx input_stride, const TensorIdx output_stride) const {
@@ -299,13 +271,6 @@ void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
       reg_input[1]);
 }
 
-
-template <>
-void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::set_coef(
-    const DeducedFloatType<float> alpha, const DeducedFloatType<float> beta) {
-  this->reg_alpha_ = _mm_set1_ps(alpha);
-  this->reg_beta_ = _mm_set1_ps(beta);
-}
 
 template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
@@ -363,13 +328,6 @@ void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
 
 
 template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::set_coef(
-    const DeducedFloatType<double> alpha, const DeducedFloatType<double> beta) {
-  this->reg_alpha_ = _mm_set1_pd(alpha);
-  this->reg_beta_ = _mm_set1_pd(beta);
-}
-
-template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
     const double * RESTRICT in_data, double * RESTRICT out_data,
     const TensorIdx input_stride, const TensorIdx output_stride) const {
@@ -405,14 +363,6 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
   _mm_storeu_pd(out_data + output_stride, reg[1]);
 }
 
-
-template <>
-void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::set_coef(
-    const DeducedFloatType<FloatComplex> alpha,
-    const DeducedFloatType<FloatComplex> beta) {
-  this->reg_alpha_ = _mm_set1_ps(alpha);
-  this->reg_beta_ = _mm_set1_ps(beta);
-}
 
 template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
@@ -454,57 +404,118 @@ void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
 
 
 template <>
-void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::set_coef(
-    const DeducedFloatType<DoubleComplex> alpha,
-    const DeducedFloatType<DoubleComplex> beta) {
-  this->reg_alpha_ = alpha;
-  this->reg_beta_ = beta;
-}
-
-template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::exec(
     const DoubleComplex * RESTRICT in_data, DoubleComplex * RESTRICT out_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    const TensorIdx, const TensorIdx) const {
   *out_data = this->reg_alpha_ * *in_data + this->reg_beta_ * *out_data;
 }
 
 
 template <typename FloatType>
-void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::set_coef(
-    const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta) {
-  this->reg_alpha_ = alpha;
-  this->reg_beta_ = beta;
+KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::KernelTrans()
+    : KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE>(),
+      stride_in_in_(1), stride_in_out_(1), stride_out_in_(1),
+      stride_out_out_(1), ld_in_(1), ld_out_(1) {
+}
+
+
+template <typename FloatType>
+void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::set_wrapper_loop(
+    const TensorIdx stride_in_in, const TensorIdx stride_in_out,
+    const TensorIdx stride_out_in, const TensorIdx stride_out_out,
+    const TensorUInt ld_in, const TensorUInt ld_out) {
+  this->stride_in_in_ = stride_in_in, this->stride_in_out_ = stride_in_out;
+  this->stride_out_in_ = stride_out_in, this->stride_out_out_ = stride_out_out;
+  this->ld_in_ = ld_in > 0 ? ld_in : 1;
+  this->ld_out_ = ld_out > 0 ? ld_out : 1;
 }
 
 
 template <typename FloatType>
 void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
     const FloatType * RESTRICT in_data, FloatType * RESTRICT out_data,
-    const TensorIdx input_stride, const TensorIdx output_stride) const {
+    const TensorIdx in_size, const TensorIdx out_size) const {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Intrin = DeducedRegType<FloatType, KernelTypeTrans::KERNEL_LINE>;
+  constexpr TensorUInt REG_CAP = hptc::REG_SIZE / sizeof(FloatType);
+  /*constexpr TensorUInt scale = sizeof(FloatType) / sizeof(Deduced);
+
+  for (TensorUInt out_ld_idx = 0; out_ld_idx < this->ld_out_; ++out_ld_idx) {
+    for (TensorUInt in_ld_idx = 0; in_ld_idx < this->ld_in_; ++in_ld_idx) {
+      const TensorIdx in_offset = this->stride_in_in_ * in_ld_idx
+          + this->stride_in_out_ * out_ld_idx;
+      const TensorIdx out_offset = this->stride_out_in_ * in_ld_idx
+          + this->stride_out_out_ * out_ld_idx;
+
+#pragma omp simd
+      for (TensorIdx idx = 0; idx < scale * in_size; ++idx)
+        reinterpret_cast<Deduced *>(out_data)[idx + out_offset] =
+            this->alpha_ * reinterpret_cast<const Deduced *>(in_data)[idx + in_offset]
+            + this->beta_ * reinterpret_cast<Deduced *>(out_data)[idx + out_offset];
+    }
+  }*/
+
+  TensorIdx idx = 0;
+  for (constexpr auto step = REG_CAP * 4; idx + step <= in_size; idx += step) {
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx]),
+        Intrin::add(Intrin::mul(this->reg_alpha_,
+            Intrin::load(reinterpret_cast<const Deduced *>(&in_data[idx]))),
+            Intrin::mul(this->reg_beta_,
+                Intrin::load(reinterpret_cast<Deduced *>(&out_data[idx])))));
+
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP]),
+        Intrin::add(Intrin::mul(this->reg_alpha_, Intrin::load(
+                reinterpret_cast<const Deduced *>(&in_data[idx + REG_CAP]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP])))));
+
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP * 2]),
+        Intrin::add(Intrin::mul(this->reg_alpha_, Intrin::load(
+                reinterpret_cast<const Deduced *>(&in_data[idx + REG_CAP * 2]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP * 2])))));
+
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP * 3]),
+        Intrin::add(Intrin::mul(this->reg_alpha_, Intrin::load(
+                reinterpret_cast<const Deduced *>(&in_data[idx + REG_CAP * 3]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP * 3])))));
+  }
+
+  for (constexpr auto step = REG_CAP * 2; idx + step <= in_size; idx += step) {
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx]),
+        Intrin::add(Intrin::mul(this->reg_alpha_,
+            Intrin::load(reinterpret_cast<const Deduced *>(&in_data[idx]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx])))));
+
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP]),
+        Intrin::add(Intrin::mul(this->reg_alpha_, Intrin::load(
+                reinterpret_cast<const Deduced *>(&in_data[idx + REG_CAP]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx + REG_CAP])))));
+  }
+
+  for (; idx + REG_CAP <= in_size; idx += REG_CAP)
+    Intrin::store(reinterpret_cast<Deduced *>(&out_data[idx]),
+        Intrin::add(Intrin::mul(this->reg_alpha_,
+            Intrin::load(reinterpret_cast<const Deduced *>(&in_data[idx]))),
+            Intrin::mul(this->reg_beta_, Intrin::load(
+                reinterpret_cast<Deduced *>(&out_data[idx])))));
+
+  for (; idx < in_size; ++idx)
+    out_data[idx] = this->alpha_ * in_data[idx] + this->beta_ * out_data[idx];
+
+  if (out_size > in_size)
+    std::fill(reinterpret_cast<Deduced *>(&out_data[idx]),
+        reinterpret_cast<Deduced *>(&out_data[out_size]),
+        static_cast<Deduced>(0.0));
 }
 
 
 /*
- * Explicit template instantiation definition for class KernelTransData and
- * KernelTrans
+ * Explicit template instantiation definition for class KernelTrans
  */
-template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
-
-
 template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
 template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
 template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;

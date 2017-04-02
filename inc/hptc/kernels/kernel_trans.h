@@ -46,6 +46,7 @@ struct KernelPackTrans {
   TensorUInt kn_cont_len(const KernelTypeTrans kn_type) const;
   TensorUInt kn_ncont_len(const KernelTypeTrans kn_type) const;
 
+  const TensorUInt linear_loop_max;
 
   // Non-linear full kernels
   MacroTransFull<FloatType, 1, 1> knf_1x1;
@@ -75,7 +76,10 @@ struct KernelPackTrans {
   MacroTransHalf<FloatType, 4, 1> knh_4x1;
 
   // Linear kernel
-  MacroTransLinear<FloatType> kn_lin;
+  MacroTransLinear<FloatType> kn_lin_core;
+  MacroTransLinear<FloatType> kn_lin_right;
+  MacroTransLinear<FloatType> kn_lin_bottom;
+  MacroTransLinear<FloatType> kn_lin_scalar;
 
   // Scalar kernel
   MacroTransScalar<FloatType> kn_scl;

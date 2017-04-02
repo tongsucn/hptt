@@ -40,7 +40,7 @@ bool ModCmp<ValType>::operator()(const ValType &first,
 
 template <typename TargetFunc>
 std::vector<TensorUInt> assign_factor(
-    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorUInt &target,
+    std::unordered_map<TensorUInt, TensorUInt> &fact_map, TensorIdx &target,
     TensorUInt &accumulate, TargetFunc cmp) {
   std::vector<TensorUInt> assigned;
   for (auto &factor : fact_map) {

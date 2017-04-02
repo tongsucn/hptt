@@ -48,9 +48,9 @@ public:
 
 private:
   struct LoopParaStrategy_ {
-    LoopParaStrategy_(TensorUInt size, TensorUInt th_num, TensorUInt loop_idx)
+    LoopParaStrategy_(TensorIdx size, TensorUInt th_num, TensorUInt loop_idx)
         : size(size), th_num(th_num), loop_idx(loop_idx) {}
-    TensorUInt size;
+    TensorIdx size;
     TensorUInt th_num;
     TensorUInt loop_idx;
   };
@@ -90,7 +90,7 @@ private:
   TensorUInt threads_;
   const TensorUInt in_ld_idx_, out_ld_idx_;
   std::unordered_map<TensorUInt, TensorUInt> th_factor_map_;
-  ParaStrategyTrans<ORDER> avail_parallel_;
+  std::array<TensorIdx, ORDER> avail_parallel_;
 
   std::vector<LoopOrderTrans<ORDER>> loop_order_candidates_;
   std::vector<ParaStrategyTrans<ORDER>> parallel_strategy_candidates_;

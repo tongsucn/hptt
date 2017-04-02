@@ -47,16 +47,17 @@ struct ParamTrans {
   using Deduced = DeducedFloatType<typename TensorType::Float>;
   using KernelPack = KernelPackTrans<typename TensorType::Float>;
 
-  constexpr static auto ORDER = TensorType::TENSOR_ORDER;
+  static constexpr auto ORDER = TensorType::TENSOR_ORDER;
 
   ParamTrans(const TensorType &input_tensor, TensorType &output_tensor,
       const std::array<TensorUInt, ORDER> &perm, const Deduced alpha,
       const Deduced beta);
 
   HPTC_INL bool is_common_leading() const;
-  HPTC_INL std::pair<TensorUInt, TensorUInt> get_leading() const;
   HPTC_INL void set_coef(const Deduced alpha, const Deduced beta);
   HPTC_INL const KernelPack &get_kernel() const;
+  void set_lin_wrapper_loop(const TensorUInt ld_in_size,
+      const TensorUInt ld_out_size);
 
 private:
   TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
@@ -68,8 +69,10 @@ private:
 public:
   std::array<TensorUInt, ORDER> perm;
   Deduced alpha, beta;
-  TensorIdx input_stride, output_stride;
-  TensorUInt begin_order_idx, merged_order;
+  TensorIdx input_stride, output_stride, stride_in_in, stride_in_out,
+      stride_out_in, stride_out_out;
+  TensorUInt begin_order_idx;
+  const TensorUInt merged_order;
 
   // Put the merged tensors here, they must be initialized after merging
   const TensorMergedWrapper<typename TensorType::Float, ORDER> input_tensor;

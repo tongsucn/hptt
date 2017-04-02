@@ -59,14 +59,22 @@ private:
 template <typename FloatType>
 class MacroTransLinear {
 public:
+  static constexpr TensorUInt LOOP_MAX = 10;
+
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
+  void set_wrapper_loop(const TensorIdx stride_in_in,
+      const TensorIdx stride_in_out, const TensorIdx stride_out_in,
+      const TensorIdx stride_out_out, const TensorUInt ld_in_size,
+      const TensorUInt ld_out_size);
 
   void exec(const FloatType *in_data, FloatType *out_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+      const TensorIdx in_size, const TensorIdx out_size) const;
 
 private:
-  DeducedFloatType<FloatType> reg_alpha_, reg_beta_;
+  DeducedFloatType<FloatType> alpha_, beta_;
+  TensorIdx stride_in_in_, stride_in_out_, stride_out_in_, stride_out_out_;
+  TensorUInt ld_in_size_, ld_out_size_;
 };
 
 
