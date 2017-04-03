@@ -15,34 +15,43 @@
 
 namespace hptc {
 
-constexpr TensorUInt REG_SIZE = 32;
+/*
+ * Definition of register's size
+ */
+constexpr TensorUInt SIZE_REG = 32;
 
 
+/*
+ * Floating types + kernel types selector
+ */
 template <typename FloatType,
-          KernelTypeTrans IN_TYPE>
+          KernelTypeTrans TYPE>
 struct TypeSelector {
   static constexpr bool fl_sc = (std::is_same<float, FloatType>::value or
           std::is_same<FloatComplex, FloatType>::value) and
-      (IN_TYPE == KernelTypeTrans::KERNEL_FULL or
-          IN_TYPE == KernelTypeTrans::KERNEL_LINE);
+      (TYPE == KernelTypeTrans::KERNEL_FULL or
+          TYPE == KernelTypeTrans::KERNEL_LINE);
 
   static constexpr bool fl_dz = (std::is_same<double, FloatType>::value or
           std::is_same<DoubleComplex, FloatType>::value) and
-      (IN_TYPE == KernelTypeTrans::KERNEL_FULL or
-          IN_TYPE == KernelTypeTrans::KERNEL_LINE);
+      (TYPE == KernelTypeTrans::KERNEL_FULL or
+          TYPE == KernelTypeTrans::KERNEL_LINE);
 
   static constexpr bool h_sc = (std::is_same<float, FloatType>::value or
           std::is_same<FloatComplex, FloatType>::value) and
-      IN_TYPE == KernelTypeTrans::KERNEL_HALF;
+      TYPE == KernelTypeTrans::KERNEL_HALF;
 
   static constexpr bool h_d = std::is_same<double, FloatType>::value and
-      IN_TYPE == KernelTypeTrans::KERNEL_HALF;
+      TYPE == KernelTypeTrans::KERNEL_HALF;
 
   static constexpr bool h_z = std::is_same<DoubleComplex, FloatType>::value
-      and IN_TYPE == KernelTypeTrans::KERNEL_HALF;
+      and TYPE == KernelTypeTrans::KERNEL_HALF;
 };
 
 
+/*
+ * Register types deducer
+ */
 template <typename FloatType,
           KernelTypeTrans TYPE,
           typename Selected = void>
@@ -89,6 +98,9 @@ template <typename FloatType,
 using RegType = typename RegDeducer<FloatType, TYPE>::type;
 
 
+/*
+ * Kernel base class for storing kernel data
+ */
 template <typename FloatType,
           KernelTypeTrans TYPE>
 class KernelTransData {
@@ -96,8 +108,8 @@ public:
   using Float = FloatType;
 
   static constexpr TensorUInt KN_WIDTH = TYPE == KernelTypeTrans::KERNEL_FULL
-      ? REG_SIZE / sizeof(FloatType) : TYPE == KernelTypeTrans::KERNEL_HALF
-      ? (REG_SIZE / sizeof(FloatType)) / 2 : 1;
+      ? SIZE_REG / sizeof(FloatType) : TYPE == KernelTypeTrans::KERNEL_HALF
+      ? (SIZE_REG / sizeof(FloatType)) / 2 : 1;
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
@@ -108,21 +120,24 @@ protected:
 };
 
 
+/*
+ * Transpose kernel class
+ */
 template <typename FloatType,
           KernelTypeTrans TYPE>
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;
 
-  void exec(const FloatType * RESTRICT input_data,
-      FloatType * RESTRICT output_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  void exec(const FloatType * RESTRICT data_in,
+      FloatType * RESTRICT data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
 };
 
 
 /*
  * Import specializations for class KernelTrans and explicit template
- * instantiation for class KernelTrans and KernelTransData
+ * instantiation for classes KernelTrans and KernelTransData
  */
 #include "kernel_trans_avx.tcc"
 

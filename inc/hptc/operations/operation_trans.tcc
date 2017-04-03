@@ -57,9 +57,9 @@ template <typename MacroType,
           typename TensorType>
 HPTC_INL void OpForTrans<ORDER>::exec(const MacroType &macro_kernel,
     const TensorType &input_tensor, TensorType &output_tensor,
-    const TensorIdx input_stride, const TensorIdx output_stride) {
+    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) {
   this->unroller_(GenCounter<ORDER>(), macro_kernel, input_tensor,
-      output_tensor, input_stride, output_stride);
+      output_tensor, stride_in_outld, stride_out_inld);
 }
 
 
@@ -95,14 +95,14 @@ template <typename MacroType,
           TensorUInt UNROLL_NUM>
 HPTC_INL void OpForTrans<ORDER>::unroller_(GenCounter<UNROLL_NUM>,
     const MacroType &macro_kernel, const TensorType &input_tensor,
-    TensorType &output_tensor, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    TensorType &output_tensor, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) {
   auto for_idx = this->loop_order_[ORDER - UNROLL_NUM];
   for (this->loop_idx_[for_idx] = this->loop_begin_[for_idx];
       this->loop_idx_[for_idx] < this->loop_end_[for_idx];
       this->loop_idx_[for_idx] += this->loop_step_[for_idx])
     this->unroller_(GenCounter<UNROLL_NUM - 1>(), macro_kernel, input_tensor,
-        output_tensor, input_stride, output_stride);
+        output_tensor, stride_in_outld, stride_out_inld);
 }
 
 
@@ -111,10 +111,10 @@ template <typename MacroType,
           typename TensorType>
 HPTC_INL void OpForTrans<ORDER>::unroller_(GenCounter<0>,
     const MacroType &macro_kernel, const TensorType &input_tensor,
-    TensorType &output_tensor, const TensorIdx input_stride,
-    const TensorIdx output_stride) {
+    TensorType &output_tensor, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) {
   macro_kernel.exec(&input_tensor[this->loop_idx_],
-      &output_tensor[this->loop_perm_idx_], input_stride, output_stride);
+      &output_tensor[this->loop_perm_idx_], stride_in_outld, stride_out_inld);
 }
 
 

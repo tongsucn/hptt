@@ -32,7 +32,7 @@ public:
             typename TensorType>
   HPTC_INL void exec(const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld);
 
   OpForTrans<ORDER> *next;
 
@@ -46,12 +46,12 @@ private:
             TensorUInt UNROLL_NUM>
   void unroller_(GenCounter<UNROLL_NUM>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld);
   template <typename MacroType,
             typename TensorType>
   void unroller_(GenCounter<0>, const MacroType &macro_kernel,
       const TensorType &input_tensor, TensorType &output_tensor,
-      const TensorIdx input_stride, const TensorIdx output_stride);
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld);
 
   TensorIdx loop_idx_[ORDER];
   TensorIdx *loop_perm_idx_[ORDER];

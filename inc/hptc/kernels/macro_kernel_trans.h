@@ -11,8 +11,8 @@
 namespace hptc {
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
 class MacroTrans {
 public:
   using Float = typename MicroKernel::Float;
@@ -25,31 +25,31 @@ public:
   TensorUInt get_cont_len() const;
   TensorUInt get_ncont_len() const;
 
-  void exec(const Float *in_data, Float *out_data,
-      const TensorIdx input_stride, const TensorIdx output_stride) const;
+  void exec(const Float *data_in, Float *data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
 
 private:
-  template <TensorUInt CONT,
-            TensorUInt NCONT>
-  void ncont_tiler_(DualCounter<CONT, NCONT>, const Float *in_data,
-      Float *out_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  template <TensorUInt IN_INLD,
+            TensorUInt IN_OUTLD>
+  void tile_outld_(DualCounter<IN_INLD, IN_OUTLD>, const Float *data_in,
+      Float *data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
 
-  template <TensorUInt CONT>
-  void ncont_tiler_(DualCounter<CONT, 0>, const Float *in_data,
-      Float *out_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  template <TensorUInt IN_INLD>
+  void tile_outld_(DualCounter<IN_INLD, 0>, const Float *data_in,
+      Float *data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
 
-  template <TensorUInt CONT,
-            TensorUInt NCONT>
-  void cont_tiler_(DualCounter<CONT, NCONT>, const Float *in_data,
-      Float *out_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  template <TensorUInt IN_INLD,
+            TensorUInt IN_OUTLD>
+  void tile_inld_(DualCounter<IN_INLD, IN_OUTLD>, const Float *data_in,
+      Float *data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
 
-  template <TensorUInt NCONT>
-  void cont_tiler_(DualCounter<0, NCONT>, const Float *in_data,
-      Float *out_data, const TensorIdx input_stride,
-      const TensorIdx output_stride) const;
+  template <TensorUInt IN_OUTLD>
+  void tile_inld_(DualCounter<0, IN_OUTLD>, const Float *data_in,
+      Float *data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
 
   MicroKernel kernel_;
   const TensorUInt kn_width_;
@@ -63,13 +63,13 @@ public:
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
-  void set_wrapper_loop(const TensorIdx stride_in_in,
-      const TensorIdx stride_in_out, const TensorIdx stride_out_in,
-      const TensorIdx stride_out_out, const TensorUInt ld_in_size,
-      const TensorUInt ld_out_size);
+  void set_wrapper_loop(const TensorIdx stride_in_inld,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
+      const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
+      const TensorUInt size_kn_outld);
 
-  void exec(const FloatType *in_data, FloatType *out_data,
-      const TensorIdx in_size, const TensorIdx out_size) const;
+  void exec(const FloatType *data_in, FloatType *data_out,
+      const TensorIdx size_trans, const TensorIdx size_pad) const;
 
 private:
   KernelTransLinear<FloatType> kernel_;
@@ -82,8 +82,8 @@ public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
 
-  void exec(const FloatType *in_data, FloatType *out_data,
-      const TensorIdx input_size, const TensorIdx output_size) const;
+  void exec(const FloatType *data_in, FloatType *data_out,
+      const TensorIdx, const TensorIdx) const;
 
 private:
   DeducedFloatType<FloatType> alpha_, beta_;
@@ -94,17 +94,17 @@ private:
  * Alias of macro kernels
  */
 template <typename FloatType,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-using MacroTransFull = MacroTrans<KernelTransFull<FloatType>, CONT_LEN,
-    NCONT_LEN>;
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+using MacroTransFull = MacroTrans<KernelTransFull<FloatType>, SIZE_IN_INLD,
+    SIZE_IN_OUTLD>;
 
 
 template <typename FloatType,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType>, CONT_LEN,
-    NCONT_LEN>;
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType>, SIZE_IN_INLD,
+    SIZE_IN_OUTLD>;
 
 
 /*

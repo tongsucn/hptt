@@ -75,19 +75,19 @@ void LibLoader::init_cpu_() {
 
 void LibLoader::select_arch_() {
   if (nullptr == this->handler_ and this->intrin_sets_["avx2"].found)
-    this->handler_ = this->search_(this->intrin_sets_["avx2"].filename);
+    this->handler_ = this->load_(this->intrin_sets_["avx2"].filename);
   if (nullptr == this->handler_ and this->intrin_sets_["avx"].found)
-    this->handler_ = this->search_(this->intrin_sets_["avx"].filename);
+    this->handler_ = this->load_(this->intrin_sets_["avx"].filename);
   if (nullptr == this->handler_)
-    this->handler_ = this->search_(this->intrin_sets_["common"].filename);
+    this->handler_ = this->load_(this->intrin_sets_["common"].filename);
 }
 
 
-void *LibLoader::search_(const std::string &filename) {
-  auto result_ptr = dlopen(filename.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  if (nullptr == result_ptr)
-    result_ptr = dlopen(("./" + filename).c_str(), RTLD_NOW | RTLD_GLOBAL);
-  return result_ptr;
+void *LibLoader::load_(const std::string &filename) {
+  auto ptr_result = dlopen(filename.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  if (nullptr == ptr_result)
+    ptr_result = dlopen(("./" + filename).c_str(), RTLD_NOW | RTLD_GLOBAL);
+  return ptr_result;
 }
 
 }

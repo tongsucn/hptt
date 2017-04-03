@@ -56,8 +56,8 @@ struct ParamTrans {
   HPTC_INL bool is_common_leading() const;
   HPTC_INL void set_coef(const Deduced alpha, const Deduced beta);
   HPTC_INL const KernelPack &get_kernel() const;
-  void set_lin_wrapper_loop(const TensorUInt ld_in_size,
-      const TensorUInt ld_out_size);
+  void set_lin_wrapper_loop(const TensorUInt size_kn_inld,
+      const TensorUInt size_kn_outld);
 
 private:
   TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
@@ -69,8 +69,7 @@ private:
 public:
   std::array<TensorUInt, ORDER> perm;
   Deduced alpha, beta;
-  TensorIdx input_stride, output_stride, stride_in_in, stride_in_out,
-      stride_out_in, stride_out_out;
+  TensorIdx stride_in_inld, stride_in_outld, stride_out_inld, stride_out_outld;
   TensorUInt begin_order_idx;
   const TensorUInt merged_order;
 

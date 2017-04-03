@@ -41,7 +41,7 @@ private:
 
   void init_cpu_();
   void select_arch_();
-  void *search_(const std::string &filename);
+  void *load_(const std::string &filename);
 
   void *handler_;
 

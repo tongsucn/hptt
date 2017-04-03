@@ -110,102 +110,102 @@ HPTC_INL void CGraphTrans<ParamType>::exec_general_() {
   const auto &kn = this->param_->get_kernel();
   const auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
-  const auto input_stride = this->param_->input_stride;
-  const auto output_stride = this->param_->output_stride;
+  const auto stride_in_outld = this->param_->stride_in_outld;
+  const auto stride_out_inld = this->param_->stride_out_inld;
 
 #pragma omp parallel for schedule(static)
   for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
     auto task = this->operations_ + th_idx;
-    task->exec(kn.knf_1x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_1x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_1x2, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_1x2, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_1x3, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_1x3, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_1x4, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_1x4, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_2x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_2x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_2x2, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_2x2, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_2x3, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_2x3, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_2x4, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_2x4, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_3x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_3x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_3x2, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_3x2, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_3x3, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_3x3, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_3x4, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_3x4, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_4x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_4x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_4x2, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_4x2, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_4x3, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_4x3, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knf_4x4, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knf_4x4, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_1x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_1x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_1x2, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_1x2, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_1x3, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_1x3, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_1x4, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_1x4, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_2x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_2x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_3x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_3x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
-    task->exec(kn.knh_4x1, input_tensor, output_tensor, input_stride,
-        output_stride);
+    task->exec(kn.knh_4x1, input_tensor, output_tensor, stride_in_outld,
+        stride_out_inld);
 
     task = task->next;
     task->exec(kn.kn_scl, input_tensor, output_tensor, 1, 0);
@@ -224,24 +224,28 @@ HPTC_INL void CGraphTrans<ParamType>::exec_common_leading_() {
   const auto &kn_scalar = this->param_->get_kernel().kn_lin_scalar;
   const auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
-  const auto ld_in_len = this->param_->input_tensor.get_size(
+  const auto size_in_inld = this->param_->input_tensor.get_size(
       this->param_->begin_order_idx);
-  const auto ld_out_len = this->param_->output_tensor.get_size(
+  const auto size_out_outld = this->param_->output_tensor.get_size(
       this->param_->begin_order_idx);
 
 #pragma omp parallel for schedule(static)
   for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
     auto task = this->operations_ + th_idx;
-    task->exec(kn_core, input_tensor, output_tensor, ld_in_len, ld_out_len);
+    task->exec(kn_core, input_tensor, output_tensor, size_in_inld,
+        size_out_outld);
 
     task = task->next;
-    task->exec(kn_right, input_tensor, output_tensor, ld_in_len, ld_out_len);
+    task->exec(kn_right, input_tensor, output_tensor, size_in_inld,
+        size_out_outld);
 
     task = task->next;
-    task->exec(kn_bottom, input_tensor, output_tensor, ld_in_len, ld_out_len);
+    task->exec(kn_bottom, input_tensor, output_tensor, size_in_inld,
+        size_out_outld);
 
     task = task->next;
-    task->exec(kn_scalar, input_tensor, output_tensor, ld_in_len, ld_out_len);
+    task->exec(kn_scalar, input_tensor, output_tensor, size_in_inld,
+        size_out_outld);
   }
 }
 

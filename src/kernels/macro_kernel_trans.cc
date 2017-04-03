@@ -17,18 +17,18 @@ class MacroTrans<MicroKernel, 0, 0> {
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::MacroTrans()
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::MacroTrans()
     : kernel_(),
       kn_width_(MicroKernel::KN_WIDTH) {
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::set_coef(
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::set_coef(
     const DeducedFloatType<typename MicroKernel::Float> alpha,
     const DeducedFloatType<typename MicroKernel::Float> beta) {
   this->kernel_.set_coef(alpha, beta);
@@ -36,91 +36,93 @@ void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::set_coef(
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_cont_len() const {
-  return CONT_LEN *this->kn_width_;
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+TensorUInt
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::get_cont_len() const {
+  return SIZE_IN_INLD * this->kn_width_;
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-TensorUInt MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::get_ncont_len() const {
-  return NCONT_LEN *this->kn_width_;
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+TensorUInt
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::get_ncont_len() const {
+  return SIZE_IN_OUTLD * this->kn_width_;
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::exec(
-    const typename MicroKernel::Float *in_data,
-    typename MicroKernel::Float *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::exec(
+    const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
   // Tiling kernels in non-continuous direction
-  this->cont_tiler_(DualCounter<CONT_LEN, NCONT_LEN>(), in_data,
-      out_data, input_stride, output_stride);
+  this->tile_inld_(DualCounter<SIZE_IN_INLD, SIZE_IN_OUTLD>(), data_in,
+      data_out, stride_in_outld, stride_out_inld);
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-template <TensorUInt CONT,
-         TensorUInt NCONT>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<CONT, NCONT>, const typename MicroKernel::Float *in_data,
-    typename MicroKernel::Float *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
-  this->cont_tiler_(DualCounter<CONT - 1, NCONT>(), in_data, out_data,
-      input_stride, output_stride);
-  this->ncont_tiler_(DualCounter<CONT - 1, NCONT - 1>(), in_data, out_data,
-      input_stride, output_stride);
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD,
+         TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_inld_(
+    DualCounter<IN_INLD, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->tile_inld_(DualCounter<IN_INLD - 1, IN_OUTLD>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
+  this->tile_outld_(DualCounter<IN_INLD - 1, IN_OUTLD - 1>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-template <TensorUInt NCONT>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::cont_tiler_(
-    DualCounter<0, NCONT>, const typename MicroKernel::Float *in_data,
-    typename MicroKernel::Float *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_inld_(
+    DualCounter<0, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-template <TensorUInt CONT,
-         TensorUInt NCONT>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, NCONT>, const typename MicroKernel::Float *in_data,
-    typename MicroKernel::Float *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
-  this->ncont_tiler_(DualCounter<CONT, NCONT - 1>(), in_data, out_data,
-      input_stride, output_stride);
-  this->kernel_.exec(in_data + CONT * this->kn_width_
-          + NCONT * this->kn_width_ *input_stride,
-      out_data + NCONT *this->kn_width_
-          + CONT * this->kn_width_ *output_stride,
-      input_stride, output_stride);
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD,
+         TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_outld_(
+    DualCounter<IN_INLD, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->tile_outld_(DualCounter<IN_INLD, IN_OUTLD - 1>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
+  this->kernel_.exec(data_in + IN_INLD * this->kn_width_
+          + IN_OUTLD * this->kn_width_ * stride_in_outld,
+      data_out + IN_OUTLD * this->kn_width_
+          + IN_INLD * this->kn_width_ * stride_out_inld,
+      stride_in_outld, stride_out_inld);
 }
 
 
 template <typename MicroKernel,
-          TensorUInt CONT_LEN,
-          TensorUInt NCONT_LEN>
-template <TensorUInt CONT>
-void MacroTrans<MicroKernel, CONT_LEN, NCONT_LEN>::ncont_tiler_(
-    DualCounter<CONT, 0>, const typename MicroKernel::Float *in_data,
-    typename MicroKernel::Float *out_data, const TensorIdx input_stride,
-    const TensorIdx output_stride) const {
-  this->kernel_.exec(in_data + CONT * this->kn_width_,
-      out_data + CONT * this->kn_width_ *output_stride, input_stride,
-      output_stride);
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_outld_(
+    DualCounter<IN_INLD, 0>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->kernel_.exec(data_in + IN_INLD * this->kn_width_,
+      data_out + IN_INLD * this->kn_width_ * stride_out_inld, stride_in_outld,
+      stride_out_inld);
 }
 
 
@@ -136,20 +138,20 @@ void MacroTransLinear<FloatType>::set_coef(
 
 
 template <typename FloatType>
-void MacroTransLinear<FloatType>::set_wrapper_loop(const TensorIdx stride_in_in,
-    const TensorIdx stride_in_out, const TensorIdx stride_out_in,
-    const TensorIdx stride_out_out, const TensorUInt ld_in_size,
-    const TensorUInt ld_out_size) {
-  this->kernel_.set_wrapper_loop(stride_in_in, stride_in_out, stride_out_in,
-      stride_out_out, ld_in_size, ld_out_size);
+void MacroTransLinear<FloatType>::set_wrapper_loop(const TensorIdx stride_in_inld,
+    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
+    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
+    const TensorUInt size_kn_outld) {
+  this->kernel_.set_wrapper_loop(stride_in_inld, stride_in_outld, stride_out_inld,
+      stride_out_outld, size_kn_inld, size_kn_outld);
 }
 
 
 template <typename FloatType>
-void MacroTransLinear<FloatType>::exec(const FloatType *in_data,
-    FloatType *out_data, const TensorIdx in_size,
-    const TensorIdx out_size) const {
-  this->kernel_.exec(in_data, out_data, in_size, out_size);
+void MacroTransLinear<FloatType>::exec(const FloatType *data_in,
+    FloatType *data_out, const TensorIdx size_trans,
+    const TensorIdx size_pad) const {
+  this->kernel_.exec(data_in, data_out, size_trans, size_pad);
 }
 
 
@@ -165,18 +167,9 @@ void MacroTransScalar<FloatType>::set_coef(
 
 
 template <typename FloatType>
-void MacroTransScalar<FloatType>::exec(const FloatType *in_data,
-    FloatType *out_data, const TensorIdx input_size,
-    const TensorIdx output_size) const {
-  for (TensorIdx idx = 0; idx < input_size; ++idx)
-    out_data[idx] = this->alpha_ * in_data[idx] + this->beta_ * out_data[idx];
-
-  // Zero padding rest
-  using Deduced = DeducedFloatType<FloatType>;
-  auto underlying_ptr = reinterpret_cast<Deduced *>(out_data);
-  constexpr TensorUInt inner_size = sizeof(FloatType) / sizeof(Deduced);
-  std::fill(underlying_ptr + inner_size * input_size,
-      underlying_ptr + inner_size * output_size, static_cast<Deduced>(0.0));
+void MacroTransScalar<FloatType>::exec(const FloatType *data_in,
+    FloatType *data_out, const TensorIdx, const TensorIdx) const {
+  *data_out = this->alpha_ * *data_in + this->beta_ * *data_out;
 }
 
 
