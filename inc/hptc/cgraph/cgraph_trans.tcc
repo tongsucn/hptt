@@ -224,10 +224,10 @@ HPTC_INL void CGraphTrans<ParamType>::exec_common_leading_() {
   const auto &kn_scalar = this->param_->get_kernel().kn_lin_scalar;
   const auto &input_tensor = this->param_->input_tensor;
   auto &output_tensor = this->param_->output_tensor;
-  const auto ld_in_len = static_cast<TensorIdx>(
-      this->param_->input_tensor.get_size(this->param_->begin_order_idx));
-  const auto ld_out_len = static_cast<TensorIdx>(
-      this->param_->output_tensor.get_size(this->param_->begin_order_idx));
+  const auto ld_in_len = this->param_->input_tensor.get_size(
+      this->param_->begin_order_idx);
+  const auto ld_out_len = this->param_->output_tensor.get_size(
+      this->param_->begin_order_idx);
 
 #pragma omp parallel for schedule(static)
   for (decltype(this->threads_) th_idx = 0; th_idx < this->threads_; ++th_idx) {
