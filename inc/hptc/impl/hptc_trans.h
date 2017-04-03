@@ -21,6 +21,7 @@ public:
 
   virtual void exec() = 0;
   virtual void operator()() = 0;
+  virtual void print_plan() = 0;
 };
 
 

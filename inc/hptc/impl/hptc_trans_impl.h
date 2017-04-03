@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <iostream>
 
 #include <hptc/types.h>
 #include <hptc/tensor.h>
@@ -53,6 +54,7 @@ public:
 
   virtual void exec() final;
   virtual void operator()() final;
+  virtual void print_plan() final;
 
 private:
   HPTC_INL void exec_impl_();

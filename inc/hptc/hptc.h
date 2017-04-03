@@ -104,20 +104,17 @@ extern template CGraphTransPackBase<float> *create_trans_plan<float>(
     const std::vector<TensorUInt> &, const DeducedFloatType<float>,
     const DeducedFloatType<float>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-
 extern template CGraphTransPackBase<double> *create_trans_plan<double>(
     const double *, double *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<double>,
     const DeducedFloatType<double>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-
 extern template CGraphTransPackBase<FloatComplex> *
 create_trans_plan<FloatComplex>(const FloatComplex *, FloatComplex *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<FloatComplex>, const DeducedFloatType<FloatComplex>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
-
 extern template CGraphTransPackBase<DoubleComplex> *
 create_trans_plan<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,

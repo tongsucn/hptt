@@ -13,8 +13,8 @@
 #include <hptc/test_util.h>
 #include <hptc/benchmark/benchmark_trans.h>
 
-#define ALPHA 2.3f
-#define BETA 4.2f
+#define ALPHA 2.3
+#define BETA 4.2
 #define MEASURE_REPEAT 5
 
 

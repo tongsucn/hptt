@@ -10,7 +10,7 @@
 namespace hptc {
 
 /*
- * Implementation for function create_cgraph_trans
+ * Implementation of function create_cgraph_trans
  */
 template <typename FloatType>
 CGraphTransPackBase<FloatType> *create_trans_plan(const FloatType *in_data,
@@ -99,19 +99,16 @@ template CGraphTransPackBase<float> *create_trans_plan<float>(const float *,
     const DeducedFloatType<float>, const DeducedFloatType<float>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
-
 template CGraphTransPackBase<double> *create_trans_plan<double>(const double *,
     double *, const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<double>, const DeducedFloatType<double>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
-
 template CGraphTransPackBase<FloatComplex> *create_trans_plan<FloatComplex>(
     const FloatComplex *, FloatComplex *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
     const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-
 template CGraphTransPackBase<DoubleComplex> *create_trans_plan<DoubleComplex>(
     const DoubleComplex *, DoubleComplex *, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,

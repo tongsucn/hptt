@@ -42,6 +42,23 @@ class IncTarget(object):
     this->cgraph_trans_ptr_%d_ = plan.get_graph();
   }''' % (order, order, order)
 
+    # CGraphTransPackData's print function content
+    print_content = ''
+    for order in orders:
+      print_content += '''
+  %sif (nullptr != this->cgraph_trans_ptr_%d_) {
+    auto descriptor = this->cgraph_trans_ptr_%d_->get_descriptor();
+    std::cout << "Loop order: ";
+    for (auto order : descriptor.loop_order)
+      std::cout << order << " ";
+    std::cout << std::endl;
+    std::cout << "Parallelization: ";
+    for (auto th_num : descriptor.parallel_strategy)
+      std::cout << th_num << " ";
+    std::cout << std::endl;
+  }''' % (
+    '' if order == orders[0] else 'else ', order, order)
+
     # CGraphTransPackData's execution function content
     exec_content = ''
     for order in orders:
@@ -135,6 +152,11 @@ HPTC_INL void CGraphTransPack<FloatType>::operator()() {
 
 
 template <typename FloatType>
+HPTC_INL void CGraphTransPack<FloatType>::print_plan() {%s
+}
+
+
+template <typename FloatType>
 HPTC_INL void CGraphTransPack<FloatType>::exec_impl_() {%s
 }
 
@@ -184,4 +206,4 @@ create_trans_plan_impl<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
 
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(),
     data_constructor_content, data_destructor_content, orders[0], orders[-1],
-    data_member_content, constructor_content, exec_content)]
+    data_member_content, constructor_content, print_content, exec_content)]
