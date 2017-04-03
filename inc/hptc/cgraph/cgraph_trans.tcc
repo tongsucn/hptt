@@ -47,6 +47,13 @@ CGraphTrans<ParamType>::get_descriptor() const {
 
 
 template <typename ParamType>
+HPTC_INL void CGraphTrans<ParamType>::reset_data(const Float *data_in,
+    Float *data_out) {
+  this->param_->reset_data(data_in, data_out);
+}
+
+
+template <typename ParamType>
 CGraphTrans<ParamType>::CGraphTrans(const std::shared_ptr<ParamType> &param,
     const Descriptor &descriptor)
     : param_(param),

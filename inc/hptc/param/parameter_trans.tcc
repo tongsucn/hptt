@@ -188,6 +188,13 @@ void ParamTrans<TensorType>::set_lin_wrapper_loop(const TensorUInt size_kn_inld,
 
 
 template <typename TensorType>
+void ParamTrans<TensorType>::reset_data(const Float *data_in, Float *data_out) {
+  this->input_tensor.reset_data(data_in);
+  this->output_tensor.reset_data(data_out);
+}
+
+
+template <typename TensorType>
 TensorUInt ParamTrans<TensorType>::merge_idx_(
     const std::array<TensorUInt, ORDER> &perm) {
   if (ORDER <= 1)

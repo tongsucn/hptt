@@ -35,6 +35,7 @@ public:
   template <typename Param>
   friend class PlanTransOptimizer;
 
+  using Float = typename ParamType::Float;
   static constexpr auto ORDER = ParamType::ORDER;
 
   struct Descriptor {
@@ -55,6 +56,7 @@ public:
   HPTC_INL void exec();
   HPTC_INL void operator()();
   HPTC_INL Descriptor get_descriptor() const;
+  HPTC_INL void reset_data(const Float *data_in, Float *data_out);
 
 private:
   CGraphTrans(const std::shared_ptr<ParamType> &param,

@@ -197,6 +197,15 @@ TensorIdx TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size(
 template <typename FloatType,
           TensorUInt ORDER,
           MemLayout LAYOUT>
+void TensorWrapper<FloatType, ORDER, LAYOUT>::reset_data(
+    const FloatType *new_data) {
+  this->raw_data_ = const_cast<FloatType *>(new_data);
+}
+
+
+template <typename FloatType,
+          TensorUInt ORDER,
+          MemLayout LAYOUT>
 FloatType *TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() {
   return this->raw_data_;
 }

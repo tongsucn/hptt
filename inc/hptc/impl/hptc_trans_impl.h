@@ -55,6 +55,7 @@ public:
   virtual void exec() final;
   virtual void operator()() final;
   virtual void print_plan() final;
+  virtual void reset_data(const FloatType *in_data, FloatType *out_data) final;
 
 private:
   HPTC_INL void exec_impl_();

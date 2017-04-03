@@ -46,8 +46,10 @@ macro(hptc_set_compiler)
     string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -qopenmp")
     string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG} " -debug full")
   elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-    string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -fopenmp -fsanitize=address")
-    string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG} " -ggdb -fsanitize=address")
+    string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG}
+      " -fopenmp -fsanitize=address")
+    string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG}
+      " -ggdb -fsanitize=address")
   else ()
     message(FATAL_ERROR "!! Unrecognized compiler: " ${CMAKE_CXX_COMPILER_ID})
   endif ()

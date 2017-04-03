@@ -22,6 +22,7 @@ public:
   virtual void exec() = 0;
   virtual void operator()() = 0;
   virtual void print_plan() = 0;
+  virtual void reset_data(const FloatType *in_data, FloatType *out_data) = 0;
 };
 
 

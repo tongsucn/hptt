@@ -44,8 +44,9 @@ private:
 template <typename TensorType>
 struct ParamTrans {
   // Type alias and constant values
-  using Deduced = DeducedFloatType<typename TensorType::Float>;
-  using KernelPack = KernelPackTrans<typename TensorType::Float>;
+  using Float = typename TensorType::Float;
+  using Deduced = DeducedFloatType<Float>;
+  using KernelPack = KernelPackTrans<Float>;
 
   static constexpr auto ORDER = TensorType::TENSOR_ORDER;
 
@@ -59,12 +60,14 @@ struct ParamTrans {
   void set_lin_wrapper_loop(const TensorUInt size_kn_inld,
       const TensorUInt size_kn_outld);
 
+  void reset_data(const Float *data_in, Float *data_out);
+
 private:
   TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
 
   // They need to be initialized before merging
   std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
-  KernelPackTrans<typename TensorType::Float> kn_;
+  KernelPackTrans<Float> kn_;
 
 public:
   std::array<TensorUInt, ORDER> perm;
@@ -74,8 +77,7 @@ public:
   const TensorUInt merged_order;
 
   // Put the merged tensors here, they must be initialized after merging
-  const TensorMergedWrapper<typename TensorType::Float, ORDER> input_tensor;
-  TensorMergedWrapper<typename TensorType::Float, ORDER> output_tensor;
+  TensorMergedWrapper<Float, ORDER> input_tensor, output_tensor;
 };
 
 

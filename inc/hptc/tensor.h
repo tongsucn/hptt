@@ -60,6 +60,7 @@ public:
   const TensorSize<ORDER> &get_outer_size() const;
   TensorIdx get_outer_size(const TensorUInt order) const;
 
+  void reset_data(const Float *new_data);
   FloatType *get_data();
   const FloatType *get_data() const;
 
