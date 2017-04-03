@@ -107,8 +107,8 @@ void PlanTransOptimizer<ParamType>::init_loop_evaluator_param_() {
   this->heur_loop_importance_scale = 0.5;
   this->heur_loop_input_penalty_factor = 1.0;
   this->heur_loop_output_penalty_factor = 1.01;
-  this->heur_loop_in_ld_award = 0.8;
-  this->heur_loop_out_ld_award = 0.85;
+  this->heur_loop_in_ld_award = 0.85;
+  this->heur_loop_out_ld_award = 0.8;
 }
 
 
@@ -355,12 +355,12 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     // Assign threads to leading loops and non-leading loops
     for (auto factor : rest_factors) {
       // Sort in descending order of available parallelism, if two loops have
-      // the same parallelism, put the non-leading loop or the output leading
-      // loop on the left
+      // the same parallelism, put the non-leading loop or the input leading
+      // loop on the left.
       std::sort(loops.begin(), loops.end(),
           [this] (const LoopParaStrategy_ &a, const LoopParaStrategy_ &b) {
               return a.size > b.size or (a.size == b.size and
-              (ORDER == a.loop_idx or this->out_ld_idx_ == a.loop_idx)); });
+              (ORDER == a.loop_idx or this->in_ld_idx_ == a.loop_idx)); });
 
       if (0 == loops[0].size % factor or loops[0].size / factor > loops[1].size)
         // The largest loop can be exactly divided by the factor or after force
