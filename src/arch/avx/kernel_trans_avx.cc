@@ -578,25 +578,6 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
           + this->stride_out_out_ * out_idx;
 
       TensorIdx idx = 0;
-      for (constexpr auto step = REG_CAP * 4; idx + step <= in_size;
-          idx += step, in_ptr += step, out_ptr += step) {
-        Intrin::store(out_ptr, Intrin::add(
-            Intrin::mul(this->reg_alpha_, Intrin::load(in_ptr)),
-            Intrin::mul(this->reg_beta_, Intrin::load(out_ptr))));
-
-        Intrin::store(out_ptr + REG_CAP, Intrin::add(
-            Intrin::mul(this->reg_alpha_, Intrin::load(in_ptr + REG_CAP)),
-            Intrin::mul(this->reg_beta_, Intrin::load(out_ptr + REG_CAP))));
-
-        Intrin::store(out_ptr + REG_CAP * 2, Intrin::add(
-            Intrin::mul(this->reg_alpha_, Intrin::load(in_ptr + REG_CAP * 2)),
-            Intrin::mul(this->reg_beta_, Intrin::load(out_ptr + REG_CAP * 2))));
-
-        Intrin::store(out_ptr + REG_CAP * 3, Intrin::add(
-            Intrin::mul(this->reg_alpha_, Intrin::load(in_ptr + REG_CAP * 3)),
-            Intrin::mul(this->reg_beta_, Intrin::load(out_ptr + REG_CAP * 3))));
-      }
-
       for (constexpr auto step = REG_CAP * 2; idx + step <= in_size;
           idx += step, in_ptr += step, out_ptr += step) {
         Intrin::store(out_ptr, Intrin::add(
