@@ -20,9 +20,8 @@ class IncTarget(object):
     for dtype in dtypes:
       for order in orders:
         temp_content += '''
-extern template class TensorWrapper<%s, %d, MemLayout::COL_MAJOR>;
-extern template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;''' % (
-    FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order)
+extern template class TensorWrapper<%s, %d, MemLayout::COL_MAJOR>;''' % (
+    FLOAT_MAP[dtype].full, order)
 
     temp_content += '\n\n#endif'
     self.content = [temp_content]
@@ -49,8 +48,7 @@ namespace hptc {
 ''')
       for order in orders:
         self.content[-1] += '''
-template class TensorWrapper<%s, %d, MemLayout::COL_MAJOR>;
-template class TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>;''' % (
-    FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order)
+template class TensorWrapper<%s, %d, MemLayout::COL_MAJOR>;''' % (
+    FLOAT_MAP[dtype].full, order)
 
       self.content[-1] += '\n\n}'

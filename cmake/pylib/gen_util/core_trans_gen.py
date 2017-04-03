@@ -28,10 +28,8 @@ class IncTarget(object):
         for order in orders:
           self.content[-1] += '''
 extern template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;
-extern template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>>>;''' % (target[1],
-    FLOAT_MAP[dtype].full, order, target[1], FLOAT_MAP[dtype].full, order)
+    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;''' % (target[1],
+    FLOAT_MAP[dtype].full, order)
 
       self.content[-1] += '\n\n#endif'
 
@@ -62,9 +60,7 @@ namespace hptc {
         for order in orders:
           self.content[-1] += '''
 template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;
-template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::ROW_MAJOR>>>;''' % (target[1],
-    FLOAT_MAP[dtype].full, order, target[1], FLOAT_MAP[dtype].full, order)
+    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;''' % (target[1],
+    FLOAT_MAP[dtype].full, order)
 
         self.content[-1] += '\n\n}'
