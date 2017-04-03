@@ -320,12 +320,6 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
   const auto cont_len = this->param_->input_tensor.get_size(this->in_ld_idx_);
   const auto ncont_len = this->param_->input_tensor.get_size(this->out_ld_idx_);
 
-  // Lambda for calculating kernel size
-  auto kn_size = [] (TensorUInt size, const TensorUInt chunk_size) {
-    while (size > 1 and 0 != chunk_size % size)
-      --size;
-    return size; };
-
   if (cont_len >= knf_basic_len and ncont_len >= knf_basic_len) {
     // Leading orders can be vectorized by full kernel
     const TensorUInt knf_scale
@@ -396,9 +390,9 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
         big_core_ncont_num = knf_ncont_num - small_core_ncont_num;
 
     // Calculate big core region macro kernel's size
-    const auto big_core_kn_cont_size = kn_size(knf_scale,
+    const auto big_core_kn_cont_size = hptc::select_kn_size(knf_scale,
         big_core_cont_num / cont_assigned);
-    const auto big_core_kn_ncont_size = kn_size(knf_scale,
+    const auto big_core_kn_ncont_size = hptc::select_kn_size(knf_scale,
         big_core_ncont_num / ncont_assigned);
 
     // Update available parallelism at input and output leading order loop
@@ -429,8 +423,10 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
 
     // Vectorization on side region
     // Calculate side region macro kernel size
-    const auto horiz_side_kn_cont_size = kn_size(knh_scale, knf_cont_num * 2);
-    const auto vert_side_kn_ncont_size = kn_size(knh_scale, knf_ncont_num * 2);
+    const auto horiz_side_kn_cont_size = hptc::select_kn_size(knh_scale,
+        knf_cont_num * 2);
+    const auto vert_side_kn_ncont_size = hptc::select_kn_size(knh_scale,
+        knf_ncont_num * 2);
 
     // Vectorize vertical side region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF, 1,
@@ -462,8 +458,8 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     // Leading orders are too small for full kernels, use half kernels
     const TensorUInt knh_cont_num = cont_len / knh_basic_len,
         knh_ncont_num = ncont_len / knh_basic_len;
-    const auto kn_cont_size = kn_size(knh_scale, knh_cont_num);
-    const auto kn_ncont_size = kn_size(knh_scale, knh_ncont_num);
+    const auto kn_cont_size = hptc::select_kn_size(knh_scale, knh_cont_num);
+    const auto kn_ncont_size = hptc::select_kn_size(knh_scale, knh_ncont_num);
 
     // Update available parallelism at input and output leading order loop
     this->avail_parallel_[this->in_ld_idx_] = knh_cont_num / kn_cont_size;
@@ -598,20 +594,14 @@ void PlanTransOptimizer<ParamType>::init_vec_common_leading_() {
   }
 
   // Split
-  // Lambda for calculating kernel size
-  auto kn_size = [] (TensorUInt size, const TensorUInt chunk_size) {
-    while (size > 1 and 0 != chunk_size % size)
-      --size;
-    return size; };
-
   const TensorUInt cl_in_ld_rest = cl_in_ld_len % cl_in_ld_assigned,
       cl_out_ld_rest = cl_out_ld_len % cl_out_ld_assigned;
   const TensorIdx cl_in_ld_num = cl_in_ld_len - cl_in_ld_rest,
       cl_out_ld_num = cl_out_ld_len - cl_out_ld_rest;
-  auto cl_in_ld_size = kn_size(this->param_->get_kernel().linear_loop_max,
-      cl_in_ld_num);
-  auto cl_out_ld_size = kn_size(this->param_->get_kernel().linear_loop_max,
-      cl_out_ld_num);
+  auto cl_in_ld_size = hptc::select_kn_size(
+      this->param_->get_kernel().linear_loop_max, cl_in_ld_num);
+  auto cl_out_ld_size = hptc::select_kn_size(
+      this->param_->get_kernel().linear_loop_max, cl_out_ld_num);
 
   // Update available parallelism at the two 2nd-leading orders
   this->avail_parallel_[cl_in_ld_idx] = cl_in_ld_num / cl_in_ld_size;

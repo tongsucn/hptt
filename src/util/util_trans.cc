@@ -27,6 +27,14 @@ double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms) {
 }
 
 
+TensorUInt select_kn_size(TensorUInt size_upper_bound,
+    const TensorUInt chunk_size) {
+  while (size_upper_bound > 1 and 0 != chunk_size % size_upper_bound)
+    --size_upper_bound;
+  return size_upper_bound;
+}
+
+
 /*
  * Explicit template instantiation for function calc_tp_trans
  */

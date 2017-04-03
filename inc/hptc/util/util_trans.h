@@ -47,6 +47,10 @@ template <typename FloatType>
 double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms);
 
 
+TensorUInt select_kn_size(TensorUInt size_upper_bound,
+    const TensorUInt chunk_size);
+
+
 /*
  * Import implementation
  */
