@@ -62,7 +62,10 @@ private:
   void init_parallel_evaluator_param_();
 
   void init_loop_rule_();
-  void init_loop_heur_(const TensorInt tune_num, const TensorInt heur_num);
+  void init_loop_heur_common_leading_(const TensorInt tune_num,
+      const TensorInt heur_num);
+  void init_loop_heur_general_(const TensorInt tune_num,
+      const TensorInt heur_num);
 
   void init_threads_();
 

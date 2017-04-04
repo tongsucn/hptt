@@ -47,7 +47,10 @@ void PlanTransOptimizer<ParamType>::init_(TensorInt tune_loop_num,
   else {
     // Use heuristic strategy
     tune_loop_num = 0 == tune_loop_num ? 1 : tune_loop_num;
-    this->init_loop_heur_(tune_loop_num, heur_loop_num);
+    if (this->param_->is_common_leading())
+      this->init_loop_heur_common_leading_(tune_loop_num, heur_loop_num);
+    else
+      this->init_loop_heur_general_(tune_loop_num, heur_loop_num);
   }
 
   // Initialize thread number
@@ -156,7 +159,7 @@ void PlanTransOptimizer<ParamType>::init_loop_rule_() {
 
 
 template <typename ParamType>
-void PlanTransOptimizer<ParamType>::init_loop_heur_(
+void PlanTransOptimizer<ParamType>::init_loop_heur_common_leading_(
     const TensorInt tune_num, const TensorInt heur_num) {
   // Create best heap to store auto tuning candidates
   // "Cost-Order" pair: (cost, loop order)
@@ -172,8 +175,7 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_(
       best_heap(heap_cmp);
 
   // Skip stride-1 leading loop in common leading case
-  if (this->param_->is_common_leading())
-    std::swap(loop_order[this->in_ld_idx_], loop_order[this->in_ld_idx_ + 1]);
+  std::swap(loop_order[this->in_ld_idx_], loop_order[this->in_ld_idx_ + 1]);
 
   // Look for best
   TensorInt times = 0;
@@ -188,6 +190,103 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_(
         best_heap.pop();
         best_heap.emplace(new_cost, loop_order);
     }
+  }
+
+  // Store result
+  while (not best_heap.empty()) {
+    this->loop_order_candidates_.emplace_back(best_heap.top().second);
+    best_heap.pop();
+  }
+}
+
+
+template <typename ParamType>
+void PlanTransOptimizer<ParamType>::init_loop_heur_general_(
+    const TensorInt tune_num, const TensorInt heur_num) {
+  // Create best heap to store auto tuning candidates
+  // "Cost-Order" pair: (cost, loop order)
+  using OrderDes = std::pair<double, LoopOrderTrans<ORDER>>;
+  auto heap_cmp = [] (const OrderDes &a, const OrderDes &b) -> bool {
+      return a.first < b.first; };
+
+  // Create initial loop order
+  LoopOrderTrans<ORDER> loop_order;
+  for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
+    loop_order[order_idx] = order_idx;
+  std::priority_queue<OrderDes, std::vector<OrderDes>, decltype(heap_cmp)>
+      best_heap(heap_cmp);
+
+  // 1. Force the leading orders' loops to inner most
+  std::swap(loop_order[this->out_ld_idx_], loop_order[ORDER - 1]);
+  std::swap(loop_order[this->in_ld_idx_], loop_order[ORDER - 2]);
+
+  // Look for best
+  TensorInt times = 0;
+  for (bool has_next = true; has_next and (heur_num < 0 or heur_num > times);) {
+    for (auto swap_count = 2; swap_count > 0;
+        --swap_count, std::swap(loop_order[ORDER - 1], loop_order[ORDER - 2])) {
+      auto new_cost = this->heur_loop_evaluator_(loop_order);
+      if (tune_num < 0 or tune_num > static_cast<TensorInt>(best_heap.size()))
+        best_heap.emplace(new_cost, loop_order);
+      else if (best_heap.top().first > new_cost) {
+          best_heap.pop();
+          best_heap.emplace(new_cost, loop_order);
+      }
+    }
+
+    times += 2;
+    has_next = std::next_permutation(loop_order.begin() + this->in_ld_idx_,
+        loop_order.end() - 2);
+  }
+
+  // Re-initialize loop order descriptor, and skip cases that leading orders
+  // locating at outer most loops (when ORDER > 3)
+  if (ORDER > 3) {
+    for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
+      loop_order[order_idx] = order_idx;
+    if (this->in_ld_idx_ + 1 == this->out_ld_idx_)
+      std::rotate(loop_order.begin() + this->in_ld_idx_,
+          loop_order.begin() + this->in_ld_idx_ + 2,
+          loop_order.begin() + this->in_ld_idx_ + 3);
+    else
+      std::swap(loop_order[this->in_ld_idx_], loop_order[this->in_ld_idx_ + 1]);
+  }
+
+  // 2. Allow leading orders appear anywhere except outer most (when ORDER > 3)
+  for (bool has_next = true;
+      ORDER > 2 and has_next and (heur_num < 0 or heur_num > times);) {
+    if (ORDER > 3) {
+      if (this->out_ld_idx_ == loop_order[this->in_ld_idx_]) {
+        if (ORDER - 1 == this->out_ld_idx_)
+          break;
+        else
+          std::swap(loop_order[this->in_ld_idx_],
+              loop_order[this->out_ld_idx_ + 1]);
+      }
+      else {
+        while ((this->in_ld_idx_ == loop_order[ORDER - 1] and
+                this->out_ld_idx_ == loop_order[ORDER - 2]) or
+            (this->in_ld_idx_ == loop_order[ORDER - 2] and
+                this->out_ld_idx_ == loop_order[ORDER - 1]))
+          has_next = std::next_permutation(
+              loop_order.begin() + this->in_ld_idx_, loop_order.end());
+      }
+
+      if (not has_next)
+        break;
+    }
+
+    auto new_cost = this->heur_loop_evaluator_(loop_order);
+    if (tune_num < 0 or tune_num > static_cast<TensorInt>(best_heap.size()))
+      best_heap.emplace(new_cost, loop_order);
+    else if (best_heap.top().first > new_cost) {
+        best_heap.pop();
+        best_heap.emplace(new_cost, loop_order);
+    }
+
+    ++times;
+    has_next = std::next_permutation(loop_order.begin() + this->in_ld_idx_,
+        loop_order.end());
   }
 
   // Store result
