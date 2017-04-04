@@ -56,6 +56,8 @@ public:
   virtual void operator()() final;
   virtual void print_plan() final;
   virtual void reset_data(const FloatType *in_data, FloatType *out_data) final;
+  virtual void set_thread_ids(const std::vector<TensorInt> &thread_ids) final;
+  virtual void unset_thread_ids() final;
 
 private:
   HPTC_INL void exec_impl_();

@@ -5,6 +5,9 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <unordered_map>
+
+#include <omp.h>
 
 #include <hptc/types.h>
 #include <hptc/arch/compat.h>
@@ -55,8 +58,11 @@ public:
 
   HPTC_INL void exec();
   HPTC_INL void operator()();
+
   HPTC_INL Descriptor get_descriptor() const;
   HPTC_INL void reset_data(const Float *data_in, Float *data_out);
+  HPTC_INL void set_thread_ids(const std::vector<TensorInt> &thread_ids);
+  HPTC_INL void unset_thread_ids();
 
 private:
   CGraphTrans(const std::shared_ptr<ParamType> &param,
@@ -66,14 +72,15 @@ private:
 
   void release_();
 
-  HPTC_INL void exec_general_();
-  HPTC_INL void exec_common_leading_();
+  HPTC_INL void exec_general_(const TensorUInt th_idx);
+  HPTC_INL void exec_common_leading_(const TensorUInt th_idx);
 
 
   std::shared_ptr<ParamType> param_;
   TensorUInt threads_;
   Descriptor descriptor_;
   OpForTrans<ORDER> *operations_;
+  std::unordered_map<TensorInt, TensorUInt> thread_id_map_;
 };
 
 

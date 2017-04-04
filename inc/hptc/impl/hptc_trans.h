@@ -2,6 +2,10 @@
 #ifndef HPTC_IMPL_HPTC_TRANS_H_
 #define HPTC_IMPL_HPTC_TRANS_H_
 
+#include <cstdint>
+
+#include <vector>
+
 
 namespace hptc {
 
@@ -23,6 +27,8 @@ public:
   virtual void operator()() = 0;
   virtual void print_plan() = 0;
   virtual void reset_data(const FloatType *in_data, FloatType *out_data) = 0;
+  virtual void set_thread_ids(const std::vector<int32_t> &thread_ids) = 0;
+  virtual void unset_thread_ids() = 0;
 };
 
 

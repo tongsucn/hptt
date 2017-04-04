@@ -58,12 +58,28 @@ class IncTarget(object):
     std::cout << std::endl;
   }''' % ('' if order == orders[0] else 'else ', order, order)
 
-    # CGraphTransPackData's print function content
+    # CGraphTransPackData's set data function content
     set_content = ''
     for order in orders:
       set_content += '''
   %sif (nullptr != this->cgraph_trans_ptr_%d_)
     this->cgraph_trans_ptr_%d_->reset_data(in_data, out_data);''' % (
+    '' if order == orders[0] else 'else ', order, order)
+
+    # CGraphTransPackData's set thread ID function content
+    set_thread_id_content = ''
+    for order in orders:
+      set_thread_id_content += '''
+  %sif (nullptr != this->cgraph_trans_ptr_%d_)
+    this->cgraph_trans_ptr_%d_->set_thread_ids(thread_ids);''' % (
+    '' if order == orders[0] else 'else ', order, order)
+
+    # CGraphTransPackData's unset thread ID function content
+    unset_thread_id_content = ''
+    for order in orders:
+      unset_thread_id_content += '''
+  %sif (nullptr != this->cgraph_trans_ptr_%d_)
+    this->cgraph_trans_ptr_%d_->unset_thread_ids();''' % (
     '' if order == orders[0] else 'else ', order, order)
 
     # CGraphTransPackData's execution function content
@@ -170,6 +186,17 @@ HPTC_INL void CGraphTransPack<FloatType>::reset_data(const FloatType *in_data,
 
 
 template <typename FloatType>
+HPTC_INL void CGraphTransPack<FloatType>::set_thread_ids(
+    const std::vector<TensorInt> &thread_ids) {%s
+}
+
+
+template <typename FloatType>
+HPTC_INL void CGraphTransPack<FloatType>::unset_thread_ids() {%s
+}
+
+
+template <typename FloatType>
 HPTC_INL void CGraphTransPack<FloatType>::exec_impl_() {%s
 }
 
@@ -220,4 +247,4 @@ create_trans_plan_impl<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(),
     data_constructor_content, data_destructor_content, orders[0], orders[-1],
     data_member_content, constructor_content, print_content, set_content,
-    exec_content)]
+    set_thread_id_content, unset_thread_id_content, exec_content)]
