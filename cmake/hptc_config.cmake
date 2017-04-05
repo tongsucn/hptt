@@ -43,7 +43,7 @@ macro(hptc_set_compiler)
   set(HPTC_RELEASE_FLAG "-O3 -DNDEBUG")
 
   if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -qopenmp")
+    string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG} " -qopenmp -ipo")
     string(CONCAT HPTC_DEBUG_FLAG ${HPTC_DEBUG_FLAG} " -debug full")
   elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     string(CONCAT HPTC_CXX_FLAG ${HPTC_CXX_FLAG}
