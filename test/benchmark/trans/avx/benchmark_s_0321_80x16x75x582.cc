@@ -1,17 +1,15 @@
-#include <hptc/benchmark/benchmark_trans_avx.h>
+#include <hptc/benchmark/benchmark_trans.h>
 #include <hptc/perf-test/test_perf_util.h>
+#include <hptc/test_util.h>
 
 using namespace hptc;
 
 
 int main() {
-  auto ref_func = [] (const float *input_data, float *output_data) {
-      sTranspose_0321_80x16x75x582_par<80, 16, 75, 582>(
-          input_data, output_data, ALPHA, BETA, nullptr, nullptr);
-  };
+  RefTrans<float> ref_trans;
   auto &ref_config = ref_trans_configs[14];
 
-  compare_perf<float, decltype(ref_func), 4>(ref_func, ref_config);
+  compare_perf<float, RefTrans<float>, 4>(ref_trans, ref_config);
 
   return 0;
 }

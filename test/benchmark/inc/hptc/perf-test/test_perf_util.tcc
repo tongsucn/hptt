@@ -5,7 +5,7 @@
 template <typename FloatType,
           typename RefFuncType,
           TensorUInt ORDER>
-void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
+void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case) {
   using Deduced = DeducedFloatType<FloatType>;
 
   // Prepare data and timer
@@ -26,8 +26,9 @@ void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case) {
   for (auto times = 0; times < MEASURE_REPEAT; ++times) {
     // Measure TTC version
     data_wrapper.trash_cache();
-    auto new_time_ttc = timer(ref_func, data_wrapper.org_in_data,
-        data_wrapper.ref_data);
+    auto new_time_ttc = timer(ref_trans, data_wrapper.org_in_data,
+        data_wrapper.ref_data, test_case.size, test_case.perm,
+        static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
     time_ttc = new_time_ttc < time_ttc ? new_time_ttc : time_ttc;
 
     // Measure HPTC version

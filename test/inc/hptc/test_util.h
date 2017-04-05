@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include <hptc/types.h>
+#include <hptc/arch/compat.h>
 
 
 namespace hptc {
@@ -46,6 +47,20 @@ protected:
   const TensorIdx data_len_, page_size_;
 
   TrashType_ *trash_[2];
+};
+
+
+/**
+ * \author Paul Springer
+ * \author Tong Su
+ */
+template <typename FloatType>
+struct RefTrans {
+  void operator()(const FloatType * RESTRICT data_in,
+      FloatType * RESTRICT data_out, const std::vector<TensorIdx> &size,
+      const std::vector<TensorUInt> &perm,
+      const DeducedFloatType<FloatType> alpha,
+      const DeducedFloatType<FloatType> beta);
 };
 
 

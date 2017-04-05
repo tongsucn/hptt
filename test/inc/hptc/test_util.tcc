@@ -135,4 +135,49 @@ TensorInt DataWrapper<FloatType>::verify() {
   return this->verify(this->ref_data, this->act_data, this->data_len_);
 }
 
+
+template <typename FloatType>
+void RefTrans<FloatType>::operator()(const FloatType * RESTRICT data_in,
+    FloatType * RESTRICT data_out, const std::vector<TensorIdx> &size,
+    const std::vector<TensorUInt> &perm,
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  // Get order
+  const auto order = static_cast<TensorUInt>(perm.size());
+  if (order <= 1 or size.size() != order)
+    return;
+
+  // Initialize stride
+  std::vector<TensorUInt> stride_in_outld(order, 1);
+  for (TensorUInt order_idx = 0; order_idx < order - 1; ++order_idx)
+    stride_in_outld[order_idx + 1]
+        = stride_in_outld[order_idx] * size[order_idx];
+  const auto size_inner = size[perm[0]];
+
+  // Combine all non-stride-one orders of output tensor into a single order for
+  // maximum parallelism
+  TensorIdx size_outer = 1;
+  for (TensorUInt order_idx = 0; order_idx < order; ++order_idx)
+    if (order_idx != perm[0])
+      size_outer *= size[order_idx];
+
+#pragma omp parallel for schedule(static)
+  for (TensorIdx idx = 0; idx < size_outer; ++idx) {
+    TensorIdx offset_in = 0, tmp_idx = idx;
+    for (TensorUInt order_idx = 1; order_idx < order; ++order_idx) {
+      auto curr_idx = tmp_idx % size[perm[order_idx]];
+      tmp_idx /= size[perm[order_idx]];
+      offset_in += curr_idx * stride_in_outld[perm[order_idx]];
+    }
+
+    const FloatType * RESTRICT data_in_offset_ = data_in + offset_in;
+    FloatType * RESTRICT data_out_offset_ = data_out + idx * size_inner;
+
+    const auto stride_in_inner = stride_in_outld[perm[0]];
+    for (TensorIdx inner_idx = 0; inner_idx < size_inner; ++inner_idx)
+      data_out_offset_[inner_idx] = beta * data_out_offset_[inner_idx]
+          + alpha * data_in_offset_[inner_idx * stride_in_inner];
+  }
+}
+
 #endif // HPTC_TEST_UTIL_TCC_

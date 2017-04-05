@@ -10,6 +10,8 @@
 #include <iostream>
 
 #include <hptc/hptc.h>
+#include <hptc/util/util.h>
+#include <hptc/util/util_trans.h>
 #include <hptc/test_util.h>
 #include <hptc/benchmark/benchmark_trans.h>
 
