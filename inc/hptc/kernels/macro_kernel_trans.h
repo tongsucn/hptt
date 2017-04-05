@@ -13,20 +13,24 @@ namespace hptc {
 template <typename MicroKernel,
           TensorUInt SIZE_IN_INLD,
           TensorUInt SIZE_IN_OUTLD>
-class MacroTrans {
+class MacroTransData {
 public:
   using Float = typename MicroKernel::Float;
 
-  MacroTrans();
-
-  void set_coef(const DeducedFloatType<Float> alpha,
-      const DeducedFloatType<Float> beta);
+  MacroTransData();
 
   TensorUInt get_cont_len() const;
   TensorUInt get_ncont_len() const;
 
+  void set_coef(const DeducedFloatType<typename MicroKernel::Float> alpha,
+      const DeducedFloatType<typename MicroKernel::Float> beta);
+
   void exec(const Float *data_in, Float *data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+protected:
+  MicroKernel kernel_;
+  const TensorUInt kn_width_;
 
 private:
   template <TensorUInt IN_INLD,
@@ -50,9 +54,16 @@ private:
   void tile_inld_(DualCounter<0, IN_OUTLD>, const Float *data_in,
       Float *data_out, const TensorIdx stride_in_outld,
       const TensorIdx stride_out_inld) const;
+};
 
-  MicroKernel kernel_;
-  const TensorUInt kn_width_;
+
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+class MacroTrans
+    : public MacroTransData<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD> {
+public:
+  MacroTrans();
 };
 
 
