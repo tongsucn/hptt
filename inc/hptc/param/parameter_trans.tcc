@@ -123,13 +123,14 @@ ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
         this->begin_order_idx);
 
     // stride of output tensor's 2nd-order in input tensor
-    for (auto order_idx = this->begin_order_idx;
-        order_idx != perm[this->begin_order_idx + 1] + this->begin_order_idx;
+    const auto in_outld_end
+        = this->perm[this->begin_order_idx + 1] + this->begin_order_idx;
+    for (auto order_idx = this->begin_order_idx; order_idx != in_outld_end;
         ++order_idx)
       this->stride_in_outld *= this->input_tensor.get_outer_size(order_idx);
 
     // stride of input tensor's 2nd-order in output tensor
-    for (auto order_idx = this->begin_order_idx; 1 != perm[order_idx];
+    for (auto order_idx = this->begin_order_idx; 1 != this->perm[order_idx];
         ++order_idx)
       this->stride_out_inld *= this->output_tensor.get_outer_size(order_idx);
 
@@ -140,11 +141,11 @@ ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
   else {
     // Non-common leading case
     for (auto order_idx = this->begin_order_idx;
-        order_idx != perm[this->begin_order_idx] + this->begin_order_idx;
+        order_idx != this->perm[this->begin_order_idx] + this->begin_order_idx;
         ++order_idx)
       this->stride_in_outld *= input_tensor.get_outer_size(order_idx);
     for (auto order_idx = this->begin_order_idx;
-        0 != perm[order_idx]; ++order_idx)
+        0 != this->perm[order_idx]; ++order_idx)
       this->stride_out_inld *= output_tensor.get_outer_size(order_idx);
   }
 }
