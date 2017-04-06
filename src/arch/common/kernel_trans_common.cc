@@ -8,20 +8,15 @@
 namespace hptc {
 
 /*
- * Implementation of class KernelTransData
+ * Implementation of class KernelTrans
  */
 template <typename FloatType,
           KernelTypeTrans TYPE>
-void KernelTransData<FloatType, TYPE>::set_coef(
-    const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta) {
-  this->alpha_ = alpha, this->beta_ = beta;
+KernelTrans<FloatType, TYPE>::KernelTrans()
+    : KernelTransData<FloatType, TYPE>() {
 }
 
 
-/*
- * Implementation of class KernelTrans
- */
 template <typename FloatType,
           KernelTypeTrans TYPE>
 void KernelTrans<FloatType, TYPE>::exec(const FloatType * RESTRICT data_in,
@@ -79,25 +74,6 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
     }
   }
 }
-
-
-/*
- * Explicit template instantiation definition for class KernelTransData
- */
-template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
 
 
 /*

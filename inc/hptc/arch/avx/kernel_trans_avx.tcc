@@ -3,20 +3,52 @@
 #define HPTC_ARCH_AVX_KERNEL_TRANS_AVX_TCC_
 
 /*
+ * Implementation of class KernelTransData
+ */
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+KernelTransData<FloatType, TYPE>::KernelTransData()
+    : reg_alpha_(), reg_beta_(), alpha_(), beta_() {
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTransData<FloatType, TYPE>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->alpha_ = alpha, this->beta_ = beta;
+  this->reg_alpha_ = IntrinImpl<FloatType, TYPE>::set_reg(this->alpha_);
+  this->reg_beta_ = IntrinImpl<FloatType, TYPE>::set_reg(this->beta_);
+}
+
+
+/*
  * Specializations of class KernelTrans
  */
+template <>
+KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
 template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
     const float * RESTRICT data_in, float * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
 template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
     const double * RESTRICT data_in, double * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
 template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
     const FloatComplex * RESTRICT data_in, FloatComplex * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
 template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
     const DoubleComplex * RESTRICT data_in, DoubleComplex * RESTRICT data_out,
@@ -24,17 +56,28 @@ void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <>
+KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
+template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
     const float * RESTRICT data_in, float * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
 template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
     const double * RESTRICT data_in, double * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
 template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
     const FloatComplex * RESTRICT data_in, FloatComplex * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+
+template <>
+KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
 template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::exec(
     const DoubleComplex * RESTRICT data_in, DoubleComplex * RESTRICT data_out,
@@ -65,31 +108,6 @@ private:
       stride_out_outld_;
   TensorUInt size_kn_inld_, size_kn_outld_;
 };
-
-
-/*
- * Explicit template instantiation declaration for class KernelTransData
- */
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_FULL>;
-
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_HALF>;
-
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_LINE>;
 
 
 /*

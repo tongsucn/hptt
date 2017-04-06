@@ -11,138 +11,13 @@
 namespace hptc {
 
 /*
- * Intrinsics wrappers
- */
-template <typename FloatType,
-          KernelTypeTrans TYPE,
-          typename Selected = void>
-struct IntrinImpl {
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct IntrinImpl<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::fl_sc>> {
-  using Deduced = DeducedFloatType<FloatType>;
-  using Reg = RegType<FloatType, TYPE>;
-
-  static HPTC_INL Reg set_reg(const Deduced coef) {
-    return _mm256_set1_ps(coef);
-  }
-  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
-    return _mm256_loadu_ps(reinterpret_cast<const Deduced *>(target));
-  }
-  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
-    _mm256_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
-  }
-  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
-    return _mm256_add_ps(reg_a, reg_b);
-  }
-  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
-    return _mm256_mul_ps(reg_a, reg_b);
-  }
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct IntrinImpl<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::fl_dz>> {
-  using Deduced = DeducedFloatType<FloatType>;
-  using Reg = RegType<FloatType, TYPE>;
-
-  static HPTC_INL Reg set_reg(const Deduced coef) {
-    return _mm256_set1_pd(coef);
-  }
-  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
-    return _mm256_loadu_pd(reinterpret_cast<const Deduced *>(target));
-  }
-  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
-    _mm256_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
-  }
-  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
-    return _mm256_add_pd(reg_a, reg_b);
-  }
-  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
-    return _mm256_mul_pd(reg_a, reg_b);
-  }
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct IntrinImpl<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::h_sc>> {
-  using Deduced = DeducedFloatType<FloatType>;
-  using Reg = RegType<FloatType, TYPE>;
-
-  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
-    return _mm_set1_ps(coef);
-  }
-  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
-    return _mm_loadu_ps(reinterpret_cast<const Deduced *>(target));
-  }
-  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
-    _mm_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
-  }
-  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
-    return _mm_add_ps(reg_a, reg_b);
-  }
-  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
-    return _mm_mul_ps(reg_a, reg_b);
-  }
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_d>> {
-  using Deduced = DeducedFloatType<FloatType>;
-  using Reg = RegType<FloatType, TYPE>;
-
-  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
-    return _mm_set1_pd(coef);
-  }
-  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
-    return _mm_loadu_pd(reinterpret_cast<const Deduced *>(target));
-  }
-  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
-    _mm_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
-  }
-  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
-    return _mm_add_pd(reg_a, reg_b);
-  }
-  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
-    return _mm_mul_pd(reg_a, reg_b);
-  }
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_z>> {
-  using Deduced = DeducedFloatType<FloatType>;
-  using Reg = RegType<FloatType, TYPE>;
-
-  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
-    return coef;
-  }
-};
-
-
-/*
- * Implementation of class KernelTransData
- */
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-void KernelTransData<FloatType, TYPE>::set_coef(
-    const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta) {
-  this->alpha_ = alpha, this->beta_ = beta;
-  this->reg_alpha_ = IntrinImpl<FloatType, TYPE>::set_reg(this->alpha_);
-  this->reg_beta_ = IntrinImpl<FloatType, TYPE>::set_reg(this->beta_);
-}
-
-
-/*
  * Implementation of class KernelTrans
  */
+template <>
+KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::KernelTrans()
+    : KernelTransData<float, KernelTypeTrans::KERNEL_FULL>() {
+}
+
 template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
     const float * RESTRICT data_in, float * RESTRICT data_out,
@@ -243,6 +118,11 @@ void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <>
+KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::KernelTrans()
+    : KernelTransData<double, KernelTypeTrans::KERNEL_FULL>() {
+}
+
+template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
     const double * RESTRICT data_in, double * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
@@ -298,6 +178,11 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
   Intrin::store(data_out + 3 * stride_out_inld, reg_input[3]);
 }
 
+
+template <>
+KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans()
+    : KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL>() {
+}
 
 template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
@@ -357,6 +242,11 @@ void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <>
+KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans()
+    : KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL>() {
+}
+
+template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
     const DoubleComplex * RESTRICT data_in, DoubleComplex * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
@@ -396,6 +286,11 @@ void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
   Intrin::store(data_out + stride_out_inld, reg_input[1]);
 }
 
+
+template <>
+KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::KernelTrans()
+    : KernelTransData<float, KernelTypeTrans::KERNEL_HALF>() {
+}
 
 template <>
 void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
@@ -455,6 +350,11 @@ void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
 
 
 template <>
+KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::KernelTrans()
+    : KernelTransData<double, KernelTypeTrans::KERNEL_HALF>() {
+}
+
+template <>
 void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
     const double * RESTRICT data_in, double * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
@@ -494,6 +394,11 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
 
 
 template <>
+KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans()
+    : KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF>() {
+}
+
+template <>
 void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
     const FloatComplex * RESTRICT data_in, FloatComplex * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
@@ -531,6 +436,11 @@ void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
   Intrin::store(data_out + stride_out_inld, reg[1]);
 }
 
+
+template <>
+KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans()
+    : KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF>() {
+}
 
 template <>
 void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::exec(
@@ -599,25 +509,6 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
     }
   }
 }
-
-
-/*
- * Explicit template instantiation definition for class KernelTransData
- */
-template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
-
-template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
 
 
 /*

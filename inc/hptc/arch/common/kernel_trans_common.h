@@ -22,7 +22,7 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 class KernelTransData {
 public:
-  using Float = FloatType;
+  KernelTransData();
 
   static constexpr TensorUInt KN_WIDTH = TYPE == KernelTypeTrans::KERNEL_FULL
       ? SIZE_REG / sizeof(FloatType) : TYPE == KernelTypeTrans::KERNEL_HALF
@@ -44,6 +44,8 @@ template <typename FloatType,
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;
+
+  KernelTrans();
 
   void exec(const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
@@ -77,28 +79,21 @@ private:
 
 
 /*
- * Explicit template instantiation declaration for class KernelTransData
+ * Implementation of class KernelTransData
  */
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_FULL>;
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+KernelTransData<FloatType, TYPE>::KernelTransData() : alpha_(), beta_() {
+}
 
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_HALF>;
 
-extern template class KernelTransData<float, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<double, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<FloatComplex,
-    KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTransData<DoubleComplex,
-    KernelTypeTrans::KERNEL_LINE>;
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTransData<FloatType, TYPE>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->alpha_ = alpha, this->beta_ = beta;
+}
 
 
 /*

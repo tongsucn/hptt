@@ -94,9 +94,12 @@ private:
 
 
 /*
- * Import implementation and explicit instantiation declaration
+ * Explicit instantiation declaration for struct KernelPackTrans
  */
-#include "kernel_trans.tcc"
+extern template struct KernelPackTrans<float>;
+extern template struct KernelPackTrans<double>;
+extern template struct KernelPackTrans<FloatComplex>;
+extern template struct KernelPackTrans<DoubleComplex>;
 
 }
 
