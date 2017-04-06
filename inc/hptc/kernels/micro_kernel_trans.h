@@ -10,6 +10,10 @@
 // AVX
 #include <hptc/arch/avx/kernel_trans_avx.h>
 
+#elif defined HPTC_ARCH_IBM
+// PowerPC
+#include <hptc/arch/ibm/kernel_trans_ibm.h>
+
 #else
 // Common
 #include <hptc/arch/common/kernel_trans_common.h>

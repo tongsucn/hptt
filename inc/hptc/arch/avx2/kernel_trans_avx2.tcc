@@ -3,6 +3,122 @@
 #define HPTC_ARCH_AVX2_KERNEL_TRANS_AVX2_TCC_
 
 /*
+ * Intrinsics wrappers
+ */
+template <typename FloatType,
+          KernelTypeTrans TYPE,
+          typename Selected = void>
+struct IntrinImpl {
+};
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+struct IntrinImpl<FloatType, TYPE,
+    Enable<TypeSelector<FloatType, TYPE>::fl_sc>> {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Reg = RegType<FloatType, TYPE>;
+
+  static HPTC_INL Reg set_reg(const Deduced coef) {
+    return _mm256_set1_ps(coef);
+  }
+  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
+    return _mm256_loadu_ps(reinterpret_cast<const Deduced *>(target));
+  }
+  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+    _mm256_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
+    return _mm256_add_ps(reg_a, reg_b);
+  }
+  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
+    return _mm256_mul_ps(reg_a, reg_b);
+  }
+};
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+struct IntrinImpl<FloatType, TYPE,
+    Enable<TypeSelector<FloatType, TYPE>::fl_dz>> {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Reg = RegType<FloatType, TYPE>;
+
+  static HPTC_INL Reg set_reg(const Deduced coef) {
+    return _mm256_set1_pd(coef);
+  }
+  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
+    return _mm256_loadu_pd(reinterpret_cast<const Deduced *>(target));
+  }
+  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+    _mm256_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
+    return _mm256_add_pd(reg_a, reg_b);
+  }
+  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
+    return _mm256_mul_pd(reg_a, reg_b);
+  }
+};
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+struct IntrinImpl<FloatType, TYPE,
+    Enable<TypeSelector<FloatType, TYPE>::h_sc>> {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Reg = RegType<FloatType, TYPE>;
+
+  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
+    return _mm_set1_ps(coef);
+  }
+  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
+    return _mm_loadu_ps(reinterpret_cast<const Deduced *>(target));
+  }
+  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+    _mm_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
+    return _mm_add_ps(reg_a, reg_b);
+  }
+  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
+    return _mm_mul_ps(reg_a, reg_b);
+  }
+};
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_d>> {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Reg = RegType<FloatType, TYPE>;
+
+  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
+    return _mm_set1_pd(coef);
+  }
+  static HPTC_INL Reg load(const FloatType * RESTRICT target) {
+    return _mm_loadu_pd(reinterpret_cast<const Deduced *>(target));
+  }
+  static HPTC_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+    _mm_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTC_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
+    return _mm_add_pd(reg_a, reg_b);
+  }
+  static HPTC_INL Reg mul(const Reg &reg_a, const Reg &reg_b) {
+    return _mm_mul_pd(reg_a, reg_b);
+  }
+};
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_z>> {
+  using Deduced = DeducedFloatType<FloatType>;
+  using Reg = RegType<FloatType, TYPE>;
+
+  static HPTC_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
+    return coef;
+  }
+};
+
+
+/*
  * Implementation of class KernelTransData
  */
 template <typename FloatType,

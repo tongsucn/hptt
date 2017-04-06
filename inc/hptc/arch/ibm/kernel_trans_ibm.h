@@ -1,11 +1,11 @@
 #pragma once
-#ifndef HPTC_ARCH_AVX_KERNEL_TRANS_AVX_H_
-#define HPTC_ARCH_AVX_KERNEL_TRANS_AVX_H_
+#ifndef HPTC_ARCH_IBM_KERNEL_TRANS_IBM_H_
+#define HPTC_ARCH_IBM_KERNEL_TRANS_IBM_H_
 
 #include <type_traits>
 
-#include <immintrin.h>
-#include <xmmintrin.h>
+#include <builtins.h>
+#include <altivec.h>
 
 #include <hptc/types.h>
 #include <hptc/arch/compat.h>
@@ -27,25 +27,18 @@ constexpr TensorUInt SIZE_REG = 32;
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct TypeSelector {
-  static constexpr bool fl_sc = (std::is_same<float, FloatType>::value or
-          std::is_same<FloatComplex, FloatType>::value) and
-      (TYPE == KernelTypeTrans::KERNEL_FULL or
-          TYPE == KernelTypeTrans::KERNEL_LINE);
+  static constexpr bool fhl_sc = std::is_same<float, FloatType>::value or
+          std::is_same<FloatComplex, FloatType>::value;
 
-  static constexpr bool fl_dz = (std::is_same<double, FloatType>::value or
+  static constexpr bool f_d = TYPE == KernelTypeTrans::KERNEL_FULL and
+      std::is_same<double, FloatType>::value;
+
+  static constexpr bool fhl_dz = ((std::is_same<double, FloatType>::value or
           std::is_same<DoubleComplex, FloatType>::value) and
-      (TYPE == KernelTypeTrans::KERNEL_FULL or
-          TYPE == KernelTypeTrans::KERNEL_LINE);
-
-  static constexpr bool h_sc = (std::is_same<float, FloatType>::value or
-          std::is_same<FloatComplex, FloatType>::value) and
-      TYPE == KernelTypeTrans::KERNEL_HALF;
-
-  static constexpr bool h_d = std::is_same<double, FloatType>::value and
-      TYPE == KernelTypeTrans::KERNEL_HALF;
-
-  static constexpr bool h_z = std::is_same<DoubleComplex, FloatType>::value
-      and TYPE == KernelTypeTrans::KERNEL_HALF;
+      (TYPE == KernelTypeTrans::KERNEL_HALF or
+          TYPE == KernelTypeTrans::KERNEL_LINE)) or
+      (std::is_same<double, FloatType>::value and
+          TYPE == KernelTypeTrans::KERNEL_FULL);
 };
 
 
@@ -61,35 +54,21 @@ struct RegDeducer {
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegDeducer<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::fl_sc>> {
-  using type = __m256;
+    Enable<TypeSelector<FloatType, TYPE>::fhl_sc>> {
+  using type = float;
 };
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegDeducer<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::fl_dz>> {
-  using type = __m256d;
+    Enable<TypeSelector<FloatType, TYPE>::f_d>> {
+  using type = vector4double;
 };
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct RegDeducer<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::h_sc>> {
-  using type = __m128;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegDeducer<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::h_d>> {
-  using type = __m128d;
-};
-
-template <typename FloatType,
-          KernelTypeTrans TYPE>
-struct RegDeducer<FloatType, TYPE,
-    Enable<TypeSelector<FloatType, TYPE>::h_z>> {
+    Enable<TypeSelector<FloatType, TYPE>::fhl_dz>> {
   using type = double;
 };
 
@@ -143,8 +122,8 @@ public:
  * Import specializations for class KernelTrans and explicit template
  * instantiation for classes KernelTrans and KernelTransData
  */
-#include "kernel_trans_avx.tcc"
+#include "kernel_trans_ibm.tcc"
 
 }
 
-#endif // HPTC_ARCH_AVX_KERNEL_TRANS_AVX_H_
+#endif // HPTC_ARCH_IBM_KERNEL_TRANS_IBM_H_
