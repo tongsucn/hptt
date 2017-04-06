@@ -1,11 +1,11 @@
-#include <hptc/arch/common/kernel_trans_common.h>
+#include <hptt/arch/common/kernel_trans_common.h>
 
-#include <hptc/types.h>
-#include <hptc/arch/compat.h>
-#include <hptc/util/util_trans.h>
+#include <hptt/types.h>
+#include <hptt/arch/compat.h>
+#include <hptt/util/util_trans.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Implementation of class KernelTrans

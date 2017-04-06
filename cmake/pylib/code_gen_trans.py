@@ -4,7 +4,7 @@
 import os, shutil, sys, argparse
 
 from gen_util import (tensor_gen, core_trans_gen, operation_trans_gen,
-    param_trans_gen, hptc_trans_gen)
+    param_trans_gen, hptt_trans_gen)
 from gen_util.gen_types import (FloatType, FLOAT_MAP)
 
 
@@ -34,7 +34,7 @@ class GenTarget(object):
         core_trans_gen.IncTarget,
         operation_trans_gen.IncTarget,
         param_trans_gen.IncTarget,
-        hptc_trans_gen.IncTarget ]
+        hptt_trans_gen.IncTarget ]
 
     self.src_targets = [ tensor_gen.SrcTarget,
         core_trans_gen.SrcTarget,

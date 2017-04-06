@@ -1,13 +1,13 @@
-#include <hptc/util/util_trans.h>
+#include <hptt/util/util_trans.h>
 
 #include <vector>
 #include <numeric>
 #include <functional>
 
-#include <hptc/types.h>
+#include <hptt/types.h>
 
 
-namespace hptc {
+namespace hptt {
 
 template <typename FloatType>
 double calc_tp_trans(const std::vector<TensorIdx> &size, double time_ms) {

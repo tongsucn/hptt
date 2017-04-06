@@ -1,14 +1,14 @@
-#include <hptc/arch/ibm/kernel_trans_ibm.h>
+#include <hptt/arch/ibm/kernel_trans_ibm.h>
 
 #include <immintrin.h>
 #include <xmmintrin.h>
 
-#include <hptc/types.h>
-#include <hptc/arch/compat.h>
-#include <hptc/util/util_trans.h>
+#include <hptt/types.h>
+#include <hptt/arch/compat.h>
+#include <hptt/util/util_trans.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Implementation of class KernelTrans and its (partial) specializations

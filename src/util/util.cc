@@ -1,4 +1,4 @@
-#include <hptc/util/util.h>
+#include <hptt/util/util.h>
 
 #include <cfloat>
 
@@ -7,10 +7,10 @@
 #include <utility>
 #include <unordered_map>
 
-#include <hptc/types.h>
+#include <hptt/types.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Implementation for class TimerWrapper

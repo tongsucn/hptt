@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
 // Tests on utilities
-#include <hptc/unit-test/test_infra.h>
+#include <hptt/unit-test/test_infra.h>
 
 // Tests on tensor wrapper
-#include <hptc/unit-test/test_tensor_util.h>
-#include <hptc/unit-test/test_tensor_wrapper.h>
+#include <hptt/unit-test/test_tensor_util.h>
+#include <hptt/unit-test/test_tensor_wrapper.h>
 
 
 int main(int argc, char *argv[]) {

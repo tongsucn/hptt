@@ -1,14 +1,14 @@
-#include <hptc/arch/avx/kernel_trans_avx.h>
+#include <hptt/arch/avx/kernel_trans_avx.h>
 
 #include <immintrin.h>
 #include <xmmintrin.h>
 
-#include <hptc/types.h>
-#include <hptc/arch/compat.h>
-#include <hptc/util/util_trans.h>
+#include <hptt/types.h>
+#include <hptt/arch/compat.h>
+#include <hptt/util/util_trans.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Implementation of class KernelTrans
@@ -477,7 +477,7 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
     const TensorIdx size_trans, const TensorIdx size_pad) const {
   using Intrin = IntrinImpl<FloatType, KernelTypeTrans::KERNEL_LINE>;
-  constexpr TensorUInt REG_CAP = hptc::SIZE_REG / sizeof(FloatType);
+  constexpr TensorUInt REG_CAP = hptt::SIZE_REG / sizeof(FloatType);
 
   for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
     for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {

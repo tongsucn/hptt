@@ -1,8 +1,8 @@
-#include <hptc/benchmark/benchmark_trans.h>
-#include <hptc/perf-test/test_perf_util.h>
-#include <hptc/test_util.h>
+#include <hptt/benchmark/benchmark_trans.h>
+#include <hptt/perf-test/test_perf_util.h>
+#include <hptt/test_util.h>
 
-using namespace hptc;
+using namespace hptt;
 
 
 int main() {

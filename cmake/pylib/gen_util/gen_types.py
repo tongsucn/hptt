@@ -25,6 +25,6 @@ FLOAT_MAP = { FloatType.FLOAT : TypeDescriptor('s', 'float'),
 
 arch_list = [ 'avx2', 'avx' ]
 
-ARCH_MAP = {'common' : TypeDescriptor('HPTC_ARCH_COMMON', 'libhptc_common.so'),
-    'avx' : TypeDescriptor('HPTC_ARCH_AVX', 'libhptc_avx.so'),
-    'avx2' : TypeDescriptor('HPTC_ARCH_AVX2', 'libhptc_avx2.so') }
+ARCH_MAP = {'common' : TypeDescriptor('HPTT_ARCH_COMMON', 'libhptt_common.so'),
+    'avx' : TypeDescriptor('HPTT_ARCH_AVX', 'libhptt_avx.so'),
+    'avx2' : TypeDescriptor('HPTT_ARCH_AVX2', 'libhptt_avx2.so') }

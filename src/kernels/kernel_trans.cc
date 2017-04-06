@@ -1,11 +1,11 @@
-#include <hptc/kernels/kernel_trans.h>
+#include <hptt/kernels/kernel_trans.h>
 
-#include <hptc/types.h>
-#include <hptc/util/util_trans.h>
-#include <hptc/kernels/macro_kernel_trans.h>
+#include <hptt/types.h>
+#include <hptt/util/util_trans.h>
+#include <hptt/kernels/macro_kernel_trans.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Implementation for struct KernelPackTrans

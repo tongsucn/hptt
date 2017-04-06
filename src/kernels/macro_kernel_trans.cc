@@ -1,10 +1,10 @@
-#include <hptc/kernels/macro_kernel_trans.h>
+#include <hptt/kernels/macro_kernel_trans.h>
 
-#include <hptc/types.h>
-#include <hptc/util/util_trans.h>
+#include <hptt/types.h>
+#include <hptt/util/util_trans.h>
 
 
-namespace hptc {
+namespace hptt {
 
 /*
  * Specialization and implementation for class MacroTrans

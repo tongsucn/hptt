@@ -1,4 +1,4 @@
-#include <hptc/arch/arch.h>
+#include <hptt/arch/arch.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -9,12 +9,12 @@
 #include <string>
 #include <sstream>
 
-#include <hptc/arch/compat.h>
+#include <hptt/arch/compat.h>
 
 
-namespace hptc {
+namespace hptt {
 
-void hptc_cpuid(const uint32_t input, uint32_t output[4]) {
+void hptt_cpuid(const uint32_t input, uint32_t output[4]) {
   __cpuid_count(input, 0, output[0], output[1], output[2], output[3]);
 }
 
@@ -32,10 +32,10 @@ void *LibLoader::dlsym(const char *symbol) {
 
 LibLoader::LibLoader()
     : handler_(nullptr),
-      intrin_sets_{ { "avx2", Arch_(false, "libhptc_avx2.so") },
-          { "avx", Arch_(false, "libhptc_avx.so") },
-          { "fma3", Arch_(false, "libhptc_fma3.so") },
-          { "common", Arch_(true, "libhptc_common.so") } } {
+      intrin_sets_{ { "avx2", Arch_(false, "libhptt_avx2.so") },
+          { "avx", Arch_(false, "libhptt_avx.so") },
+          { "fma3", Arch_(false, "libhptt_fma3.so") },
+          { "common", Arch_(true, "libhptt_common.so") } } {
   // Detect CPU features
   this->init_cpu_();
 
@@ -49,13 +49,13 @@ void LibLoader::init_cpu_() {
   uint32_t cpu_info[4];
 
   // Get support values
-  hptc::hptc_cpuid(0, cpu_info);
+  hptt::hptt_cpuid(0, cpu_info);
   const auto support_val = cpu_info[0];
-  hptc::hptc_cpuid(0x80000000, cpu_info);
+  hptt::hptt_cpuid(0x80000000, cpu_info);
 
   // Check supported features
   if (support_val >= 1) {
-    hptc::hptc_cpuid(1, cpu_info);
+    hptt::hptt_cpuid(1, cpu_info);
 
     // Check AVX
     this->intrin_sets_["avx"].found = 0 != (cpu_info[2] & (1 << 28));
@@ -65,7 +65,7 @@ void LibLoader::init_cpu_() {
   }
 
   if (support_val >= 7) {
-    hptc::hptc_cpuid(7, cpu_info);
+    hptt::hptt_cpuid(7, cpu_info);
 
     // Check AVX2
     this->intrin_sets_["avx2"].found = 0 != (cpu_info[1] & (1 << 5));

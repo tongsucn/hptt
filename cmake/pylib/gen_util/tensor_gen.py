@@ -14,8 +14,8 @@ class IncTarget(object):
 
     self.filename = ['%s_%s' % (TARGET_PREFIX, suffix)]
     temp_content = '''#pragma once
-#ifndef HPTC_GEN_%s_GEN_TCC_
-#define HPTC_GEN_%s_GEN_TCC_
+#ifndef HPTT_GEN_%s_GEN_TCC_
+#define HPTT_GEN_%s_GEN_TCC_
 ''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper())
     for dtype in dtypes:
       for order in orders:
@@ -39,12 +39,12 @@ class SrcTarget(object):
     for dtype in dtypes:
       self.filename.append('%s_%s_%s' % (TARGET_PREFIX, FLOAT_MAP[dtype].abbrev,
           suffix))
-      self.content.append('''#include <hptc/tensor.h>
+      self.content.append('''#include <hptt/tensor.h>
 
-#include <hptc/types.h>
-#include <hptc/arch/compat.h>
+#include <hptt/types.h>
+#include <hptt/arch/compat.h>
 
-namespace hptc {
+namespace hptt {
 ''')
       for order in orders:
         self.content[-1] += '''

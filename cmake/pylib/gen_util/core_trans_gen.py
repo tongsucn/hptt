@@ -20,8 +20,8 @@ class IncTarget(object):
     for target in TARGET_PREFIXS:
       self.filename.append('%s_%s' % (target[0], suffix))
       self.content.append('''#pragma once
-#ifndef HPTC_GEN_%s_GEN_TCC_
-#define HPTC_GEN_%s_GEN_TCC_
+#ifndef HPTT_GEN_%s_GEN_TCC_
+#define HPTT_GEN_%s_GEN_TCC_
 ''' % (target[0].upper(), target[0].upper()))
 
       for dtype in dtypes:
@@ -47,14 +47,14 @@ class SrcTarget(object):
       for dtype in dtypes:
         self.filename.append('%s_%s_%s' % (target[0], FLOAT_MAP[dtype].abbrev,
             suffix))
-        self.content.append('''#include <hptc/%s.h>
+        self.content.append('''#include <hptt/%s.h>
 
-#include <hptc/types.h>
-#include <hptc/tensor.h>
-#include <hptc/arch/compat.h>
-#include <hptc/param/parameter_trans.h>
+#include <hptt/types.h>
+#include <hptt/tensor.h>
+#include <hptt/arch/compat.h>
+#include <hptt/param/parameter_trans.h>
 
-namespace hptc {
+namespace hptt {
 ''' % target[2])
 
         for order in orders:
