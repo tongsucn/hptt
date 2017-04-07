@@ -57,7 +57,7 @@ private:
 
 
 template <typename FloatType,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 class MacroTransLinear {
 public:
   static constexpr TensorUInt LOOP_MAX
@@ -79,7 +79,7 @@ private:
 
 
 template <typename FloatType,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 class MacroTransScalar {
 public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
@@ -99,7 +99,7 @@ private:
 template <typename FloatType,
           TensorUInt SIZE_IN_INLD,
           TensorUInt SIZE_IN_OUTLD,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 using MacroTransFull = MacroTrans<KernelTransFull<FloatType, UPDATE_OUT>,
     SIZE_IN_INLD, SIZE_IN_OUTLD>;
 
@@ -107,7 +107,7 @@ using MacroTransFull = MacroTrans<KernelTransFull<FloatType, UPDATE_OUT>,
 template <typename FloatType,
           TensorUInt SIZE_IN_INLD,
           TensorUInt SIZE_IN_OUTLD,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType, UPDATE_OUT>,
     SIZE_IN_INLD, SIZE_IN_OUTLD>;
 

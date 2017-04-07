@@ -200,50 +200,6 @@ template <typename FloatType>
 HPTT_INL void CGraphTransPack<FloatType>::exec_impl_() {%s
 }
 
-
-/*
- * Explicit template instantiation declaration for class CGraphTransPackData
- */
-extern template class CGraphTransPackData<float>;
-extern template class CGraphTransPackData<double>;
-extern template class CGraphTransPackData<FloatComplex>;
-extern template class CGraphTransPackData<DoubleComplex>;
-
-/*
- * Explicit template instantiation declaration for class CGraphTransPack
- */
-extern template class CGraphTransPack<float>;
-extern template class CGraphTransPack<double>;
-extern template class CGraphTransPack<FloatComplex>;
-extern template class CGraphTransPack<DoubleComplex>;
-
-/*
- * Explicit template instantiation declaration for function
- * create_trans_plan_impl
- */
-extern template CGraphTransPackBase<float> *create_trans_plan_impl<float>(
-    const float *, float *, const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<float>,
-    const DeducedFloatType<float>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-extern template CGraphTransPackBase<double> *create_trans_plan_impl<double>(
-    const double *, double *, const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<double>,
-    const DeducedFloatType<double>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-extern template CGraphTransPackBase<FloatComplex> *
-create_trans_plan_impl<FloatComplex>(const FloatComplex *, FloatComplex *,
-    const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
-    const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-extern template CGraphTransPackBase<DoubleComplex> *
-create_trans_plan_impl<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
-    const TensorUInt, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,
-    const DeducedFloatType<DoubleComplex>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(),
     data_constructor_content, data_destructor_content, orders[0], orders[-1],
     data_member_content, constructor_content, print_content, set_content,

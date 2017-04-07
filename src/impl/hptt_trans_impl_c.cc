@@ -22,7 +22,6 @@ hptt::CGraphTransPackBase<hptt::FloatComplex> *create_trans_plan_impl_c(
 
 namespace hptt {
 
-template class CGraphTransPackData<FloatComplex>;
 template class CGraphTransPack<FloatComplex>;
 template CGraphTransPackBase<FloatComplex> *
 create_trans_plan_impl<FloatComplex>(const FloatComplex *, FloatComplex *,

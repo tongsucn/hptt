@@ -22,7 +22,6 @@ hptt::CGraphTransPackBase<hptt::DoubleComplex> *create_trans_plan_impl_z(
 
 namespace hptt {
 
-template class CGraphTransPackData<DoubleComplex>;
 template class CGraphTransPack<DoubleComplex>;
 template CGraphTransPackBase<DoubleComplex> *
 create_trans_plan_impl<DoubleComplex>(const DoubleComplex *, DoubleComplex *,

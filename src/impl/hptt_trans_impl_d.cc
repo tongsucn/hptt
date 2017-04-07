@@ -22,7 +22,6 @@ hptt::CGraphTransPackBase<double> *create_trans_plan_impl_d(
 
 namespace hptt {
 
-template class CGraphTransPackData<double>;
 template class CGraphTransPack<double>;
 template CGraphTransPackBase<double> *create_trans_plan_impl<double>(
     const double *, double *, const TensorUInt, const std::vector<TensorUInt> &,

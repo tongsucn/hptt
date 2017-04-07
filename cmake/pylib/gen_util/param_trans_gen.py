@@ -20,8 +20,9 @@ class IncTarget(object):
     for dtype in dtypes:
       for order in orders:
         temp_content += '''
-extern template struct ParamTrans<TensorWrapper<%s, %d>>;''' % (
-    FLOAT_MAP[dtype].full, order)
+extern template struct ParamTrans<TensorWrapper<%s, %d>, true>;
+extern template struct ParamTrans<TensorWrapper<%s, %d>, false>;''' % (
+    FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order)
 
     temp_content += '\n\n#endif'
     self.content = [temp_content]
@@ -48,8 +49,9 @@ namespace hptt {
 '''
       for order in orders:
         temp_content +='''
-template struct ParamTrans<TensorWrapper<%s, %d>>;''' % (FLOAT_MAP[dtype].full,
-    order)
+template struct ParamTrans<TensorWrapper<%s, %d>, true>;
+template struct ParamTrans<TensorWrapper<%s, %d>, false>;''' % (
+    FLOAT_MAP[dtype].full, order, FLOAT_MAP[dtype].full, order)
 
       temp_content += '\n\n}'
       self.content.append(temp_content)

@@ -100,8 +100,9 @@ TensorUInt TensorMergedWrapper<FloatType, ORDER>::merge_idx_(
 /*
  * Implementation for struct ParamTrans
  */
-template <typename TensorType>
-ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
+template <typename TensorType,
+          bool UPDATE_OUT>
+ParamTrans<TensorType, UPDATE_OUT>::ParamTrans(const TensorType &input_tensor,
     TensorType &output_tensor, const std::array<TensorUInt, ORDER> &perm,
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta)
@@ -150,14 +151,16 @@ ParamTrans<TensorType>::ParamTrans(const TensorType &input_tensor,
 }
 
 
-template <typename TensorType>
-HPTT_INL bool ParamTrans<TensorType>::is_common_leading() const {
+template <typename TensorType,
+          bool UPDATE_OUT>
+HPTT_INL bool ParamTrans<TensorType, UPDATE_OUT>::is_common_leading() const {
   return 0 == this->perm[this->begin_order_idx];
 }
 
 
-template <typename TensorType>
-HPTT_INL void ParamTrans<TensorType>::set_coef(
+template <typename TensorType,
+          bool UPDATE_OUT>
+HPTT_INL void ParamTrans<TensorType, UPDATE_OUT>::set_coef(
     const DeducedFloatType<typename TensorType::Float> alpha,
     const DeducedFloatType<typename TensorType::Float> beta) {
   this->alpha = alpha, this->beta = beta;
@@ -165,16 +168,18 @@ HPTT_INL void ParamTrans<TensorType>::set_coef(
 }
 
 
-template <typename TensorType>
-HPTT_INL const KernelPackTrans<typename TensorType::Float> &
-ParamTrans<TensorType>::get_kernel() const {
+template <typename TensorType,
+          bool UPDATE_OUT>
+HPTT_INL const KernelPackTrans<typename TensorType::Float, UPDATE_OUT> &
+ParamTrans<TensorType, UPDATE_OUT>::get_kernel() const {
   return this->kn_;
 }
 
 
-template <typename TensorType>
-void ParamTrans<TensorType>::set_lin_wrapper_loop(const TensorUInt size_kn_inld,
-    const TensorUInt size_kn_outld) {
+template <typename TensorType,
+          bool UPDATE_OUT>
+void ParamTrans<TensorType, UPDATE_OUT>::set_lin_wrapper_loop(
+    const TensorUInt size_kn_inld, const TensorUInt size_kn_outld) {
   this->kn_.kn_lin_core.set_wrapper_loop(this->stride_in_inld,
       this->stride_in_outld, this->stride_out_inld, this->stride_out_outld,
       size_kn_inld, size_kn_outld);
@@ -187,15 +192,18 @@ void ParamTrans<TensorType>::set_lin_wrapper_loop(const TensorUInt size_kn_inld,
 }
 
 
-template <typename TensorType>
-void ParamTrans<TensorType>::reset_data(const Float *data_in, Float *data_out) {
+template <typename TensorType,
+          bool UPDATE_OUT>
+void ParamTrans<TensorType, UPDATE_OUT>::reset_data(const Float *data_in,
+    Float *data_out) {
   this->input_tensor.reset_data(data_in);
   this->output_tensor.reset_data(data_out);
 }
 
 
-template <typename TensorType>
-TensorUInt ParamTrans<TensorType>::merge_idx_(
+template <typename TensorType,
+          bool UPDATE_OUT>
+TensorUInt ParamTrans<TensorType, UPDATE_OUT>::merge_idx_(
     const std::array<TensorUInt, ORDER> &perm) {
   if (ORDER <= 1)
     return ORDER;

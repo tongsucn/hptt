@@ -95,6 +95,43 @@ CGraphTransPackBase<FloatType> *create_trans_plan_impl(const FloatType *in_data,
  */
 #include <hptt/gen/hptt_trans_impl_gen.tcc>
 
+
+/*
+ * Explicit template instantiation declaration for class CGraphTransPack
+ */
+extern template class CGraphTransPack<float>;
+extern template class CGraphTransPack<double>;
+extern template class CGraphTransPack<FloatComplex>;
+extern template class CGraphTransPack<DoubleComplex>;
+
+
+/*
+ * Explicit template instantiation declaration for function
+ * create_trans_plan_impl
+ */
+extern template CGraphTransPackBase<float> *create_trans_plan_impl<float>(
+    const float *, float *, const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<float>,
+    const DeducedFloatType<float>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPackBase<double> *create_trans_plan_impl<double>(
+    const double *, double *, const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<double>,
+    const DeducedFloatType<double>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPackBase<FloatComplex> *
+create_trans_plan_impl<FloatComplex>(const FloatComplex *, FloatComplex *,
+    const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
+    const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+extern template CGraphTransPackBase<DoubleComplex> *
+create_trans_plan_impl<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
+    const TensorUInt, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,
+    const DeducedFloatType<DoubleComplex>, const TensorUInt, const double,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+
 }
 
 

@@ -39,12 +39,13 @@ private:
 };
 
 
-template <typename TensorType>
+template <typename TensorType,
+          bool UPDATE_OUT = true>
 struct ParamTrans {
   // Type alias and constant values
   using Float = typename TensorType::Float;
   using Deduced = DeducedFloatType<Float>;
-  using KernelPack = KernelPackTrans<Float>;
+  using KernelPack = KernelPackTrans<Float, UPDATE_OUT>;
 
   static constexpr auto ORDER = TensorType::TENSOR_ORDER;
 
@@ -65,7 +66,7 @@ private:
 
   // They need to be initialized before merging
   std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;
-  KernelPackTrans<Float> kn_;
+  KernelPackTrans<Float, UPDATE_OUT> kn_;
 
 public:
   std::array<TensorUInt, ORDER> perm;
