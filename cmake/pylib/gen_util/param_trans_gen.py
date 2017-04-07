@@ -20,7 +20,7 @@ class IncTarget(object):
     for dtype in dtypes:
       for order in orders:
         temp_content += '''
-extern template class ParamTrans<
+extern template struct ParamTrans<
     TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>;''' % (FLOAT_MAP[dtype].full,
     order)
 
