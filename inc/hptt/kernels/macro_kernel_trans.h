@@ -67,10 +67,12 @@ public:
 };
 
 
-template <typename FloatType>
+template <typename FloatType,
+          bool UPDATE_OUT = true>
 class MacroTransLinear {
 public:
-  static constexpr TensorUInt LOOP_MAX = KernelTransLinear<FloatType>::LOOP_MAX;
+  static constexpr TensorUInt LOOP_MAX
+      = KernelTransLinear<FloatType, UPDATE_OUT>::LOOP_MAX;
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
@@ -83,11 +85,12 @@ public:
       const TensorIdx size_trans, const TensorIdx size_pad) const;
 
 private:
-  KernelTransLinear<FloatType> kernel_;
+  KernelTransLinear<FloatType, UPDATE_OUT> kernel_;
 };
 
 
-template <typename FloatType>
+template <typename FloatType,
+          bool UPDATE_OUT = true>
 class MacroTransScalar {
 public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
@@ -106,16 +109,18 @@ private:
  */
 template <typename FloatType,
           TensorUInt SIZE_IN_INLD,
-          TensorUInt SIZE_IN_OUTLD>
-using MacroTransFull = MacroTrans<KernelTransFull<FloatType>, SIZE_IN_INLD,
-    SIZE_IN_OUTLD>;
+          TensorUInt SIZE_IN_OUTLD,
+          bool UPDATE_OUT = true>
+using MacroTransFull = MacroTrans<KernelTransFull<FloatType, UPDATE_OUT>,
+    SIZE_IN_INLD, SIZE_IN_OUTLD>;
 
 
 template <typename FloatType,
           TensorUInt SIZE_IN_INLD,
-          TensorUInt SIZE_IN_OUTLD>
-using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType>, SIZE_IN_INLD,
-    SIZE_IN_OUTLD>;
+          TensorUInt SIZE_IN_OUTLD,
+          bool UPDATE_OUT = true>
+using MacroTransHalf = MacroTrans<KernelTransHalf<FloatType, UPDATE_OUT>,
+    SIZE_IN_INLD, SIZE_IN_OUTLD>;
 
 
 /*

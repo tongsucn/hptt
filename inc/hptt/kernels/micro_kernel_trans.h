@@ -28,14 +28,20 @@ namespace hptt {
 /*
  * Alias for micro kernels
  */
-template <typename FloatType>
-using KernelTransFull = KernelTrans<FloatType, KernelTypeTrans::KERNEL_FULL>;
+template <typename FloatType,
+          bool UPDATE_OUT>
+using KernelTransFull = KernelTrans<FloatType, KernelTypeTrans::KERNEL_FULL,
+    UPDATE_OUT>;
 
-template <typename FloatType>
-using KernelTransHalf = KernelTrans<FloatType, KernelTypeTrans::KERNEL_HALF>;
+template <typename FloatType,
+          bool UPDATE_OUT>
+using KernelTransHalf = KernelTrans<FloatType, KernelTypeTrans::KERNEL_HALF,
+    UPDATE_OUT>;
 
-template <typename FloatType>
-using KernelTransLinear = KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>;
+template <typename FloatType,
+          bool UPDATE_OUT>
+using KernelTransLinear = KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE,
+    UPDATE_OUT>;
 
 }
 

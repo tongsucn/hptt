@@ -25,7 +25,7 @@ void KernelTrans<FloatType, TYPE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
   // Get number of elements to be processed in on row
-  constexpr auto WIDTH = KernelTrans<FloatType, TYPE>::KN_WIDTH;
+  constexpr auto WIDTH = KernelTrans<FloatType, TYPE, UPDATE_OUT>::KN_WIDTH;
 
   if (UPDATE_OUT) {
     for (TensorUInt idx_in_outld = 0; idx_in_outld < WIDTH; ++idx_in_outld) {

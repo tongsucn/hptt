@@ -41,7 +41,7 @@ protected:
  */
 template <typename FloatType,
           KernelTypeTrans TYPE,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;

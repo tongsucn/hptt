@@ -486,16 +486,18 @@ void MacroTrans<MicroKernel, 1, 1>::exec(
 /*
  * Implementation for class MacroTransLinear
  */
-template <typename FloatType>
-void MacroTransLinear<FloatType>::set_coef(
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {
   this->kernel_.set_coef(alpha, beta);
 }
 
 
-template <typename FloatType>
-void MacroTransLinear<FloatType>::set_wrapper_loop(
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::set_wrapper_loop(
     const TensorIdx stride_in_inld,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
     const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
@@ -505,8 +507,9 @@ void MacroTransLinear<FloatType>::set_wrapper_loop(
 }
 
 
-template <typename FloatType>
-void MacroTransLinear<FloatType>::exec(const FloatType *data_in,
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
     FloatType *data_out, const TensorIdx size_trans,
     const TensorIdx size_pad) const {
   this->kernel_.exec(data_in, data_out, size_trans, size_pad);
@@ -516,16 +519,18 @@ void MacroTransLinear<FloatType>::exec(const FloatType *data_in,
 /*
  * Implementation for class MacroTransScalar
  */
-template <typename FloatType>
-void MacroTransScalar<FloatType>::set_coef(
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransScalar<FloatType, UPDATE_OUT>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {
   this->alpha_ = alpha, this->beta_ = beta;
 }
 
 
-template <typename FloatType>
-void MacroTransScalar<FloatType>::exec(const FloatType *data_in,
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransScalar<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
     FloatType *data_out, const TensorIdx, const TensorIdx) const {
   *data_out = this->alpha_ * *data_in + this->beta_ * *data_out;
 }
@@ -534,117 +539,232 @@ void MacroTransScalar<FloatType>::exec(const FloatType *data_in,
 /*
  * Explicit template instantiation for class MacroTrans
  */
-template class MacroTrans<KernelTransFull<float>, 4, 4>;
-template class MacroTrans<KernelTransFull<float>, 4, 3>;
-template class MacroTrans<KernelTransFull<float>, 4, 2>;
-template class MacroTrans<KernelTransFull<float>, 4, 1>;
-template class MacroTrans<KernelTransFull<float>, 3, 4>;
-template class MacroTrans<KernelTransFull<float>, 3, 3>;
-template class MacroTrans<KernelTransFull<float>, 3, 2>;
-template class MacroTrans<KernelTransFull<float>, 3, 1>;
-template class MacroTrans<KernelTransFull<float>, 2, 4>;
-template class MacroTrans<KernelTransFull<float>, 2, 3>;
-template class MacroTrans<KernelTransFull<float>, 2, 2>;
-template class MacroTrans<KernelTransFull<float>, 2, 1>;
-template class MacroTrans<KernelTransFull<float>, 1, 4>;
-template class MacroTrans<KernelTransFull<float>, 1, 3>;
-template class MacroTrans<KernelTransFull<float>, 1, 2>;
-template class MacroTrans<KernelTransFull<float>, 1, 1>;
+template class MacroTrans<KernelTransFull<float, true>, 4, 4>;
+template class MacroTrans<KernelTransFull<float, true>, 4, 3>;
+template class MacroTrans<KernelTransFull<float, true>, 4, 2>;
+template class MacroTrans<KernelTransFull<float, true>, 4, 1>;
+template class MacroTrans<KernelTransFull<float, true>, 3, 4>;
+template class MacroTrans<KernelTransFull<float, true>, 3, 3>;
+template class MacroTrans<KernelTransFull<float, true>, 3, 2>;
+template class MacroTrans<KernelTransFull<float, true>, 3, 1>;
+template class MacroTrans<KernelTransFull<float, true>, 2, 4>;
+template class MacroTrans<KernelTransFull<float, true>, 2, 3>;
+template class MacroTrans<KernelTransFull<float, true>, 2, 2>;
+template class MacroTrans<KernelTransFull<float, true>, 2, 1>;
+template class MacroTrans<KernelTransFull<float, true>, 1, 4>;
+template class MacroTrans<KernelTransFull<float, true>, 1, 3>;
+template class MacroTrans<KernelTransFull<float, true>, 1, 2>;
+template class MacroTrans<KernelTransFull<float, true>, 1, 1>;
 
-template class MacroTrans<KernelTransFull<double>, 4, 4>;
-template class MacroTrans<KernelTransFull<double>, 4, 3>;
-template class MacroTrans<KernelTransFull<double>, 4, 2>;
-template class MacroTrans<KernelTransFull<double>, 4, 1>;
-template class MacroTrans<KernelTransFull<double>, 3, 4>;
-template class MacroTrans<KernelTransFull<double>, 3, 3>;
-template class MacroTrans<KernelTransFull<double>, 3, 2>;
-template class MacroTrans<KernelTransFull<double>, 3, 1>;
-template class MacroTrans<KernelTransFull<double>, 2, 4>;
-template class MacroTrans<KernelTransFull<double>, 2, 3>;
-template class MacroTrans<KernelTransFull<double>, 2, 2>;
-template class MacroTrans<KernelTransFull<double>, 2, 1>;
-template class MacroTrans<KernelTransFull<double>, 1, 4>;
-template class MacroTrans<KernelTransFull<double>, 1, 3>;
-template class MacroTrans<KernelTransFull<double>, 1, 2>;
-template class MacroTrans<KernelTransFull<double>, 1, 1>;
+template class MacroTrans<KernelTransFull<double, true>, 4, 4>;
+template class MacroTrans<KernelTransFull<double, true>, 4, 3>;
+template class MacroTrans<KernelTransFull<double, true>, 4, 2>;
+template class MacroTrans<KernelTransFull<double, true>, 4, 1>;
+template class MacroTrans<KernelTransFull<double, true>, 3, 4>;
+template class MacroTrans<KernelTransFull<double, true>, 3, 3>;
+template class MacroTrans<KernelTransFull<double, true>, 3, 2>;
+template class MacroTrans<KernelTransFull<double, true>, 3, 1>;
+template class MacroTrans<KernelTransFull<double, true>, 2, 4>;
+template class MacroTrans<KernelTransFull<double, true>, 2, 3>;
+template class MacroTrans<KernelTransFull<double, true>, 2, 2>;
+template class MacroTrans<KernelTransFull<double, true>, 2, 1>;
+template class MacroTrans<KernelTransFull<double, true>, 1, 4>;
+template class MacroTrans<KernelTransFull<double, true>, 1, 3>;
+template class MacroTrans<KernelTransFull<double, true>, 1, 2>;
+template class MacroTrans<KernelTransFull<double, true>, 1, 1>;
 
-template class MacroTrans<KernelTransFull<FloatComplex>, 4, 4>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 4, 3>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 4, 2>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 4, 1>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 3, 4>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 3, 3>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 3, 2>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 3, 1>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 2, 4>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 2, 3>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 2, 2>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 2, 1>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 1, 4>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 1, 3>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 1, 2>;
-template class MacroTrans<KernelTransFull<FloatComplex>, 1, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 4, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 4, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 4, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 4, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 3, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 3, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 3, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 3, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 2, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 2, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 2, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 2, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 1, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 1, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 1, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, true>, 1, 1>;
 
-template class MacroTrans<KernelTransFull<DoubleComplex>, 4, 4>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 4, 3>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 4, 2>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 4, 1>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 3, 4>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 3, 3>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 3, 2>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 3, 1>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 2, 4>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 2, 3>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 2, 2>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 2, 1>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 1, 4>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 1, 3>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 1, 2>;
-template class MacroTrans<KernelTransFull<DoubleComplex>, 1, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 4, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 4, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 4, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 4, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 3, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 3, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 3, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 3, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 2, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 2, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 2, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 2, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 1, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 1, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 1, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, true>, 1, 1>;
 
-template class MacroTrans<KernelTransHalf<float>, 4, 1>;
-template class MacroTrans<KernelTransHalf<float>, 3, 1>;
-template class MacroTrans<KernelTransHalf<float>, 2, 1>;
-template class MacroTrans<KernelTransHalf<float>, 1, 4>;
-template class MacroTrans<KernelTransHalf<float>, 1, 3>;
-template class MacroTrans<KernelTransHalf<float>, 1, 2>;
-template class MacroTrans<KernelTransHalf<float>, 1, 1>;
+template class MacroTrans<KernelTransHalf<float, true>, 4, 1>;
+template class MacroTrans<KernelTransHalf<float, true>, 3, 1>;
+template class MacroTrans<KernelTransHalf<float, true>, 2, 1>;
+template class MacroTrans<KernelTransHalf<float, true>, 1, 4>;
+template class MacroTrans<KernelTransHalf<float, true>, 1, 3>;
+template class MacroTrans<KernelTransHalf<float, true>, 1, 2>;
+template class MacroTrans<KernelTransHalf<float, true>, 1, 1>;
 
-template class MacroTrans<KernelTransHalf<double>, 4, 1>;
-template class MacroTrans<KernelTransHalf<double>, 3, 1>;
-template class MacroTrans<KernelTransHalf<double>, 2, 1>;
-template class MacroTrans<KernelTransHalf<double>, 1, 4>;
-template class MacroTrans<KernelTransHalf<double>, 1, 3>;
-template class MacroTrans<KernelTransHalf<double>, 1, 2>;
-template class MacroTrans<KernelTransHalf<double>, 1, 1>;
+template class MacroTrans<KernelTransHalf<double, true>, 4, 1>;
+template class MacroTrans<KernelTransHalf<double, true>, 3, 1>;
+template class MacroTrans<KernelTransHalf<double, true>, 2, 1>;
+template class MacroTrans<KernelTransHalf<double, true>, 1, 4>;
+template class MacroTrans<KernelTransHalf<double, true>, 1, 3>;
+template class MacroTrans<KernelTransHalf<double, true>, 1, 2>;
+template class MacroTrans<KernelTransHalf<double, true>, 1, 1>;
 
-template class MacroTrans<KernelTransHalf<FloatComplex>, 4, 1>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 3, 1>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 2, 1>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 1, 4>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 1, 3>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 1, 2>;
-template class MacroTrans<KernelTransHalf<FloatComplex>, 1, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 4, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 3, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 2, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 1, 4>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 1, 3>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 1, 2>;
+template class MacroTrans<KernelTransHalf<FloatComplex, true>, 1, 1>;
 
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 4, 1>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 3, 1>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 2, 1>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 4>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 3>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 2>;
-template class MacroTrans<KernelTransHalf<DoubleComplex>, 1, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 4, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 3, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 2, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 1, 4>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 1, 3>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 1, 2>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, true>, 1, 1>;
 
-template class MacroTransLinear<float>;
-template class MacroTransLinear<double>;
-template class MacroTransLinear<FloatComplex>;
-template class MacroTransLinear<DoubleComplex>;
+template class MacroTrans<KernelTransFull<float, false>, 4, 4>;
+template class MacroTrans<KernelTransFull<float, false>, 4, 3>;
+template class MacroTrans<KernelTransFull<float, false>, 4, 2>;
+template class MacroTrans<KernelTransFull<float, false>, 4, 1>;
+template class MacroTrans<KernelTransFull<float, false>, 3, 4>;
+template class MacroTrans<KernelTransFull<float, false>, 3, 3>;
+template class MacroTrans<KernelTransFull<float, false>, 3, 2>;
+template class MacroTrans<KernelTransFull<float, false>, 3, 1>;
+template class MacroTrans<KernelTransFull<float, false>, 2, 4>;
+template class MacroTrans<KernelTransFull<float, false>, 2, 3>;
+template class MacroTrans<KernelTransFull<float, false>, 2, 2>;
+template class MacroTrans<KernelTransFull<float, false>, 2, 1>;
+template class MacroTrans<KernelTransFull<float, false>, 1, 4>;
+template class MacroTrans<KernelTransFull<float, false>, 1, 3>;
+template class MacroTrans<KernelTransFull<float, false>, 1, 2>;
+template class MacroTrans<KernelTransFull<float, false>, 1, 1>;
+
+template class MacroTrans<KernelTransFull<double, false>, 4, 4>;
+template class MacroTrans<KernelTransFull<double, false>, 4, 3>;
+template class MacroTrans<KernelTransFull<double, false>, 4, 2>;
+template class MacroTrans<KernelTransFull<double, false>, 4, 1>;
+template class MacroTrans<KernelTransFull<double, false>, 3, 4>;
+template class MacroTrans<KernelTransFull<double, false>, 3, 3>;
+template class MacroTrans<KernelTransFull<double, false>, 3, 2>;
+template class MacroTrans<KernelTransFull<double, false>, 3, 1>;
+template class MacroTrans<KernelTransFull<double, false>, 2, 4>;
+template class MacroTrans<KernelTransFull<double, false>, 2, 3>;
+template class MacroTrans<KernelTransFull<double, false>, 2, 2>;
+template class MacroTrans<KernelTransFull<double, false>, 2, 1>;
+template class MacroTrans<KernelTransFull<double, false>, 1, 4>;
+template class MacroTrans<KernelTransFull<double, false>, 1, 3>;
+template class MacroTrans<KernelTransFull<double, false>, 1, 2>;
+template class MacroTrans<KernelTransFull<double, false>, 1, 1>;
+
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 4, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 4, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 4, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 4, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 3, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 3, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 3, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 3, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 2, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 2, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 2, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 2, 1>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 1, 4>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 1, 3>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 1, 2>;
+template class MacroTrans<KernelTransFull<FloatComplex, false>, 1, 1>;
+
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 4, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 4, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 4, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 4, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 3, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 3, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 3, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 3, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 2, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 2, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 2, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 2, 1>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 1, 4>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 1, 3>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 1, 2>;
+template class MacroTrans<KernelTransFull<DoubleComplex, false>, 1, 1>;
+
+template class MacroTrans<KernelTransHalf<float, false>, 4, 1>;
+template class MacroTrans<KernelTransHalf<float, false>, 3, 1>;
+template class MacroTrans<KernelTransHalf<float, false>, 2, 1>;
+template class MacroTrans<KernelTransHalf<float, false>, 1, 4>;
+template class MacroTrans<KernelTransHalf<float, false>, 1, 3>;
+template class MacroTrans<KernelTransHalf<float, false>, 1, 2>;
+template class MacroTrans<KernelTransHalf<float, false>, 1, 1>;
+
+template class MacroTrans<KernelTransHalf<double, false>, 4, 1>;
+template class MacroTrans<KernelTransHalf<double, false>, 3, 1>;
+template class MacroTrans<KernelTransHalf<double, false>, 2, 1>;
+template class MacroTrans<KernelTransHalf<double, false>, 1, 4>;
+template class MacroTrans<KernelTransHalf<double, false>, 1, 3>;
+template class MacroTrans<KernelTransHalf<double, false>, 1, 2>;
+template class MacroTrans<KernelTransHalf<double, false>, 1, 1>;
+
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 4, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 3, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 2, 1>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 1, 4>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 1, 3>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 1, 2>;
+template class MacroTrans<KernelTransHalf<FloatComplex, false>, 1, 1>;
+
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 4, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 3, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 2, 1>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 1, 4>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 1, 3>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 1, 2>;
+template class MacroTrans<KernelTransHalf<DoubleComplex, false>, 1, 1>;
+
+
+/*
+ * Explicit template instantiation for class MacroTransLinear
+ */
+template class MacroTransLinear<float, true>;
+template class MacroTransLinear<double, true>;
+template class MacroTransLinear<FloatComplex, true>;
+template class MacroTransLinear<DoubleComplex, true>;
+
+template class MacroTransLinear<float, false>;
+template class MacroTransLinear<double, false>;
+template class MacroTransLinear<FloatComplex, false>;
+template class MacroTransLinear<DoubleComplex, false>;
+
 
 /*
  * Explicit template instantiation for class MacroTransScalar
  */
-template class MacroTransScalar<float>;
-template class MacroTransScalar<double>;
-template class MacroTransScalar<FloatComplex>;
-template class MacroTransScalar<DoubleComplex>;
+template class MacroTransScalar<float, true>;
+template class MacroTransScalar<double, true>;
+template class MacroTransScalar<FloatComplex, true>;
+template class MacroTransScalar<DoubleComplex, true>;
+
+template class MacroTransScalar<float, false>;
+template class MacroTransScalar<double, false>;
+template class MacroTransScalar<FloatComplex, false>;
+template class MacroTransScalar<DoubleComplex, false>;
 
 }
