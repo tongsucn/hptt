@@ -110,6 +110,92 @@ void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_inld_(
 }
 
 
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD,
+         TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_outld_(
+    DualCounter<IN_INLD, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->tile_outld_(DualCounter<IN_INLD, IN_OUTLD - 1>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
+  this->kernel_.exec(data_in + IN_INLD * this->kn_width_
+          + IN_OUTLD * this->kn_width_ * stride_in_outld,
+      data_out + IN_OUTLD * this->kn_width_
+          + IN_INLD * this->kn_width_ * stride_out_inld,
+      stride_in_outld, stride_out_inld);
+}
+
+
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_outld_(
+    DualCounter<IN_INLD, 0>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->kernel_.exec(data_in + IN_INLD * this->kn_width_,
+      data_out + IN_INLD * this->kn_width_ * stride_out_inld, stride_in_outld,
+      stride_out_inld);
+}
+
+
+/*
+ * Implementation for class MacroTransLinear
+ */
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->kernel_.set_coef(alpha, beta);
+}
+
+
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::set_wrapper_loop(
+    const TensorIdx stride_in_inld,
+    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
+    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
+    const TensorUInt size_kn_outld) {
+  this->kernel_.set_wrapper_loop(stride_in_inld, stride_in_outld,
+      stride_out_inld, stride_out_outld, size_kn_inld, size_kn_outld);
+}
+
+
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransLinear<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
+    FloatType *data_out, const TensorIdx size_trans,
+    const TensorIdx size_pad) const {
+  this->kernel_.exec(data_in, data_out, size_trans, size_pad);
+}
+
+
+/*
+ * Implementation for class MacroTransScalar
+ */
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransScalar<FloatType, UPDATE_OUT>::set_coef(
+    const DeducedFloatType<FloatType> alpha,
+    const DeducedFloatType<FloatType> beta) {
+  this->alpha_ = alpha, this->beta_ = beta;
+}
+
+
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransScalar<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
+    FloatType *data_out, const TensorIdx, const TensorIdx) const {
+  *data_out = this->alpha_ * *data_in + this->beta_ * *data_out;
+}
+
+
 /*
  * Explicit template instantiation for class MacroTrans
  */

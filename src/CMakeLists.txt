@@ -18,7 +18,7 @@ file(GLOB HPTT_SRC arch/*.cc hptt.cc)
 # Architecture related
 file(GLOB HPTT_ARCH_AVX2_SRC arch/avx2/*.cc)
 file(GLOB HPTT_ARCH_AVX_SRC arch/avx/*.cc)
-file(GLOB HPTT_ARCH_IBM_SRC arch/ibnm/*.cc)
+file(GLOB HPTT_ARCH_IBM_SRC arch/ibm/*.cc)
 file(GLOB HPTT_ARCH_COMMON_SRC arch/common/*.cc)
 
 file(GLOB HPTT_AVX2_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_AVX2_SRC})
