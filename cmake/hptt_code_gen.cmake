@@ -1,14 +1,13 @@
 # ----------------------------------------------------------------------------
 # Code generation configuration
 # ----------------------------------------------------------------------------
-string(CONCAT HPTT_CODE_GEN_SCRIPT_DIR ${CMAKE_SOURCE_DIR}/cmake/pylib)
-string(CONCAT HPTT_CODE_GEN_TRANS_SCRIPT ${HPTT_CODE_GEN_SCRIPT_DIR}
-  "/code_gen_trans.py")
+set(HPTT_CODE_GEN_SCRIPT_DIR "${CMAKE_SOURCE_DIR}/cmake/pylib")
+set(HPTT_CODE_GEN_TRANS_SCRIPT "${HPTT_CODE_GEN_SCRIPT_DIR}/code_gen_trans.py")
 
 set(HPTT_CODE_GEN_TRANS_ORDER_MIN_ARG "--order-min")
 set(HPTT_CODE_GEN_TRANS_ORDER_MAX_ARG "--order-max")
 set(HPTT_CODE_GEN_TARGET_DIR_ARG "--target")
-string(CONCAT HPTT_CODE_GEN_TARGET_DIR ${CMAKE_SOURCE_DIR} "/src/hptt/gen")
+set(HPTT_CODE_GEN_TARGET_DIR "${CMAKE_SOURCE_DIR}/src/hptt/gen")
 
 
 # ----------------------------------------------------------------------------

@@ -1,8 +1,7 @@
 # ----------------------------------------------------------------------------
 # Architecture detection configuration
 # ----------------------------------------------------------------------------
-string(CONCAT HPTT_ARCH_DETECT_SCRIPT ${CMAKE_SOURCE_DIR}
-  "/cmake/pylib/cpu_flags.py")
+set(HPTT_ARCH_DETECT_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/pylib/cpu_flags.py")
 
 # ----------------------------------------------------------------------------
 # Architecture detection
@@ -35,5 +34,6 @@ macro(hptt_detect_arch)
         set(HPTT_ARCH_AVX "-DHPTT_ARCH_AVX")
       endif ()
     endforeach ()
+    #set(HPTT_ARCH_IBM "-DHPTT_ARCH_IBM")
   endif ()
 endmacro()
