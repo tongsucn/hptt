@@ -72,6 +72,13 @@ KernelTransData<FloatType, TYPE>::KernelTransData()
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
+void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
+    const FloatType *buffer) {
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
 void KernelTransData<FloatType, TYPE>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {

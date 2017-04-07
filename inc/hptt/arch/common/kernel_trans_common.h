@@ -30,6 +30,8 @@ public:
       ? SIZE_REG / sizeof(FloatType) : TYPE == KernelTypeTrans::KERNEL_HALF
       ? (SIZE_REG / sizeof(FloatType)) / 2 : 1;
 
+  static void sstore(FloatType *data_out, const FloatType *buffer);
+
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
 
@@ -89,6 +91,13 @@ private:
 template <typename FloatType,
           KernelTypeTrans TYPE>
 KernelTransData<FloatType, TYPE>::KernelTransData() : alpha_(), beta_() {
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
+    const FloatType *buffer) {
 }
 
 

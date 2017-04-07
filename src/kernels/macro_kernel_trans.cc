@@ -1,538 +1,112 @@
 #include <hptt/kernels/macro_kernel_trans.h>
 
 #include <hptt/types.h>
-#include <hptt/util/util_trans.h>
+#include <hptt/util/util.h>
+#include <hptt/arch/compat.h>
+#include <hptt/kernels/micro_kernel_trans.h>
 
 
 namespace hptt {
 
 /*
- * Specialization and implementation for class MacroTrans
+ * Implementation for class MacroTrans
  */
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 4, 4>::MacroTrans()
-    : MacroTransData<MicroKernel, 4, 4>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 4, 3>::MacroTrans()
-    : MacroTransData<MicroKernel, 4, 3>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 4, 2>::MacroTrans()
-    : MacroTransData<MicroKernel, 4, 2>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 4, 1>::MacroTrans()
-    : MacroTransData<MicroKernel, 4, 1>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 3, 4>::MacroTrans()
-    : MacroTransData<MicroKernel, 3, 4>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 3, 3>::MacroTrans()
-    : MacroTransData<MicroKernel, 3, 3>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 3, 2>::MacroTrans()
-    : MacroTransData<MicroKernel, 3, 2>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 3, 1>::MacroTrans()
-    : MacroTransData<MicroKernel, 3, 1>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 2, 4>::MacroTrans()
-    : MacroTransData<MicroKernel, 2, 4>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 2, 3>::MacroTrans()
-    : MacroTransData<MicroKernel, 2, 3>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 2, 2>::MacroTrans()
-    : MacroTransData<MicroKernel, 2, 2>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 2, 1>::MacroTrans()
-    : MacroTransData<MicroKernel, 2, 1>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 1, 4>::MacroTrans()
-    : MacroTransData<MicroKernel, 1, 4>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 1, 3>::MacroTrans()
-    : MacroTransData<MicroKernel, 1, 3>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 1, 2>::MacroTrans()
-    : MacroTransData<MicroKernel, 1, 2>() {
-}
-
-template <typename MicroKernel>
-MacroTrans<MicroKernel, 1, 1>::MacroTrans()
-    : MacroTransData<MicroKernel, 1, 1>() {
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::MacroTrans()
+    : kernel_(),
+      kn_width_(MicroKernel::KN_WIDTH) {
 }
 
 
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 4, 4>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_,
-      data_out + 3 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 4, 3>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_,
-      data_out + 3 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 4, 2>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_,
-      data_out + 3 * this->kn_width_ * stride_out_inld,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 3 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 4, 1>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec( data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_,
-      data_out + 3 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 3, 4>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec( data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 3, 3>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec( data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 3, 2>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + 2 * this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 3, 1>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_,
-      data_out + 2 * this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 2, 4>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 3 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 3 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 2, 3>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + 2 * this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + 2 * this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 2, 2>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-  this->kernel_.exec(
-      data_in + this->kn_width_ + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_ * stride_out_inld + this->kn_width_,
-      stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 2, 1>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_,
-      data_out + this->kn_width_ * stride_out_inld, stride_in_outld,
-      stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 1, 4>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 3 * this->kn_width_ * stride_in_outld,
-      data_out + 3 * this->kn_width_, stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 1, 3>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + 2 * this->kn_width_ * stride_in_outld,
-      data_out + 2 * this->kn_width_, stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 1, 2>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
-  this->kernel_.exec(data_in + this->kn_width_ * stride_in_outld,
-      data_out + this->kn_width_, stride_in_outld, stride_out_inld);
-}
-
-template <typename MicroKernel>
-void MacroTrans<MicroKernel, 1, 1>::exec(
-    const typename MicroKernel::Float *data_in,
-    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
-  this->kernel_.exec(data_in, data_out, stride_in_outld, stride_out_inld);
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+TensorUInt
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::get_cont_len() const {
+  return SIZE_IN_INLD * this->kn_width_;
 }
 
 
-/*
- * Implementation for class MacroTransLinear
- */
-template <typename FloatType,
-          bool UPDATE_OUT>
-void MacroTransLinear<FloatType, UPDATE_OUT>::set_coef(
-    const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta) {
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+TensorUInt
+MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::get_ncont_len() const {
+  return SIZE_IN_OUTLD * this->kn_width_;
+}
+
+
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::set_coef(
+    const DeducedFloatType<typename MicroKernel::Float> alpha,
+    const DeducedFloatType<typename MicroKernel::Float> beta) {
   this->kernel_.set_coef(alpha, beta);
 }
 
 
-template <typename FloatType,
-          bool UPDATE_OUT>
-void MacroTransLinear<FloatType, UPDATE_OUT>::set_wrapper_loop(
-    const TensorIdx stride_in_inld,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
-    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
-    const TensorUInt size_kn_outld) {
-  this->kernel_.set_wrapper_loop(stride_in_inld, stride_in_outld,
-      stride_out_inld, stride_out_outld, size_kn_inld, size_kn_outld);
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::exec(
+    const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  // Prefetching
+  using FloatType = typename MicroKernel::Float;
+  constexpr TensorUInt NUM_IN_OUTLD = MicroKernel::KN_WIDTH * SIZE_IN_OUTLD;
+  auto USE_STREAMING = not MicroKernel::UPDATE and MicroKernel::STREAM
+      and hptt::check_aligned<FloatType>(NUM_IN_OUTLD, data_out);
+
+  if (USE_STREAMING) {
+    // Create aligned buffer, macro HPTC_MEM_ALIGN is defined in
+    // hptt/arch/compat.h
+    constexpr TensorUInt NUM_IN_INLD = MicroKernel::KN_WIDTH * SIZE_IN_INLD;
+    FloatType buffer_out[NUM_IN_INLD * NUM_IN_OUTLD]
+      __attribute__((aligned(64)));
+
+    this->tile_inld_(DualCounter<SIZE_IN_INLD, SIZE_IN_OUTLD>(), data_in,
+        buffer_out, stride_in_outld, stride_out_inld);
+
+    for (TensorUInt idx_inld = 0; idx_inld < NUM_IN_INLD; ++idx_inld)
+      for (TensorUInt idx_outld = 0; idx_outld < NUM_IN_OUTLD;
+          idx_outld += MicroKernel::KN_WIDTH)
+        MicroKernel::sstore(data_out + idx_inld * stride_out_inld + idx_outld,
+            buffer_out + idx_inld * NUM_IN_OUTLD + idx_outld);
+  }
+  else
+    this->tile_inld_(DualCounter<SIZE_IN_INLD, SIZE_IN_OUTLD>(), data_in,
+        data_out, stride_in_outld, stride_out_inld);
 }
 
 
-template <typename FloatType,
-          bool UPDATE_OUT>
-void MacroTransLinear<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
-    FloatType *data_out, const TensorIdx size_trans,
-    const TensorIdx size_pad) const {
-  this->kernel_.exec(data_in, data_out, size_trans, size_pad);
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_INLD,
+         TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_inld_(
+    DualCounter<IN_INLD, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
+  this->tile_inld_(DualCounter<IN_INLD - 1, IN_OUTLD>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
+  this->tile_outld_(DualCounter<IN_INLD - 1, IN_OUTLD - 1>(), data_in, data_out,
+      stride_in_outld, stride_out_inld);
 }
 
 
-/*
- * Implementation for class MacroTransScalar
- */
-template <typename FloatType,
-          bool UPDATE_OUT>
-void MacroTransScalar<FloatType, UPDATE_OUT>::set_coef(
-    const DeducedFloatType<FloatType> alpha,
-    const DeducedFloatType<FloatType> beta) {
-  this->alpha_ = alpha, this->beta_ = beta;
-}
-
-
-template <typename FloatType,
-          bool UPDATE_OUT>
-void MacroTransScalar<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
-    FloatType *data_out, const TensorIdx, const TensorIdx) const {
-  *data_out = this->alpha_ * *data_in + this->beta_ * *data_out;
+template <typename MicroKernel,
+          TensorUInt SIZE_IN_INLD,
+          TensorUInt SIZE_IN_OUTLD>
+template <TensorUInt IN_OUTLD>
+void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_inld_(
+    DualCounter<0, IN_OUTLD>, const typename MicroKernel::Float *data_in,
+    typename MicroKernel::Float *data_out, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld) const {
 }
 
 

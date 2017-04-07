@@ -21,11 +21,18 @@ struct IntrinImpl<FloatType, TYPE,
   static HPTT_INL Reg set_reg(const Deduced coef) {
     return _mm256_set1_ps(coef);
   }
-  static HPTT_INL Reg load(const FloatType * RESTRICT target) {
+  static HPTT_INL Reg load(const FloatType *target) {
     return _mm256_loadu_ps(reinterpret_cast<const Deduced *>(target));
   }
-  static HPTT_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+  static HPTT_INL void store(FloatType *target, const Reg &reg) {
     _mm256_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
+    _mm256_stream_ps(reinterpret_cast<Deduced *>(data_out),
+        _mm256_load_ps(reinterpret_cast<const Deduced *>(buffer)));
+    if (2 == sizeof(FloatType) / sizeof(Deduced))
+      _mm256_stream_ps(reinterpret_cast<Deduced *>(data_out) + 1,
+          _mm256_load_ps(reinterpret_cast<const Deduced *>(buffer) + 1));
   }
   static HPTT_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
     return _mm256_add_ps(reg_a, reg_b);
@@ -45,11 +52,18 @@ struct IntrinImpl<FloatType, TYPE,
   static HPTT_INL Reg set_reg(const Deduced coef) {
     return _mm256_set1_pd(coef);
   }
-  static HPTT_INL Reg load(const FloatType * RESTRICT target) {
+  static HPTT_INL Reg load(const FloatType *target) {
     return _mm256_loadu_pd(reinterpret_cast<const Deduced *>(target));
   }
-  static HPTT_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+  static HPTT_INL void store(FloatType *target, const Reg &reg) {
     _mm256_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
+    _mm256_stream_pd(reinterpret_cast<Deduced *>(data_out),
+        _mm256_load_pd(reinterpret_cast<const Deduced *>(buffer)));
+    if (2 == sizeof(FloatType) / sizeof(Deduced))
+      _mm256_stream_pd(reinterpret_cast<Deduced *>(data_out) + 1,
+          _mm256_load_pd(reinterpret_cast<const Deduced *>(buffer) + 1));
   }
   static HPTT_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
     return _mm256_add_pd(reg_a, reg_b);
@@ -69,11 +83,18 @@ struct IntrinImpl<FloatType, TYPE,
   static HPTT_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
     return _mm_set1_ps(coef);
   }
-  static HPTT_INL Reg load(const FloatType * RESTRICT target) {
+  static HPTT_INL Reg load(const FloatType *target) {
     return _mm_loadu_ps(reinterpret_cast<const Deduced *>(target));
   }
-  static HPTT_INL void store(FloatType * RESTRICT target, const Reg &reg) {
+  static HPTT_INL void store(FloatType *target, const Reg &reg) {
     _mm_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
+  }
+  static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
+    _mm_stream_ps(reinterpret_cast<Deduced *>(data_out),
+        _mm_load_ps(reinterpret_cast<const Deduced *>(buffer)));
+    if (2 == sizeof(FloatType) / sizeof(Deduced))
+      _mm_stream_ps(reinterpret_cast<Deduced *>(data_out) + 1,
+          _mm_load_ps(reinterpret_cast<const Deduced *>(buffer) + 1));
   }
   static HPTT_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
     return _mm_add_ps(reg_a, reg_b);
@@ -86,17 +107,19 @@ struct IntrinImpl<FloatType, TYPE,
 template <typename FloatType,
           KernelTypeTrans TYPE>
 struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_d>> {
-  using Deduced = DeducedFloatType<FloatType>;
   using Reg = RegType<FloatType, TYPE>;
 
-  static HPTT_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
+  static HPTT_INL RegType<FloatType, TYPE> set_reg(const FloatType coef) {
     return _mm_set1_pd(coef);
   }
-  static HPTT_INL Reg load(const FloatType * RESTRICT target) {
-    return _mm_loadu_pd(reinterpret_cast<const Deduced *>(target));
+  static HPTT_INL Reg load(const FloatType *target) {
+    return _mm_loadu_pd(target);
   }
-  static HPTT_INL void store(FloatType * RESTRICT target, const Reg &reg) {
-    _mm_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
+  static HPTT_INL void store(FloatType *target, const Reg &reg) {
+    _mm_storeu_pd(target, reg);
+  }
+  static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
+    _mm_stream_pd(data_out, _mm_load_pd(buffer));
   }
   static HPTT_INL Reg add(const Reg &reg_a, const Reg &reg_b) {
     return _mm_add_pd(reg_a, reg_b);
@@ -115,6 +138,9 @@ struct IntrinImpl<FloatType, TYPE, Enable<TypeSelector<FloatType, TYPE>::h_z>> {
   static HPTT_INL RegType<FloatType, TYPE> set_reg(const Deduced coef) {
     return coef;
   }
+  static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
+    *data_out = *buffer;
+  }
 };
 
 
@@ -125,6 +151,14 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 KernelTransData<FloatType, TYPE>::KernelTransData()
     : reg_alpha_(), reg_beta_(), alpha_(), beta_() {
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
+    const FloatType *buffer) {
+  IntrinImpl<FloatType, TYPE>::sstore(data_out, buffer);
 }
 
 
@@ -146,6 +180,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
     : public KernelTransData<float, KernelTypeTrans::KERNEL_FULL> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const float * RESTRICT data_in, float * RESTRICT data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
@@ -155,6 +190,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
     : public KernelTransData<float, KernelTypeTrans::KERNEL_HALF> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const float * RESTRICT data_in, float * RESTRICT data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
@@ -164,6 +200,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
     : public KernelTransData<double, KernelTypeTrans::KERNEL_FULL> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const double * RESTRICT data_in, double * RESTRICT data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
@@ -173,6 +210,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
     : public KernelTransData<double, KernelTypeTrans::KERNEL_HALF> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const double * RESTRICT data_in, double * RESTRICT data_out,
       const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
@@ -182,6 +220,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
     : public KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const FloatComplex * RESTRICT data_in,
       FloatComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
@@ -192,6 +231,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
     : public KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const FloatComplex * RESTRICT data_in,
       FloatComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
@@ -202,6 +242,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
     : public KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const DoubleComplex * RESTRICT data_in,
       DoubleComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
@@ -212,6 +253,7 @@ template <bool UPDATE_OUT>
 class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
     : public KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF> {
 public:
+  static constexpr bool UPDATE = UPDATE_OUT;
   KernelTrans();
   void exec(const DoubleComplex * RESTRICT data_in,
       DoubleComplex * RESTRICT data_out, const TensorIdx stride_in_outld,

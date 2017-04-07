@@ -4,7 +4,6 @@
 
 #include <hptt/types.h>
 #include <hptt/util/util.h>
-#include <hptt/util/util_trans.h>
 #include <hptt/kernels/micro_kernel_trans.h>
 
 
@@ -13,11 +12,11 @@ namespace hptt {
 template <typename MicroKernel,
           TensorUInt SIZE_IN_INLD,
           TensorUInt SIZE_IN_OUTLD>
-class MacroTransData {
+class MacroTrans {
 public:
   using Float = typename MicroKernel::Float;
 
-  MacroTransData();
+  MacroTrans();
 
   TensorUInt get_cont_len() const;
   TensorUInt get_ncont_len() const;
@@ -54,16 +53,6 @@ private:
   void tile_inld_(DualCounter<0, IN_OUTLD>, const Float *data_in,
       Float *data_out, const TensorIdx stride_in_outld,
       const TensorIdx stride_out_inld) const;
-};
-
-
-template <typename MicroKernel,
-          TensorUInt SIZE_IN_INLD,
-          TensorUInt SIZE_IN_OUTLD>
-class MacroTrans
-    : public MacroTransData<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD> {
-public:
-  MacroTrans();
 };
 
 
