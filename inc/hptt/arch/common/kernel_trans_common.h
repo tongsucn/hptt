@@ -22,6 +22,8 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 class KernelTransData {
 public:
+  static constexpr bool STREAM = false;
+
   KernelTransData();
 
   static constexpr TensorUInt KN_WIDTH = TYPE == KernelTypeTrans::KERNEL_FULL
@@ -45,6 +47,7 @@ template <typename FloatType,
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;
+  static constexpr bool UPDATE = UPDATE_OUT;
 
   KernelTrans();
 

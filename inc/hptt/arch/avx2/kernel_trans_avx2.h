@@ -106,6 +106,7 @@ template <typename FloatType,
 class KernelTransData {
 public:
   using Float = FloatType;
+  static constexpr bool STREAM = true;
 
   KernelTransData();
 
@@ -131,6 +132,7 @@ template <typename FloatType,
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;
+  static constexpr bool UPDATE = UPDATE_OUT;
 
   KernelTrans();
 

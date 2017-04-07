@@ -9,8 +9,6 @@
 #include <string>
 #include <sstream>
 
-#include <hptt/arch/compat.h>
-
 
 namespace hptt {
 
