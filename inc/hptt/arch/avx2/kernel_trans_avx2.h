@@ -126,7 +126,8 @@ protected:
  * Transpose kernel class
  */
 template <typename FloatType,
-          KernelTypeTrans TYPE>
+          KernelTypeTrans TYPE,
+          bool UPDATE_OUT = true>
 class KernelTrans : public KernelTransData<FloatType, TYPE> {
 public:
   using Float = FloatType;

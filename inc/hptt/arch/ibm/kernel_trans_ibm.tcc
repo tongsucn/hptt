@@ -84,20 +84,23 @@ void KernelTransData<FloatType, TYPE>::set_coef(
 /*
  * Specialization of class KernelTrans
  */
-template <>
-KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
+template <bool UPDATE_OUT>
+class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
+    : public KernelTransData<double, KernelTypeTrans::KERNEL_FULL> {
+public:
+  KernelTrans();
 
-template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
-    const double * RESTRICT data_in, double * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+  void exec(const double * RESTRICT data_in, double * RESTRICT data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+};
 
 
 /*
  * Specialization of class KernelTrans, linear kernel, used for common leading
  */
-template <typename FloatType>
-class KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>
+template <typename FloatType,
+          bool UPDATE_OUT>
+class KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>
     : public KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE> {
 public:
   static constexpr TensorUInt LOOP_MAX = 10;
@@ -122,19 +125,46 @@ private:
 /*
  * Explicit template instantiation declaration for class KernelTrans
  */
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL,
+    true>;
 
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF,
+    true>;
 
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE,
+    true>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL,
+    false>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF,
+    false>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE,
+    false>;
 
 #endif // HPTT_ARCH_IBM_KERNEL_TRANS_IBM_TCC_

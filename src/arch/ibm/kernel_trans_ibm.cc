@@ -13,13 +13,13 @@ namespace hptt {
 /*
  * Implementation of class KernelTrans and its (partial) specializations
  */
-template <>
-KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::KernelTrans()
+template <bool UPDATE_OUT>
+KernelTrans<double, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>::KernelTrans()
     : KernelTransData<double, KernelTypeTrans::KERNEL_FULL>() {
 }
 
-template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
+template <bool UPDATE_OUT>
+void KernelTrans<double, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>::exec(
     const double * RESTRICT data_in, double * RESTRICT data_out,
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
   using Intrin = IntrinImpl<double, KernelTypeTrans::KERNEL_FULL>;
@@ -51,17 +51,19 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
   reg_in[2] = Intrin::mul(reg_in[2], this->reg_alpha_);
   reg_in[3] = Intrin::mul(reg_in[3], this->reg_alpha_);
 
-  // Load output data into registers
-  Reg reg_out[4];
-  reg_out[0] = Introut::load(data_out);
-  reg_out[1] = Introut::load(data_out + stride_out_inld);
-  reg_out[2] = Introut::load(data_out + 2 * stride_out_inld);
-  reg_out[3] = Introut::load(data_out + 3 * stride_out_inld);
+  if (UPDATE_OUT) {
+    // Load output data into registers
+    Reg reg_out[4];
+    reg_out[0] = Introut::load(data_out);
+    reg_out[1] = Introut::load(data_out + stride_out_inld);
+    reg_out[2] = Introut::load(data_out + 2 * stride_out_inld);
+    reg_out[3] = Introut::load(data_out + 3 * stride_out_inld);
 
-  reg_out[0] = Intrin::madd(reg_out[0], this->reg_beta_, reg_in[0]);
-  reg_out[1] = Intrin::madd(reg_out[1], this->reg_beta_, reg_in[1]);
-  reg_out[2] = Intrin::madd(reg_out[2], this->reg_beta_, reg_in[2]);
-  reg_out[3] = Intrin::madd(reg_out[3], this->reg_beta_, reg_in[3]);
+    reg_out[0] = Intrin::madd(reg_out[0], this->reg_beta_, reg_in[0]);
+    reg_out[1] = Intrin::madd(reg_out[1], this->reg_beta_, reg_in[1]);
+    reg_out[2] = Intrin::madd(reg_out[2], this->reg_beta_, reg_in[2]);
+    reg_out[3] = Intrin::madd(reg_out[3], this->reg_beta_, reg_in[3]);
+  }
 
   // Write back in-register result into output data
   Intrin::store(data_out, reg_out[0]);
@@ -72,43 +74,63 @@ void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
 
 
 template <typename FloatType,
-          KernelTypeTrans TYPE>
-KernelTrans<FloatType, TYPE>::KernelTrans()
+          KernelTypeTrans TYPE,
+          bool UPDATE_OUT>
+KernelTrans<FloatType, TYPE, UPDATE_OUT>::KernelTrans()
     : KernelTransData<FloatType, TYPE>() {
 }
 
 template <typename FloatType,
-          KernelTypeTrans TYPE>
-void KernelTrans<FloatType, TYPE>::exec(const FloatType * RESTRICT data_in,
-    FloatType * RESTRICT data_out, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld) const {
+          KernelTypeTrans TYPE,
+          bool UPDATE_OUT>
+void KernelTrans<FloatType, TYPE, UPDATE_OUT>::exec(
+    const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
+    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
   constexpr auto WIDTH = KernelTrans<FloatType, TYPE>::KN_WIDTH;
 
+  if (UPDATE_OUT) {
 #pragma omp simd collapse(2)
-  for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
-    for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
-      const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
-      const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
-      data_out[offset_out] = this->reg_alpha_ * data_in[offset_in]
-          + this->reg_beta_ * data_out[offset_out];
+    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
+      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
+        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
+        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
+        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in]
+            + this->reg_beta_ * data_out[offset_out];
+      }
+    }
+  }
+  else {
+#pragma omp simd collapse(2)
+    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
+      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
+        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
+        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
+        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in];
+      }
     }
   }
 }
 
 
-template <typename FloatType>
-KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::KernelTrans()
+/*
+ * Implementation of linear kernel
+ */
+template <typename FloatType,
+          bool UPDATE_OUT>
+KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::KernelTrans()
     : KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE>(),
       stride_in_inld_(1), stride_in_outld_(1), stride_out_inld_(1),
       stride_out_outld_(1), size_kn_inld_(1), size_kn_outld_(1) {
 }
 
 
-template <typename FloatType>
-void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::set_wrapper_loop(
-    const TensorIdx stride_in_inld, const TensorIdx stride_in_outld,
-    const TensorIdx stride_out_inld, const TensorIdx stride_out_outld,
-    const TensorUInt size_kn_inld, const TensorUInt size_kn_outld) {
+template <typename FloatType,
+          bool UPDATE_OUT>
+void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::
+set_wrapper_loop(const TensorIdx stride_in_inld,
+    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
+    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
+    const TensorUInt size_kn_outld) {
   this->stride_in_inld_ = stride_in_inld;
   this->stride_in_outld_ = stride_in_outld;
   this->stride_out_inld_ = stride_out_inld;
@@ -118,8 +140,9 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::set_wrapper_loop(
 }
 
 
-template <typename FloatType>
-void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
+template <typename FloatType,
+          bool UPDATE_OUT>
+void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
     const TensorIdx size_trans, const TensorIdx size_pad) const {
   for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
@@ -140,19 +163,34 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>::exec(
 /*
  * Explicit template instantiation definition for class KernelTrans
  */
-template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
+template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, true>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, true>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL, true>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL, true>;
 
-template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, true>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, true>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF, true>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF, true>;
 
-template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
+template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, true>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, true>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE, true>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE, true>;
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, false>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, false>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL, false>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL, false>;
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, false>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, false>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF, false>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF, false>;
+
+template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, false>;
+template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, false>;
+template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE, false>;
+template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE, false>;
 
 }

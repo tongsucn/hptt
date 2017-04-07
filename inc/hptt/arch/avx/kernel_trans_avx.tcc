@@ -140,71 +140,91 @@ void KernelTransData<FloatType, TYPE>::set_coef(
 
 
 /*
- * Specializations of class KernelTrans
+ * Partial pecializations of class KernelTrans
  */
-template <>
-KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
-template <>
-void KernelTrans<float, KernelTypeTrans::KERNEL_FULL>::exec(
-    const float * RESTRICT data_in, float * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
+    : public KernelTransData<float, KernelTypeTrans::KERNEL_FULL> {
+public:
+  KernelTrans();
+  void exec(const float * RESTRICT data_in, float * RESTRICT data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
-template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_FULL>::exec(
-    const double * RESTRICT data_in, double * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
+    : public KernelTransData<float, KernelTypeTrans::KERNEL_HALF> {
+public:
+  KernelTrans();
+  void exec(const float * RESTRICT data_in, float * RESTRICT data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
-template <>
-void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>::exec(
-    const FloatComplex * RESTRICT data_in, FloatComplex * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
+    : public KernelTransData<double, KernelTypeTrans::KERNEL_FULL> {
+public:
+  KernelTrans();
+  void exec(const double * RESTRICT data_in, double * RESTRICT data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::KernelTrans();
-template <>
-void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>::exec(
-    const DoubleComplex * RESTRICT data_in, DoubleComplex * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
+    : public KernelTransData<double, KernelTypeTrans::KERNEL_HALF> {
+public:
+  KernelTrans();
+  void exec(const double * RESTRICT data_in, double * RESTRICT data_out,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+};
 
+template <bool UPDATE_OUT>
+class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
+    : public KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_FULL> {
+public:
+  KernelTrans();
+  void exec(const FloatComplex * RESTRICT data_in,
+      FloatComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
-template <>
-void KernelTrans<float, KernelTypeTrans::KERNEL_HALF>::exec(
-    const float * RESTRICT data_in, float * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
+    : public KernelTransData<FloatComplex, KernelTypeTrans::KERNEL_HALF> {
+public:
+  KernelTrans();
+  void exec(const FloatComplex * RESTRICT data_in,
+      FloatComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
-template <>
-void KernelTrans<double, KernelTypeTrans::KERNEL_HALF>::exec(
-    const double * RESTRICT data_in, double * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL, UPDATE_OUT>
+    : public KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_FULL> {
+public:
+  KernelTrans();
+  void exec(const DoubleComplex * RESTRICT data_in,
+      DoubleComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
+};
 
-template <>
-KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
-template <>
-void KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>::exec(
-    const FloatComplex * RESTRICT data_in, FloatComplex * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
-
-template <>
-KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::KernelTrans();
-template <>
-void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>::exec(
-    const DoubleComplex * RESTRICT data_in, DoubleComplex * RESTRICT data_out,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const;
+template <bool UPDATE_OUT>
+class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>
+    : public KernelTransData<DoubleComplex, KernelTypeTrans::KERNEL_HALF> {
+public:
+  KernelTrans();
+  void exec(const DoubleComplex * RESTRICT data_in,
+      DoubleComplex * RESTRICT data_out, const TensorIdx stride_in_outld,
+      const TensorIdx stride_out_inld) const;
+};
 
 
 /*
  * Specialization of class KernelTrans, linear kernel, used for common leading
  */
-template <typename FloatType>
-class KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE>
+template <typename FloatType,
+          bool UPDATE_OUT>
+class KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>
     : public KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE> {
 public:
   static constexpr TensorUInt LOOP_MAX = 10;
@@ -229,19 +249,46 @@ private:
 /*
  * Explicit template instantiation declaration for class KernelTrans
  */
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL,
+    true>;
 
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF,
+    true>;
 
-extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE>;
-extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE>;
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, true>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, true>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE,
+    true>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE,
+    true>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_FULL, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_FULL, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_FULL,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_FULL,
+    false>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_HALF, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_HALF, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_HALF,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF,
+    false>;
+
+extern template class KernelTrans<float, KernelTypeTrans::KERNEL_LINE, false>;
+extern template class KernelTrans<double, KernelTypeTrans::KERNEL_LINE, false>;
+extern template class KernelTrans<FloatComplex, KernelTypeTrans::KERNEL_LINE,
+    false>;
+extern template class KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_LINE,
+    false>;
 
 #endif // HPTT_ARCH_AVX_KERNEL_TRANS_AVX_TCC_
