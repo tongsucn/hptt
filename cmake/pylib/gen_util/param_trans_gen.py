@@ -20,9 +20,8 @@ class IncTarget(object):
     for dtype in dtypes:
       for order in orders:
         temp_content += '''
-extern template struct ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>;''' % (FLOAT_MAP[dtype].full,
-    order)
+extern template struct ParamTrans<TensorWrapper<%s, %d>>;''' % (
+    FLOAT_MAP[dtype].full, order)
 
     temp_content += '\n\n#endif'
     self.content = [temp_content]
@@ -43,15 +42,13 @@ class SrcTarget(object):
       temp_content = '''#include <hptt/param/parameter_trans.h>
 
 #include <hptt/types.h>
-#include <hptt/arch/compat.h>
 #include <hptt/tensor.h>
 
 namespace hptt {
 '''
       for order in orders:
         temp_content +='''
-template struct ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>;''' % (FLOAT_MAP[dtype].full,
+template struct ParamTrans<TensorWrapper<%s, %d>>;''' % (FLOAT_MAP[dtype].full,
     order)
 
       temp_content += '\n\n}'

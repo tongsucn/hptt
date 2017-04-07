@@ -28,7 +28,7 @@ class IncTarget(object):
         for order in orders:
           self.content[-1] += '''
 extern template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;''' % (target[1],
+    TensorWrapper<%s, %d>>>;''' % (target[1],
     FLOAT_MAP[dtype].full, order)
 
       self.content[-1] += '\n\n#endif'
@@ -51,7 +51,6 @@ class SrcTarget(object):
 
 #include <hptt/types.h>
 #include <hptt/tensor.h>
-#include <hptt/arch/compat.h>
 #include <hptt/param/parameter_trans.h>
 
 namespace hptt {
@@ -59,8 +58,7 @@ namespace hptt {
 
         for order in orders:
           self.content[-1] += '''
-template class %s<ParamTrans<
-    TensorWrapper<%s, %d, MemLayout::COL_MAJOR>>>;''' % (target[1],
+template class %s<ParamTrans<TensorWrapper<%s, %d>>>;''' % (target[1],
     FLOAT_MAP[dtype].full, order)
 
         self.content[-1] += '\n\n}'

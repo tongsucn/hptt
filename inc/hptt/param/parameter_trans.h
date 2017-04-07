@@ -19,13 +19,11 @@ namespace hptt {
 
 template <typename FloatType,
           TensorUInt ORDER>
-class TensorMergedWrapper
-    : public TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR> {
+class TensorMergedWrapper : public TensorWrapper<FloatType, ORDER> {
 public:
   TensorMergedWrapper() = delete;
 
-  template <MemLayout ACT_MAJOR>
-  TensorMergedWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
+  TensorMergedWrapper(const TensorWrapper<FloatType, ORDER> &tensor,
       const std::unordered_set<TensorUInt> &merge_set);
 
   HPTT_INL FloatType &operator[](const TensorIdx * RESTRICT indices);

@@ -65,9 +65,8 @@ const TensorIdx &TensorSize<ORDER>::operator[](
  * Implementation for class TensorWrapper
  */
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper()
+          TensorUInt ORDER>
+TensorWrapper<FloatType, ORDER>::TensorWrapper()
     : size_(),
       outer_size_(),
       raw_data_(nullptr) {
@@ -76,9 +75,8 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper()
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
+          TensorUInt ORDER>
+TensorWrapper<FloatType, ORDER>::TensorWrapper(
     const TensorSize<ORDER> &size_obj, const FloatType *raw_data)
     : size_(size_obj),
       outer_size_(size_obj),
@@ -88,9 +86,8 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
+          TensorUInt ORDER>
+TensorWrapper<FloatType, ORDER>::TensorWrapper(
     const TensorSize<ORDER> &size_obj, const TensorSize<ORDER> &outer_size_obj,
     const FloatType *raw_data)
     : size_(size_obj),
@@ -101,43 +98,19 @@ TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-template <MemLayout ACT_MAJOR>
-TensorWrapper<FloatType, ORDER, LAYOUT>::TensorWrapper(
-    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper)
+          TensorUInt ORDER>
+TensorWrapper<FloatType, ORDER>::TensorWrapper(
+    const TensorWrapper<FloatType, ORDER> &wrapper)
     : size_(wrapper.get_size()),
       outer_size_(wrapper.get_outer_size()),
       raw_data_(const_cast<FloatType *>(wrapper.get_data())) {
-  // Translate if input wrapper has different layout
-  if (LAYOUT != ACT_MAJOR) {
-    // Reverse size objects
-    TensorUInt left_idx = 0, right_idx = ORDER - 1;
-    while (left_idx < right_idx) {
-      std::swap(this->size_[left_idx], this->size_[right_idx]);
-      std::swap(this->outer_size_[left_idx], this->outer_size_[right_idx]);
-      ++left_idx, --right_idx;
-    }
-  }
-
   this->init_strides_();
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-template <typename... Idx>
-FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator()(
-    Idx... indices) {
-  return this->get_element_(0, 0, indices...);
-}
-
-
-template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorUInt ORDER>
+FloatType &TensorWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) {
   TensorIdx abs_offset = 0;
   for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
@@ -147,9 +120,8 @@ FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
+          TensorUInt ORDER>
+const FloatType &TensorWrapper<FloatType, ORDER>::operator[](
     const TensorIdx * RESTRICT indices) const {
   TensorIdx abs_offset = 0;
   for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
@@ -159,107 +131,68 @@ const FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::operator[](
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
+          TensorUInt ORDER>
 const TensorSize<ORDER> &
-TensorWrapper<FloatType, ORDER, LAYOUT>::get_size() const {
+TensorWrapper<FloatType, ORDER>::get_size() const {
   return this->size_;
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-TensorIdx TensorWrapper<FloatType, ORDER, LAYOUT>::get_size(
+          TensorUInt ORDER>
+TensorIdx TensorWrapper<FloatType, ORDER>::get_size(
     const TensorUInt order) const {
   return this->size_[order];
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
+          TensorUInt ORDER>
 const TensorSize<ORDER> &
-TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size() const {
+TensorWrapper<FloatType, ORDER>::get_outer_size() const {
   return this->outer_size_;
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-TensorIdx TensorWrapper<FloatType, ORDER, LAYOUT>::get_outer_size(
+          TensorUInt ORDER>
+TensorIdx TensorWrapper<FloatType, ORDER>::get_outer_size(
     const TensorUInt order) const {
   return this->outer_size_[order];
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-void TensorWrapper<FloatType, ORDER, LAYOUT>::reset_data(
-    const FloatType *new_data) {
+          TensorUInt ORDER>
+void TensorWrapper<FloatType, ORDER>::reset_data(const FloatType *new_data) {
   this->raw_data_ = const_cast<FloatType *>(new_data);
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-FloatType *TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() {
+          TensorUInt ORDER>
+FloatType *TensorWrapper<FloatType, ORDER>::get_data() {
   return this->raw_data_;
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-const FloatType *TensorWrapper<FloatType, ORDER, LAYOUT>::get_data() const {
+          TensorUInt ORDER>
+const FloatType *TensorWrapper<FloatType, ORDER>::get_data() const {
   return this->raw_data_;
 }
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-void TensorWrapper<FloatType, ORDER, LAYOUT>::init_strides_() {
+          TensorUInt ORDER>
+void TensorWrapper<FloatType, ORDER>::init_strides_() {
   if (0 == ORDER)
     return;
 
-  // Initialize strides_ according to memory layout
-  if (MemLayout::COL_MAJOR == LAYOUT) {
-    this->strides_[0] = 1;
-    for (TensorUInt order_idx = 0; order_idx < ORDER - 1; ++order_idx)
-      this->strides_[order_idx + 1]
-          = this->outer_size_[order_idx] * this->strides_[order_idx];
-  }
-  else {
-    this->strides_[ORDER - 1] = 1;
-    for (TensorInt order_idx = ORDER - 1; order_idx > 0; --order_idx)
-      this->strides_[order_idx - 1]
-          = this->outer_size_[order_idx] * this->strides_[order_idx];
-  }
-}
-
-
-template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-template <typename... Idx>
-FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
-    TensorUInt curr_order, TensorIdx abs_offset, TensorIdx next_idx,
-    Idx... idx) {
-  return this->get_element_(curr_order + 1,
-      abs_offset + next_idx * this->strides_[curr_order], idx...);
-}
-
-
-template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT>
-FloatType &TensorWrapper<FloatType, ORDER, LAYOUT>::get_element_(
-    TensorUInt curr_order, TensorIdx abs_offset) {
-  return this->raw_data_[abs_offset];
+  this->strides_[0] = 1;
+  for (TensorUInt order_idx = 0; order_idx < ORDER - 1; ++order_idx)
+    this->strides_[order_idx + 1]
+      = this->outer_size_[order_idx] * this->strides_[order_idx];
 }
 
 

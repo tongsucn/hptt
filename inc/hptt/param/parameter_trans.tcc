@@ -7,11 +7,10 @@
  */
 template <typename FloatType,
           TensorUInt ORDER>
-template <MemLayout ACT_MAJOR>
 TensorMergedWrapper<FloatType, ORDER>::TensorMergedWrapper(
-    const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &tensor,
+    const TensorWrapper<FloatType, ORDER> &tensor,
     const std::unordered_set<TensorUInt> &merge_set)
-    : TensorWrapper<FloatType, ORDER, MemLayout::COL_MAJOR>(tensor),
+    : TensorWrapper<FloatType, ORDER>(tensor),
       begin_order_idx_(0),
       merged_order_(this->merge_idx_(merge_set)) {
 }

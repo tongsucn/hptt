@@ -32,8 +32,7 @@ private:
 
 
 template <typename FloatType,
-          TensorUInt ORDER,
-          MemLayout LAYOUT = MemLayout::COL_MAJOR>
+          TensorUInt ORDER>
 class TensorWrapper {
 public:
   using Float = FloatType;
@@ -45,11 +44,7 @@ public:
   TensorWrapper(const TensorSize<ORDER> &size_obj,
       const TensorSize<ORDER> &outer_size_obj, const FloatType *raw_data);
 
-  template <MemLayout ACT_MAJOR>
-  TensorWrapper(const TensorWrapper<FloatType, ORDER, ACT_MAJOR> &wrapper);
-
-  template <typename... Idx>
-  FloatType &operator()(Idx... indices);
+  TensorWrapper(const TensorWrapper<FloatType, ORDER> &wrapper);
 
   FloatType &operator[](const TensorIdx * RESTRICT indices);
   const FloatType &operator[](const TensorIdx * RESTRICT indices) const;
@@ -67,11 +62,6 @@ public:
 protected:
   // Internal function member
   void init_strides_();
-
-  template <typename... Idx>
-  FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset,
-      TensorIdx next_idx, Idx... idx);
-  FloatType &get_element_(TensorUInt curr_order, TensorIdx abs_offset);
 
   // Internal data member
   TensorSize<ORDER> size_;

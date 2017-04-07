@@ -13,14 +13,4 @@
 
 #define RESTRICT __restrict__
 
-
-namespace hptt {
-
-enum class MemLayout : bool {
-  COL_MAJOR = true,
-  ROW_MAJOR = false
-};
-
-}
-
 #endif // HPTT_COMPAT_H_
