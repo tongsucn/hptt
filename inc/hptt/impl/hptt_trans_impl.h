@@ -65,6 +65,8 @@ private:
   using Param_ = ParamTrans<TensorWrapper<FloatType, ORDER>, UPDATE>;
 
   HPTT_INL void exec_impl_();
+
+  const bool update_;
 };
 
 

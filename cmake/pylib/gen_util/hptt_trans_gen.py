@@ -42,7 +42,7 @@ class IncTarget(object):
       constructor_content += '''
   if (%s == order) {
     HPTT_CGRAPH_TRANS_IMPL_GEN(%d);
-    if (hptt::update_output(beta)) {
+    if (this->update_) {
       PlanTrans<Param_<%d, true>> plan(
           std::make_shared<Param_<%d, true>>(in_tensor, out_tensor,
           perm_arr, alpha, beta), num_threads, tune_loop_num, tune_para_num,
@@ -116,14 +116,18 @@ class IncTarget(object):
     '' if order == orders[0] else 'else ', order, order, order, order)
 
     # CGraphTransPackData's execution function content
-    exec_content = ''
+    exec_content_t = ''
     for order in orders:
-      exec_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
-    this->cgraph_trans_ptr_%d_t_->exec();
-  else if (nullptr != this->cgraph_trans_ptr_%d_f_)
-    this->cgraph_trans_ptr_%d_f_->exec();''' % (
-    '' if order == orders[0] else 'else ', order, order, order, order)
+      exec_content_t += '''
+    %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
+      this->cgraph_trans_ptr_%d_t_->exec();''' % (
+    '' if order == orders[0] else 'else ', order, order)
+    exec_content_f = ''
+    for order in orders:
+      exec_content_f += '''
+    %sif (nullptr != this->cgraph_trans_ptr_%d_f_)
+      this->cgraph_trans_ptr_%d_f_->exec();''' % (
+    '' if order == orders[0] else 'else ', order, order)
 
 
     # File content
@@ -178,7 +182,8 @@ CGraphTransPack<FloatType>::CGraphTransPack(const FloatType *in_data,
     const double tuning_timeout_ms,
     const std::vector<TensorUInt> &in_outer_size,
     const std::vector<TensorUInt> &out_outer_size)
-    : CGraphTransPackBase<FloatType>(), CGraphTransPackData<FloatType>() {
+    : CGraphTransPackBase<FloatType>(), CGraphTransPackData<FloatType>(),
+      update_(hptt::update_output(beta)) {
   // Create input size objects
   std::vector<TensorIdx> in_size_vec(in_size.begin(), in_size.end()),
       in_outer_size_vec(in_outer_size.begin(), in_outer_size.begin());
@@ -231,10 +236,15 @@ HPTT_INL void CGraphTransPack<FloatType>::unset_thread_ids() {%s
 
 
 template <typename FloatType>
-HPTT_INL void CGraphTransPack<FloatType>::exec_impl_() {%s
+HPTT_INL void CGraphTransPack<FloatType>::exec_impl_() {
+  if (this->update_) {%s
+  }
+  else {%s
+  }
 }
 
 #endif''' % (TARGET_PREFIX.upper(), TARGET_PREFIX.upper(),
     data_constructor_content, data_destructor_content, orders[0], orders[-1],
     data_member_content, constructor_content, print_content, set_content,
-    set_thread_id_content, unset_thread_id_content, exec_content)]
+    set_thread_id_content, unset_thread_id_content, exec_content_t,
+    exec_content_f)]
