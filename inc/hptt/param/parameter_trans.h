@@ -40,7 +40,7 @@ private:
 
 
 template <typename TensorType,
-          bool UPDATE_OUT = true>
+          bool UPDATE_OUT>
 struct ParamTrans {
   // Type alias and constant values
   using Float = typename TensorType::Float;

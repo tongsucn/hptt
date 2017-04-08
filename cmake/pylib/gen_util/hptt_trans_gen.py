@@ -15,39 +15,55 @@ class IncTarget(object):
     self.filename = ['%s_impl_%s' % (TARGET_PREFIX, suffix)]
 
     # CGraphTransPackData constructor's content
-    data_constructor_content = 'cgraph_trans_ptr_2_(nullptr),'
-    for order in orders[1:]:
+    data_constructor_content = ''
+    for order in orders:
       data_constructor_content += '''
-      cgraph_trans_ptr_%d_(nullptr),''' % order
+      cgraph_trans_ptr_%d_t_(nullptr),
+      cgraph_trans_ptr_%d_f_(nullptr),''' % (order, order)
     data_constructor_content = data_constructor_content[:-1]
 
     # CGraphTransPackData destructor's content
     data_destructor_content = ''
     for order in orders:
       data_destructor_content += '''
-    delete this->cgraph_trans_ptr_%d_;''' % order
+    delete this->cgraph_trans_ptr_%d_t_;
+    delete this->cgraph_trans_ptr_%d_f_;''' % (order, order)
 
     # CGraphTransPackData's member content
     data_member_content = ''
     for order in orders:
       data_member_content += '''
-  CGraphType_<%d> *cgraph_trans_ptr_%d_;''' % (order, order)
+  CGraph<%d, true> *cgraph_trans_ptr_%d_t_;
+  CGraph<%d, false> *cgraph_trans_ptr_%d_f_;''' % (order, order, order, order)
 
     # CGraphTransPackData's constructor content
     constructor_content = ''
     for order in orders:
       constructor_content += '''
-  if (%d == order) {
+  if (%s == order) {
     HPTT_CGRAPH_TRANS_IMPL_GEN(%d);
-    this->cgraph_trans_ptr_%d_ = plan.get_graph();
-  }''' % (order, order, order)
+    if (hptt::update_output(beta)) {
+      PlanTrans<Param_<%d, true>> plan(
+          std::make_shared<Param_<%d, true>>(in_tensor, out_tensor,
+          perm_arr, alpha, beta), num_threads, tune_loop_num, tune_para_num,
+          heur_loop_num, heur_para_num, tuning_timeout_ms);
+      this->cgraph_trans_ptr_%d_t_ = plan.get_graph();
+    }
+    else {
+      PlanTrans<Param_<%d, false>> plan(
+          std::make_shared<Param_<%d, false>>(in_tensor, out_tensor,
+          perm_arr, alpha, beta), num_threads, tune_loop_num, tune_para_num,
+          heur_loop_num, heur_para_num, tuning_timeout_ms);
+      this->cgraph_trans_ptr_%d_f_ = plan.get_graph();
+    }
+  }''' % (order, order, order, order, order, order, order, order)
 
     # CGraphTransPackData's print function content
     print_content = ''
     for order in orders:
       print_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_) {
-    auto descriptor = this->cgraph_trans_ptr_%d_->get_descriptor();
+  %sif (nullptr != this->cgraph_trans_ptr_%d_t_) {
+    auto descriptor = this->cgraph_trans_ptr_%d_t_->get_descriptor();
     std::cout << "Loop order: ";
     for (auto order : descriptor.loop_order)
       std::cout << order << " ";
@@ -56,39 +72,58 @@ class IncTarget(object):
     for (auto th_num : descriptor.parallel_strategy)
       std::cout << th_num << " ";
     std::cout << std::endl;
-  }''' % ('' if order == orders[0] else 'else ', order, order)
+  }
+  else if (nullptr != this->cgraph_trans_ptr_%d_f_) {
+    auto descriptor = this->cgraph_trans_ptr_%d_f_->get_descriptor();
+    std::cout << "Loop order: ";
+    for (auto order : descriptor.loop_order)
+      std::cout << order << " ";
+    std::cout << std::endl;
+    std::cout << "Parallelization: ";
+    for (auto th_num : descriptor.parallel_strategy)
+      std::cout << th_num << " ";
+    std::cout << std::endl;
+  }''' % ('' if order == orders[0] else 'else ', order, order, order, order)
 
     # CGraphTransPackData's set data function content
     set_content = ''
     for order in orders:
       set_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_)
-    this->cgraph_trans_ptr_%d_->reset_data(in_data, out_data);''' % (
-    '' if order == orders[0] else 'else ', order, order)
+  %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
+    this->cgraph_trans_ptr_%d_t_->reset_data(in_data, out_data);
+  else if (nullptr != this->cgraph_trans_ptr_%d_f_)
+    this->cgraph_trans_ptr_%d_f_->reset_data(in_data, out_data);''' % (
+    '' if order == orders[0] else 'else ', order, order, order, order)
 
     # CGraphTransPackData's set thread ID function content
     set_thread_id_content = ''
     for order in orders:
       set_thread_id_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_)
-    this->cgraph_trans_ptr_%d_->set_thread_ids(thread_ids);''' % (
-    '' if order == orders[0] else 'else ', order, order)
+  %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
+    this->cgraph_trans_ptr_%d_t_->set_thread_ids(thread_ids);
+  else if (nullptr != this->cgraph_trans_ptr_%d_f_)
+    this->cgraph_trans_ptr_%d_f_->set_thread_ids(thread_ids);''' % (
+    '' if order == orders[0] else 'else ', order, order, order, order)
 
     # CGraphTransPackData's unset thread ID function content
     unset_thread_id_content = ''
     for order in orders:
       unset_thread_id_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_)
-    this->cgraph_trans_ptr_%d_->unset_thread_ids();''' % (
-    '' if order == orders[0] else 'else ', order, order)
+  %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
+    this->cgraph_trans_ptr_%d_t_->unset_thread_ids();
+  else if (nullptr != this->cgraph_trans_ptr_%d_f_)
+    this->cgraph_trans_ptr_%d_f_->unset_thread_ids();''' % (
+    '' if order == orders[0] else 'else ', order, order, order, order)
 
     # CGraphTransPackData's execution function content
     exec_content = ''
     for order in orders:
       exec_content += '''
-  %sif (nullptr != this->cgraph_trans_ptr_%d_)
-    this->cgraph_trans_ptr_%d_->exec();''' % (
-    '' if order == orders[0] else 'else ', order, order)
+  %sif (nullptr != this->cgraph_trans_ptr_%d_t_)
+    this->cgraph_trans_ptr_%d_t_->exec();
+  else if (nullptr != this->cgraph_trans_ptr_%d_f_)
+    this->cgraph_trans_ptr_%d_f_->exec();''' % (
+    '' if order == orders[0] else 'else ', order, order, order, order)
 
 
     # File content
@@ -110,27 +145,26 @@ public:
   constexpr static auto MAX_ORDER = %d;
 
 protected:
-  template <TensorUInt ORDER>
-  using ParamType_ = ParamTrans<TensorWrapper<FloatType, ORDER>>;
-  template <TensorUInt ORDER>
-  using CGraphType_ = CGraphTrans<ParamType_<ORDER>>;
+  template <TensorUInt ORDER,
+            bool UPDATE>
+  using Param = ParamTrans<TensorWrapper<FloatType, ORDER>, UPDATE>;
+  template <TensorUInt ORDER,
+            bool UPDATE>
+  using CGraph = CGraphTrans<Param<ORDER, UPDATE>>;
 %s
 };
 
 
 #define HPTT_CGRAPH_TRANS_IMPL_GEN(ORDER)                                     \\
-  using TensorType = TensorWrapper<FloatType, ORDER>;                         \\
-  using ParamType = ParamTrans<TensorType>;                                   \\
   TensorSize<ORDER> in_size_obj(in_size_vec), out_size_obj(out_size_vec),     \\
       in_outer_size_obj(in_outer_size_vec),                                   \\
       out_outer_size_obj(out_outer_size_vec);                                 \\
   std::array<TensorUInt, ORDER> perm_arr;                                     \\
   std::copy(perm.begin(), perm.end(), perm_arr.begin());                      \\
-  const TensorType in_tensor(in_size_obj, in_outer_size_obj, in_data);        \\
-  TensorType out_tensor(out_size_obj, out_outer_size_obj, out_data);          \\
-  PlanTrans<ParamType> plan(std::make_shared<ParamType>(in_tensor, out_tensor,\\
-      perm_arr, alpha, beta), num_threads, tune_loop_num, tune_para_num,      \\
-      heur_loop_num, heur_para_num, tuning_timeout_ms);
+  const TensorWrapper<FloatType, ORDER> in_tensor(in_size_obj,                \\
+      in_outer_size_obj, in_data);                                            \\
+  TensorWrapper<FloatType, ORDER> out_tensor(out_size_obj, out_outer_size_obj,\\
+      out_data);
 
 
 template <typename FloatType>

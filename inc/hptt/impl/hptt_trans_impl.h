@@ -60,8 +60,18 @@ public:
   virtual void unset_thread_ids() final;
 
 private:
+  template <TensorUInt ORDER,
+            bool UPDATE>
+  using Param_ = ParamTrans<TensorWrapper<FloatType, ORDER>, UPDATE>;
+
   HPTT_INL void exec_impl_();
 };
+
+
+template <typename DeducedFloat>
+bool update_output(const DeducedFloat beta) {
+  return beta >= 1e-16;
+}
 
 
 template <typename FloatType>
