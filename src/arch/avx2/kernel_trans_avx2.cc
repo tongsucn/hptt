@@ -551,20 +551,17 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
         TensorIdx idx = 0;
         for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
             idx += step, ptr_in += step, ptr_out += step) {
-          Intrin::store(ptr_out, Intrin::add(
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)),
-              Intrin::load(ptr_out)));
+          Intrin::store(ptr_out,
+              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
 
-          Intrin::store(ptr_out + REG_CAP, Intrin::add(
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in + REG_CAP)),
-              Intrin::load(ptr_out + REG_CAP)));
+          Intrin::store(ptr_out + REG_CAP,
+              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in + REG_CAP)));
         }
 
         for (constexpr auto step = REG_CAP; idx + step <= size_trans;
             idx += step, ptr_in += step, ptr_out += step)
-          Intrin::store(ptr_out, Intrin::add(
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)),
-              Intrin::load(ptr_out)));
+          Intrin::store(ptr_out,
+              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
 
         for (; idx < size_trans; ++idx)
           ptr_out[idx] = this->alpha_ * ptr_in[idx];

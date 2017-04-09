@@ -145,16 +145,33 @@ template <typename FloatType,
 void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
     const TensorIdx size_trans, const TensorIdx size_pad) const {
-  for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
-    for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
-      auto ptr_in = data_in + this->stride_in_inld_ * in_idx
-          + this->stride_in_outld_ * out_idx;
-      auto ptr_out = data_out + this->stride_out_inld_ * in_idx
-          + this->stride_out_outld_ * out_idx;
+  if (UPDATE_OUT) {
+    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
+      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
+        auto ptr_in = data_in + this->stride_in_inld_ * in_idx
+            + this->stride_in_outld_ * out_idx;
+        auto ptr_out = data_out + this->stride_out_inld_ * in_idx
+            + this->stride_out_outld_ * out_idx;
 
 #pragma omp simd
-      for (TensorIdx idx = 0; idx < size_trans; ++idx)
-        out_ptr[idx] = this->alpha_ * in_ptr[idx] + this->beta_ * out_ptr[idx];
+        for (TensorIdx idx = 0; idx < size_trans; ++idx)
+          out_ptr[idx] = this->alpha_ * in_ptr[idx]
+              + this->beta_ * out_ptr[idx];
+      }
+    }
+  }
+  else {
+    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
+      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
+        auto ptr_in = data_in + this->stride_in_inld_ * in_idx
+            + this->stride_in_outld_ * out_idx;
+        auto ptr_out = data_out + this->stride_out_inld_ * in_idx
+            + this->stride_out_outld_ * out_idx;
+
+#pragma omp simd
+        for (TensorIdx idx = 0; idx < size_trans; ++idx)
+          out_ptr[idx] = this->alpha_ * in_ptr[idx];
+      }
     }
   }
 }

@@ -5,6 +5,7 @@
 #include <hptt/arch/compat.h>
 #include <hptt/kernels/micro_kernel_trans.h>
 
+#include <iostream>
 
 namespace hptt {
 
@@ -69,7 +70,7 @@ void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::exec(
       __attribute__((aligned(64)));
 
     this->tile_inld_(DualCounter<SIZE_IN_INLD, SIZE_IN_OUTLD>(), data_in,
-        buffer_out, stride_in_outld, stride_out_inld);
+        buffer_out, stride_in_outld, NUM_IN_OUTLD);
 
     for (TensorUInt idx_inld = 0; idx_inld < NUM_IN_INLD; ++idx_inld)
       for (TensorUInt idx_outld = 0; idx_outld < NUM_IN_OUTLD;
