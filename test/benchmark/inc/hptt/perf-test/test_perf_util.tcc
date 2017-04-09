@@ -5,11 +5,12 @@
 template <typename FloatType,
           typename RefFuncType,
           TensorUInt ORDER>
-void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case) {
+void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case,
+    const TensorUInt bm_idx) {
   using Deduced = DeducedFloatType<FloatType>;
 
   // Prepare data and timer
-  DataWrapper<FloatType> data_wrapper(test_case.size);
+  DataWrapper<FloatType> data_wrapper(test_case.size, true);
   TimerWrapper timer(1);
 
   // Create HPTT computational graph
@@ -22,22 +23,26 @@ void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case) {
       data_wrapper.act_data, size_vec, perm, static_cast<Deduced>(ALPHA),
       static_cast<Deduced>(BETA), 0);
 
-  double time_ttc = DBL_MAX, time_hptt = DBL_MAX;
+  double time_ref = DBL_MAX, time_hptt = DBL_MAX;
   for (auto times = 0; times < MEASURE_REPEAT; ++times) {
-    // Measure TTC version
+    // Measure reference version
     data_wrapper.trash_cache();
-    auto new_time_ttc = timer(ref_trans, data_wrapper.org_in_data,
+    auto new_time_ref = timer(ref_trans, data_wrapper.org_in_data,
         data_wrapper.ref_data, test_case.size, test_case.perm,
         static_cast<Deduced>(ALPHA), static_cast<Deduced>(BETA));
-    time_ttc = new_time_ttc < time_ttc ? new_time_ttc : time_ttc;
+    time_ref = new_time_ref < time_ref ? new_time_ref : time_ref;
 
     // Measure HPTT version
     data_wrapper.trash_cache();
     auto new_time_hptt  = timer(*graph);
     time_hptt = new_time_hptt < time_hptt ? new_time_hptt : time_hptt;
+
+    // Reset data
+    data_wrapper.reset_act();
+    data_wrapper.reset_ref();
   }
 
-  auto tp_ttc = calc_tp_trans<FloatType>(test_case.size, time_ttc);
+  auto tp_ref = calc_tp_trans<FloatType>(test_case.size, time_ref);
   auto tp_hptt = calc_tp_trans<FloatType>(test_case.size, time_hptt);
 
   delete graph;
@@ -46,12 +51,40 @@ void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case) {
   auto result = data_wrapper.verify();
 
   // Print log
-  std::stringstream ss;
-  ss << std::setprecision(3) << time_ttc << "," << std::setprecision(3)
-      << time_hptt << "," << std::setprecision(3) << tp_ttc << ","
-      << std::setprecision(3) << tp_hptt
-      << (-1 == result ? ",SUCCEED" : ",FAILED");
-  std::cout << ss.str() << std::endl;
+  printf(
+      "|| %02d | %6.2f ms | %6.2f ms | %4.1f GiB/s | %4.1f GiB/s | %s ||\n",
+      bm_idx, time_ref, time_hptt, tp_ref, tp_hptt,
+      (-1 != result ? " \x1B[31mFAILED\x1B[0m"
+       : time_ref >= time_hptt ? "\x1B[32mSUCCEED\x1B[0m"
+       : "\x1B[33mSUCCEED\x1B[0m"));
+}
+
+
+void print_title(std::string title) {
+  constexpr auto WIDTH = 68;
+
+  if (title.length() > WIDTH - 2)
+    title.resize(WIDTH - 2);
+
+  for (auto idx = 0; idx < WIDTH; ++idx)
+    std::cout << '=';
+  std::cout << std::endl;
+  const TensorInt title_deco_len = WIDTH - title.length() - 2;
+  for (auto idx = 0; idx < title_deco_len / 2; ++idx)
+    std::cout << '=';
+  std::cout << ' ' << title << ' ';
+  for (auto idx = 0; idx < title_deco_len / 2 + title_deco_len % 2; ++idx)
+    std::cout << '=';
+  std::cout << std::endl;
+  for (auto idx = 0; idx < WIDTH; ++idx)
+    std::cout << '=';
+  std::cout << std::endl;
+  std::cout <<
+      "= IDX == REF TIME == HPTT TIME == REF TP ==== HPTT TP === RESULT ==="
+      << std::endl;
+  for (auto idx = 0; idx < WIDTH; ++idx)
+    std::cout << '=';
+  std::cout << std::endl;
 }
 
 #endif // HPTT_PERF_TEST_TEST_PERF_UTIL_TCC_

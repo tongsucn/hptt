@@ -34,14 +34,18 @@ DataWrapper<FloatType>::DataWrapper(const std::vector<TensorIdx> &size,
     for (TensorIdx idx = 0; idx < this->data_len_; ++idx) {
       auto org_in_ptr = reinterpret_cast<Deduced_ *>(this->org_in_data + idx);
       auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
-      auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
-      auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
       for (TensorUInt in_idx = 0; in_idx < inner_; ++in_idx) {
         org_in_ptr[in_idx] = this->dist_(this->gen_);
         org_out_ptr[in_idx] = this->dist_(this->gen_);
-        ref_ptr[in_idx] = org_out_ptr[in_idx];
-        act_ptr[in_idx] = org_out_ptr[in_idx];
       }
+    }
+#pragma omp parallel for schedule(static)
+    for (TensorIdx idx = 0; idx < this->data_len_; ++idx) {
+      auto org_out_ptr = reinterpret_cast<Deduced_ *>(this->org_out_data + idx);
+      auto ref_ptr = reinterpret_cast<Deduced_ *>(this->ref_data + idx);
+      auto act_ptr = reinterpret_cast<Deduced_ *>(this->act_data + idx);
+      for (TensorUInt in_idx = 0; in_idx < inner_; ++in_idx)
+        ref_ptr[in_idx] = act_ptr[in_idx] = org_out_ptr[in_idx];
     }
   }
   else {

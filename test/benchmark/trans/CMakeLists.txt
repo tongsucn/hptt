@@ -1,12 +1,10 @@
 # ----------------------------------------------------------------------------
 # Add transpose AVX benchmark files
 # ----------------------------------------------------------------------------
-set(HPTT_SELECTED_ARCH avx)
-set(BM_TRANS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/${HPTT_SELECTED_ARCH})
+set(BM_TRANS_SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(BM_TRANS_SRC_SUFFIX .cc)
 
-file(GLOB BENCHMARK_SRC RELATIVE ${BM_TRANS_SRC}
-    ${BM_TRANS_SRC}/*${BM_TRANS_SRC_SUFFIX})
+file(GLOB BENCHMARK_SRC RELATIVE ${BM_TRANS_SRC} ./*${BM_TRANS_SRC_SUFFIX})
 
 foreach(BENCHMARK_CC_FILE ${BENCHMARK_SRC})
   string(REPLACE ${BM_TRANS_SRC_SUFFIX} "" BENCHMARK_NAME ${BENCHMARK_CC_FILE})

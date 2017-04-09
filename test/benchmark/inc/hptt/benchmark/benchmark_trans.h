@@ -78,8 +78,7 @@ std::vector<RefTransConfig> ref_trans_configs {
   RefTransConfig(6, 1, { 3, 2, 5, 1, 0, 4 }, { 32, 5, 15, 112, 15, 15 }),
   RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 32, 15, 15, 15, 15, 32 }),
   RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 112, 5, 15, 15, 15, 32 }),
-  RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 32, 5, 15, 15, 15, 112 }),
-  RefTransConfig(4, 1, { 0, 1, 3, 2 }, { 3, 2, 3, 2 })
+  RefTransConfig(6, 1, { 5, 4, 3, 2, 1, 0 }, { 32, 5, 15, 15, 15, 112 })
 };
 
 
