@@ -2,6 +2,8 @@
 #ifndef HPTT_IMPL_HPTT_TRANS_IMPL_H_
 #define HPTT_IMPL_HPTT_TRANS_IMPL_H_
 
+#include <cmath>
+
 #include <array>
 #include <vector>
 #include <memory>
@@ -72,7 +74,7 @@ private:
 
 template <typename DeducedFloat>
 bool update_output(const DeducedFloat beta) {
-  return beta >= 1e-16;
+  return std::fabs(beta) >= 1e-16;
 }
 
 

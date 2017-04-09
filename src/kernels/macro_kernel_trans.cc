@@ -63,11 +63,10 @@ void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::exec(
       and hptt::check_aligned<FloatType>(NUM_IN_OUTLD, data_out);
 
   if (USE_STREAMING) {
-    // Create aligned buffer, macro HPTC_MEM_ALIGN is defined in
+    // Create aligned buffer, macro HPTT_MEM_ALIGN is defined in
     // hptt/arch/compat.h
     constexpr TensorUInt NUM_IN_INLD = MicroKernel::KN_WIDTH * SIZE_IN_INLD;
-    FloatType buffer_out[NUM_IN_INLD * NUM_IN_OUTLD]
-      __attribute__((aligned(64)));
+    FloatType buffer_out[NUM_IN_INLD * NUM_IN_OUTLD] HPTT_MEM_ALIGN;
 
     this->tile_inld_(DualCounter<SIZE_IN_INLD, SIZE_IN_OUTLD>(), data_in,
         buffer_out, stride_in_outld, NUM_IN_OUTLD);
