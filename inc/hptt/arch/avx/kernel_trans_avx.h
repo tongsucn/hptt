@@ -106,7 +106,6 @@ template <typename FloatType,
 class KernelTransData {
 public:
   using Float = FloatType;
-  static constexpr bool STREAM = true;
 
   KernelTransData();
 
@@ -115,6 +114,7 @@ public:
       ? (SIZE_REG / sizeof(FloatType)) / 2 : 1;
 
   static void sstore(FloatType *data_out, const FloatType *buffer);
+  static bool check_stream(TensorUInt arr_size);
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);

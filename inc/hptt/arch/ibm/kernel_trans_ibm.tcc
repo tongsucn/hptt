@@ -79,6 +79,13 @@ void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
 
 template <typename FloatType,
           KernelTypeTrans TYPE>
+bool KernelTransData<FloatType, TYPE>::check_stream(TensorUInt) {
+  return false;
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
 void KernelTransData<FloatType, TYPE>::set_coef(
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta) {

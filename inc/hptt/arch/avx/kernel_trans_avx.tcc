@@ -27,9 +27,11 @@ struct IntrinImpl<FloatType, TYPE,
   static HPTT_INL void store(FloatType *target, const Reg &reg) {
     _mm256_storeu_ps(reinterpret_cast<Deduced *>(target), reg);
   }
+  static HPTT_INL void stream(FloatType *data_out, const Reg &reg) {
+    _mm256_stream_ps(reinterpret_cast<Deduced *>(data_out), reg);
+  }
   static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
-    _mm256_stream_ps(reinterpret_cast<Deduced *>(data_out),
-        _mm256_load_ps(reinterpret_cast<const Deduced *>(buffer)));
+    IntrinImpl::stream(data_out, IntrinImpl::load(buffer));
     if (2 == sizeof(FloatType) / sizeof(Deduced))
       _mm256_stream_ps(reinterpret_cast<Deduced *>(data_out) + 1,
           _mm256_load_ps(reinterpret_cast<const Deduced *>(buffer) + 1));
@@ -58,9 +60,11 @@ struct IntrinImpl<FloatType, TYPE,
   static HPTT_INL void store(FloatType *target, const Reg &reg) {
     _mm256_storeu_pd(reinterpret_cast<Deduced *>(target), reg);
   }
+  static HPTT_INL void stream(FloatType *data_out, const Reg &reg) {
+    _mm256_stream_pd(reinterpret_cast<Deduced *>(data_out), reg);
+  }
   static HPTT_INL void sstore(FloatType *data_out, const FloatType *buffer) {
-    _mm256_stream_pd(reinterpret_cast<Deduced *>(data_out),
-        _mm256_load_pd(reinterpret_cast<const Deduced *>(buffer)));
+    IntrinImpl::stream(data_out, IntrinImpl::load(buffer));
     if (2 == sizeof(FloatType) / sizeof(Deduced))
       _mm256_stream_pd(reinterpret_cast<Deduced *>(data_out) + 1,
           _mm256_load_pd(reinterpret_cast<const Deduced *>(buffer) + 1));
@@ -159,6 +163,13 @@ template <typename FloatType,
 void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
     const FloatType *buffer) {
   IntrinImpl<FloatType, TYPE>::sstore(data_out, buffer);
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+bool KernelTransData<FloatType, TYPE>::check_stream(TensorUInt arr_size) {
+  return (arr_size * sizeof(FloatType)) % 64 == 0;
 }
 
 

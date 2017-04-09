@@ -502,8 +502,9 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const TensorIdx size_trans, const TensorIdx size_pad) const {
   using Intrin = IntrinImpl<FloatType, KernelTypeTrans::KERNEL_LINE>;
   constexpr TensorUInt REG_CAP = hptt::SIZE_REG / sizeof(FloatType);
+  const bool USE_STREAMING = not UPDATE_OUT and hptt::check_aligned(data_out);
 
-  if (UPDATE_OUT) {
+  if (not USE_STREAMING) {
     for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
       for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
         const FloatType * RESTRICT ptr_in
@@ -551,16 +552,16 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
         TensorIdx idx = 0;
         for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
             idx += step, ptr_in += step, ptr_out += step) {
-          Intrin::store(ptr_out,
+          Intrin::stream(ptr_out,
               Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
 
-          Intrin::store(ptr_out + REG_CAP,
+          Intrin::stream(ptr_out + REG_CAP,
               Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in + REG_CAP)));
         }
 
         for (constexpr auto step = REG_CAP; idx + step <= size_trans;
             idx += step, ptr_in += step, ptr_out += step)
-          Intrin::store(ptr_out,
+          Intrin::stream(ptr_out,
               Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
 
         for (; idx < size_trans; ++idx)

@@ -59,8 +59,9 @@ void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::exec(
   // Prefetching
   using FloatType = typename MicroKernel::Float;
   constexpr TensorUInt NUM_IN_OUTLD = MicroKernel::KN_WIDTH * SIZE_IN_OUTLD;
-  auto USE_STREAMING = not MicroKernel::UPDATE and MicroKernel::STREAM
-      and hptt::check_aligned<FloatType>(NUM_IN_OUTLD, data_out);
+  auto USE_STREAMING = not MicroKernel::UPDATE and
+      hptt::check_aligned<FloatType>(data_out) and
+      MicroKernel::check_stream(NUM_IN_OUTLD);
 
   if (USE_STREAMING) {
     // Create aligned buffer, macro HPTT_MEM_ALIGN is defined in

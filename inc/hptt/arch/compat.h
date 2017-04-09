@@ -23,9 +23,8 @@
 namespace hptt {
 
 template <typename FloatType>
-bool check_aligned(const uint32_t arr_size, const FloatType *begin_ptr) {
-  return reinterpret_cast<intptr_t>(begin_ptr) % 32 == 0 and
-      (arr_size * sizeof(FloatType)) % 64 == 0;
+bool check_aligned(const FloatType *begin_ptr) {
+  return reinterpret_cast<intptr_t>(begin_ptr) % 32 == 0;
 }
 
 }

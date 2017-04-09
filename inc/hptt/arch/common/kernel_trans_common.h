@@ -22,8 +22,6 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 class KernelTransData {
 public:
-  static constexpr bool STREAM = false;
-
   KernelTransData();
 
   static constexpr TensorUInt KN_WIDTH = TYPE == KernelTypeTrans::KERNEL_FULL
@@ -31,6 +29,7 @@ public:
       ? (SIZE_REG / sizeof(FloatType)) / 2 : 1;
 
   static void sstore(FloatType *data_out, const FloatType *buffer);
+  static bool check_stream(TensorUInt);
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
@@ -98,6 +97,13 @@ template <typename FloatType,
           KernelTypeTrans TYPE>
 void KernelTransData<FloatType, TYPE>::sstore(FloatType *data_out,
     const FloatType *buffer) {
+}
+
+
+template <typename FloatType,
+          KernelTypeTrans TYPE>
+bool KernelTransData<FloatType, TYPE>::check_stream(TensorUInt) {
+  return false;
 }
 
 
