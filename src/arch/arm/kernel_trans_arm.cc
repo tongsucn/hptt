@@ -28,21 +28,23 @@ void KernelTrans<FloatType, TYPE, UPDATE_OUT>::exec(
   constexpr auto WIDTH = KernelTrans<FloatType, TYPE, UPDATE_OUT>::KN_WIDTH;
 
   if (UPDATE_OUT) {
-    for (TensorUInt idx_in_outld = 0; idx_in_outld < WIDTH; ++idx_in_outld) {
-      for (TensorUInt idx_in_inld = 0; idx_in_inld < WIDTH; ++idx_in_inld) {
-        const auto idx_in = idx_in_inld + idx_in_outld * stride_in_outld,
-            idx_out = idx_in_outld + idx_in_inld * stride_out_inld;
-        data_out[idx_out] = this->alpha_ * data_in[idx_in]
-            + this->beta_ * data_out[idx_out];
+#pragma omp simd collapse(2)
+    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
+      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
+        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
+        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
+        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in]
+            + this->reg_beta_ * data_out[offset_out];
       }
     }
   }
   else {
-    for (TensorUInt idx_in_outld = 0; idx_in_outld < WIDTH; ++idx_in_outld) {
-      for (TensorUInt idx_in_inld = 0; idx_in_inld < WIDTH; ++idx_in_inld) {
-        const auto idx_in = idx_in_inld + idx_in_outld * stride_in_outld,
-            idx_out = idx_in_outld + idx_in_inld * stride_out_inld;
-        data_out[idx_out] = this->alpha_ * data_in[idx_in];
+#pragma omp simd collapse(2)
+    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
+      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
+        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
+        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
+        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in];
       }
     }
   }
@@ -87,6 +89,7 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
         auto out_ptr = data_out + this->stride_out_inld_ * idx_in
             + this->stride_out_outld_ * idx_out;
 
+#pragma omp simd
         for (TensorIdx idx = 0; idx < size_trans; ++idx)
           out_ptr[idx] = this->alpha_ * in_ptr[idx]
               + this->beta_ * out_ptr[idx];
@@ -103,6 +106,7 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
             = data_out + this->stride_out_inld_ * idx_in
             + this->stride_out_outld_ * idx_out;
 
+#pragma omp simd
         for (TensorIdx idx = 0; idx < size_trans; ++idx)
           out_ptr[idx] = this->alpha_ * in_ptr[idx];
       }
