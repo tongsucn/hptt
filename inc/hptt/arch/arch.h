@@ -8,9 +8,6 @@
 #include <string>
 #include <unordered_map>
 
-#include <immintrin.h>
-#include <xmmintrin.h>
-
 
 namespace hptt {
 
