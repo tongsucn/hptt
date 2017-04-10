@@ -18,11 +18,13 @@ file(GLOB HPTT_SRC arch/*.cc hptt.cc)
 # Architecture related
 file(GLOB HPTT_ARCH_AVX2_SRC arch/avx2/*.cc)
 file(GLOB HPTT_ARCH_AVX_SRC arch/avx/*.cc)
+file(GLOB HPTT_ARCH_ARM_SRC arch/arm/*.cc)
 file(GLOB HPTT_ARCH_IBM_SRC arch/ibm/*.cc)
 file(GLOB HPTT_ARCH_COMMON_SRC arch/common/*.cc)
 
 file(GLOB HPTT_AVX2_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_AVX2_SRC})
 file(GLOB HPTT_AVX_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_AVX_SRC})
+file(GLOB HPTT_ARM_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_ARM_SRC})
 file(GLOB HPTT_IBM_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_IBM_SRC})
 file(GLOB HPTT_COMMON_SRC ${HPTT_GENERAL_SRC} ${HPTT_ARCH_COMMON_SRC})
 
@@ -84,6 +86,26 @@ if (NOT ${HPTT_ARCH_AVX} STREQUAL "")
 
   # Set install
   install(TARGETS ${HPTT_AVX_LIB_NAME} LIBRARY DESTINATION lib)
+endif ()
+
+
+# ARM architecture
+if (NOT ${HPTT_ARCH_ARM} STREQUAL "")
+  add_library(${HPTT_ARM_LIB_NAME} SHARED ${HPTT_ARM_SRC})
+
+  # Set architecture-related compiler options
+  target_compile_options(${HPTT_ARM_LIB_NAME}
+    PUBLIC -march=native ${HPTT_ARCH_ARM})
+
+  get_target_property(HPTT_ARM_FLAGS ${HPTT_ARM_LIB_NAME} COMPILE_OPTIONS)
+  message("-- Additional compiler flags for ARM library: " ${HPTT_ARM_FLAGS})
+
+  # Add dependencies
+  add_dependencies(${HPTT_LIB_NAME} ${HPTT_ARM_LIB_NAME})
+  add_dependencies(${HPTT_LIB_STATIC_NAME} ${HPTT_ARM_LIB_NAME})
+
+  # Set install
+  install(TARGETS ${HPTT_ARM_LIB_NAME} LIBRARY DESTINATION lib)
 endif ()
 
 

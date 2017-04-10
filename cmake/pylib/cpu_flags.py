@@ -15,7 +15,10 @@ def get_cpu_flags():
   result = result[0].decode().split('\n')
   flags = []
   for line in result:
-    if 'flags' == line[:5]:
+    if 'vfp' in line:
+      flags = ['arm']
+      break
+    elif 'flags' == line[:5]:
       flags = line.split(':')[-1].split()
       flags = list(map(lambda x: x.lower(), flags))
       break
