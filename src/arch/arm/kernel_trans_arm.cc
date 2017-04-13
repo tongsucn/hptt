@@ -3,6 +3,7 @@
 #include <hptt/types.h>
 #include <hptt/arch/compat.h>
 #include <hptt/util/util_trans.h>
+#include <hptt/arch/common/common_impl.h>
 
 
 namespace hptt {
@@ -26,28 +27,8 @@ void KernelTrans<FloatType, TYPE, UPDATE_OUT>::exec(
     const TensorIdx stride_in_outld, const TensorIdx stride_out_inld) const {
   // Get number of elements to be processed in on row
   constexpr auto WIDTH = KernelTrans<FloatType, TYPE, UPDATE_OUT>::KN_WIDTH;
-
-  if (UPDATE_OUT) {
-#pragma omp simd collapse(2)
-    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
-      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
-        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
-        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
-        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in]
-            + this->reg_beta_ * data_out[offset_out];
-      }
-    }
-  }
-  else {
-#pragma omp simd collapse(2)
-    for (TensorUInt idx_row = 0; idx_row < WIDTH; ++idx_row) {
-      for (TensorUInt idx_col = 0; idx_col < WIDTH; ++idx_col) {
-        const TensorIdx offset_in = idx_col + idx_row * stride_out_inld;
-        const TensorIdx offset_out = idx_row + idx_col * stride_out_inld;
-        data_out[offset_out] = this->reg_alpha_ * data_in[offset_in];
-      }
-    }
-  }
+  common_trans_impl<FloatType, WIDTH, UPDATE_OUT>(data_in, data_out,
+      stride_in_outld, stride_out_inld, this->alpha_, this->beta_);
 }
 
 
@@ -63,14 +44,8 @@ template <typename FloatType,
 void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
     const TensorIdx size_trans, const TensorIdx size_pad) const {
-  if (UPDATE_OUT)
-#pragma omp simd
-    for (TensorIdx idx = 0; idx < size_trans; ++idx)
-      data_out[idx] = this->alpha_ * data_in[idx] + this->beta_ * data_out[idx];
-  else
-#pragma omp simd
-    for (TensorIdx idx = 0; idx < size_trans; ++idx)
-      data_out[idx] = this->alpha_ * data_in[idx];
+  common_trans_linear_impl<FloatType, UPDATE_OUT>(data_in, data_out, size_trans,
+      size_pad, this->alpha_, this->beta_);
 }
 
 
