@@ -280,22 +280,10 @@ template <typename FloatType,
 class KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>
     : public KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE> {
 public:
-  static constexpr TensorUInt LOOP_MAX = 10;
-
   KernelTrans();
-
-  void set_wrapper_loop(const TensorIdx stride_in_inld,
-      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
-      const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
-      const TensorUInt size_kn_outld);
 
   void exec(const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
       const TensorIdx size_trans, const TensorIdx size_pad) const;
-
-private:
-  TensorIdx stride_in_inld_, stride_in_outld_, stride_out_inld_,
-      stride_out_outld_;
-  TensorUInt size_kn_inld_, size_kn_outld_;
 };
 
 

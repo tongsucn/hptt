@@ -60,8 +60,7 @@ template <typename FloatType,
           bool UPDATE_OUT>
 class MacroTransLinear {
 public:
-  static constexpr TensorUInt LOOP_MAX
-      = KernelTransLinear<FloatType, UPDATE_OUT>::LOOP_MAX;
+  static constexpr TensorUInt LOOP_MAX = 10;
 
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
@@ -75,6 +74,10 @@ public:
 
 private:
   KernelTransLinear<FloatType, UPDATE_OUT> kernel_;
+
+  TensorIdx stride_in_inld_, stride_in_outld_, stride_out_inld_,
+      stride_out_outld_;
+  TensorUInt size_kn_inld_, size_kn_outld_;
 };
 
 

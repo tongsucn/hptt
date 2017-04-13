@@ -473,25 +473,7 @@ void KernelTrans<DoubleComplex, KernelTypeTrans::KERNEL_HALF, UPDATE_OUT>::exec(
 template <typename FloatType,
           bool UPDATE_OUT>
 KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::KernelTrans()
-    : KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE>(),
-      stride_in_inld_(1), stride_in_outld_(1), stride_out_inld_(1),
-      stride_out_outld_(1), size_kn_inld_(1), size_kn_outld_(1) {
-}
-
-
-template <typename FloatType,
-          bool UPDATE_OUT>
-void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::
-set_wrapper_loop(const TensorIdx stride_in_inld,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
-    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
-    const TensorUInt size_kn_outld) {
-  this->stride_in_inld_ = stride_in_inld;
-  this->stride_in_outld_ = stride_in_outld;
-  this->stride_out_inld_ = stride_out_inld;
-  this->stride_out_outld_ = stride_out_outld;
-  this->size_kn_inld_ = size_kn_inld > 0 ? size_kn_inld : 1;
-  this->size_kn_outld_ = size_kn_outld > 0 ? size_kn_outld : 1;
+    : KernelTransData<FloatType, KernelTypeTrans::KERNEL_LINE>() {
 }
 
 
@@ -505,69 +487,45 @@ void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
   const bool USE_STREAMING = not UPDATE_OUT and hptt::check_aligned(data_out);
 
   if (not USE_STREAMING) {
-    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
-      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
-        const FloatType * RESTRICT ptr_in
-            = data_in + this->stride_in_inld_ * in_idx
-            + this->stride_in_outld_ * out_idx;
-        FloatType * RESTRICT ptr_out
-            = data_out + this->stride_out_inld_ * in_idx
-            + this->stride_out_outld_ * out_idx;
+    TensorIdx idx = 0;
+    for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
+        idx += step, data_in += step, data_out += step) {
+      Intrin::store(data_out, Intrin::add(
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in)),
+          Intrin::mul(this->reg_beta_, Intrin::load(data_out))));
 
-        TensorIdx idx = 0;
-        for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
-            idx += step, ptr_in += step, ptr_out += step) {
-          Intrin::store(ptr_out, Intrin::add(
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)),
-              Intrin::mul(this->reg_beta_, Intrin::load(ptr_out))));
-
-          Intrin::store(ptr_out + REG_CAP, Intrin::add(
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in + REG_CAP)),
-              Intrin::mul(this->reg_beta_, Intrin::load(ptr_out + REG_CAP))));
-        }
-
-        for (constexpr auto step = REG_CAP; idx + step <= size_trans;
-            idx += step, ptr_in += step, ptr_out += step)
-          if (UPDATE_OUT)
-            Intrin::store(ptr_out, Intrin::add(
-                Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)),
-                Intrin::mul(this->reg_beta_, Intrin::load(ptr_out))));
-
-        for (; idx < size_trans; ++idx)
-          ptr_out[idx] = this->alpha_ * ptr_in[idx]
-              + this->beta_ * ptr_out[idx];
-      }
+      Intrin::store(data_out + REG_CAP, Intrin::add(
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in + REG_CAP)),
+          Intrin::mul(this->reg_beta_, Intrin::load(data_out + REG_CAP))));
     }
+
+    for (constexpr auto step = REG_CAP; idx + step <= size_trans;
+        idx += step, data_in += step, data_out += step)
+      Intrin::store(data_out, Intrin::add(
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in)),
+          Intrin::mul(this->reg_beta_, Intrin::load(data_out))));
+
+    for (; idx < size_trans; ++idx)
+      data_out[idx] = this->alpha_ * data_in[idx] + this->beta_ * data_out[idx];
   }
   else {
-    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
-      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
-        const FloatType * RESTRICT ptr_in
-            = data_in + this->stride_in_inld_ * in_idx
-            + this->stride_in_outld_ * out_idx;
-        FloatType * RESTRICT ptr_out
-            = data_out + this->stride_out_inld_ * in_idx
-            + this->stride_out_outld_ * out_idx;
+    TensorIdx idx = 0;
+    for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
+        idx += step, data_in += step, data_out += step) {
+      Intrin::stream(data_out,
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in)));
 
-        TensorIdx idx = 0;
-        for (constexpr auto step = REG_CAP * 2; idx + step <= size_trans;
-            idx += step, ptr_in += step, ptr_out += step) {
-          Intrin::stream(ptr_out,
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
-
-          Intrin::stream(ptr_out + REG_CAP,
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in + REG_CAP)));
-        }
-
-        for (constexpr auto step = REG_CAP; idx + step <= size_trans;
-            idx += step, ptr_in += step, ptr_out += step)
-          Intrin::stream(ptr_out,
-              Intrin::mul(this->reg_alpha_, Intrin::load(ptr_in)));
-
-        for (; idx < size_trans; ++idx)
-          ptr_out[idx] = this->alpha_ * ptr_in[idx];
-      }
+      Intrin::stream(data_out + REG_CAP,
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in + REG_CAP)));
     }
+
+    for (constexpr auto step = REG_CAP; idx + step <= size_trans;
+        idx += step, data_in += step, data_out += step)
+      Intrin::stream(data_out,
+          Intrin::mul(this->reg_alpha_, Intrin::load(data_in)));
+
+    for (; idx < size_trans; ++idx)
+      data_out[idx] = this->alpha_ * data_in[idx];
   }
 }
 

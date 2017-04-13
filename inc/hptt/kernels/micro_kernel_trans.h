@@ -10,6 +10,10 @@
 // AVX
 #include <hptt/arch/avx/kernel_trans_avx.h>
 
+#elif defined HPTT_ARCH_ARM
+// ARM
+#include <hptt/arch/arm/kernel_trans_arm.h>
+
 #elif defined HPTT_ARCH_IBM
 // PowerPC
 #include <hptt/arch/ibm/kernel_trans_ibm.h>

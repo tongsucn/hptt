@@ -19,7 +19,7 @@
 
 #define ALPHA 2.3
 #define BETA 4.2
-#define MEASURE_REPEAT 1
+#define MEASURE_REPEAT 5
 
 
 namespace hptt {
