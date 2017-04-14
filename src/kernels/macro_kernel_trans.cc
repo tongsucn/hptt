@@ -5,8 +5,6 @@
 #include <hptt/arch/compat.h>
 #include <hptt/kernels/micro_kernel_trans.h>
 
-#include <iostream>
-
 namespace hptt {
 
 /*
@@ -147,6 +145,15 @@ void MacroTrans<MicroKernel, SIZE_IN_INLD, SIZE_IN_OUTLD>::tile_outld_(
 /*
  * Implementation for class MacroTransLinear
  */
+template <typename FloatType,
+          bool UPDATE_OUT>
+MacroTransLinear<FloatType, UPDATE_OUT>::MacroTransLinear()
+    : kernel_(),
+      stride_in_inld_(1), stride_in_outld_(1), stride_out_inld_(1),
+      stride_out_outld_(1), size_kn_inld_(1), size_kn_outld_(1) {
+}
+
+
 template <typename FloatType,
           bool UPDATE_OUT>
 void MacroTransLinear<FloatType, UPDATE_OUT>::set_coef(

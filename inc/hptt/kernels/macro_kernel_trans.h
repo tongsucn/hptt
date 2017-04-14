@@ -62,6 +62,8 @@ class MacroTransLinear {
 public:
   static constexpr TensorUInt LOOP_MAX = 10;
 
+  MacroTransLinear();
+
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
   void set_wrapper_loop(const TensorIdx stride_in_inld,
