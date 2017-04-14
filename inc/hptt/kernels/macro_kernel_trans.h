@@ -71,7 +71,7 @@ public:
       const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
       const TensorUInt size_kn_outld);
 
-  void exec(const FloatType *data_in, FloatType *data_out,
+  void exec(const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
       const TensorIdx size_trans, const TensorIdx size_pad) const;
 
 private:
@@ -89,12 +89,20 @@ class MacroTransScalar {
 public:
   void set_coef(const DeducedFloatType<FloatType> alpha,
       const DeducedFloatType<FloatType> beta);
+  void set_wrapper_loop(const TensorIdx stride_in_inld,
+      const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
+      const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
+      const TensorUInt size_kn_outld);
 
-  void exec(const FloatType *data_in, FloatType *data_out,
+  void exec(const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
       const TensorIdx, const TensorIdx) const;
 
 private:
   DeducedFloatType<FloatType> alpha_, beta_;
+
+  TensorIdx stride_in_inld_, stride_in_outld_, stride_out_inld_,
+      stride_out_outld_;
+  TensorUInt size_kn_inld_, size_kn_outld_;
 };
 
 

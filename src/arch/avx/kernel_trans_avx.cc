@@ -481,7 +481,7 @@ template <typename FloatType,
           bool UPDATE_OUT>
 void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
-    const TensorIdx size_trans, const TensorIdx size_pad) const {
+    const TensorIdx size_trans, const TensorIdx) const {
   using Intrin = IntrinImpl<FloatType, KernelTypeTrans::KERNEL_LINE>;
   constexpr TensorUInt REG_CAP = hptt::SIZE_REG / sizeof(FloatType);
   const bool USE_STREAMING = not UPDATE_OUT and hptt::check_aligned(data_out);

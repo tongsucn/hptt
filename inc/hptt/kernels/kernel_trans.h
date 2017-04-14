@@ -28,7 +28,7 @@ struct KernelPackTrans {
   friend struct ParamTrans;
 
   // Kernel number (linear kernel is count for 2)
-  static constexpr TensorUInt KERNEL_NUM = 25;
+  static constexpr TensorUInt KERNEL_NUM = 26;
 
   // Delete move/copy constructors
   KernelPackTrans(KernelPackTrans &&) = delete;
@@ -42,8 +42,7 @@ struct KernelPackTrans {
       const DeducedFloatType<FloatType> beta);
 
   TensorUInt kernel_offset(const KernelTypeTrans kn_type,
-      const TensorUInt cont_size, const TensorUInt ncont_size,
-      const bool is_tail = false) const;
+      const TensorUInt cont_size, const TensorUInt ncont_size) const;
   TensorUInt kn_cont_len(const KernelTypeTrans kn_type) const;
   TensorUInt kn_ncont_len(const KernelTypeTrans kn_type) const;
 
@@ -83,7 +82,9 @@ struct KernelPackTrans {
   MacroTransLinear<FloatType, UPDATE_OUT> kn_lin_scalar;
 
   // Scalar kernel
-  MacroTransScalar<FloatType, UPDATE_OUT> kn_scl;
+  MacroTransScalar<FloatType, UPDATE_OUT> kn_sca_right;
+  MacroTransScalar<FloatType, UPDATE_OUT> kn_sca_bottom;
+  MacroTransScalar<FloatType, UPDATE_OUT> kn_sca_scalar;
 
   // Reference kernels
   const MacroTransFull<FloatType, 4, 4, UPDATE_OUT> &knf_giant;

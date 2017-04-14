@@ -546,12 +546,29 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     // Set up vertical scalar region
     const TensorUInt cont_rest_len = cont_len % knh_basic_len,
         ncont_rest_len = ncont_len % knh_basic_len;
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1,
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL, 1, 1,
         cont_len - cont_rest_len, 0, cont_rest_len, ncont_len - ncont_rest_len);
 
     // Set up horizontal scalar region
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1, 0,
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL, 1, 1, 0,
         ncont_len - ncont_rest_len, cont_len, ncont_rest_len, true);
+
+    // Set up right scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        cont_rest_len, knh_basic_len, cont_len - cont_rest_len, 0,
+        cont_rest_len, ncont_len - ncont_rest_len);
+
+    // Set up bottom scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        knh_basic_len, ncont_rest_len, 0, ncont_len - ncont_rest_len,
+        cont_len - cont_rest_len, ncont_rest_len, 1);
+
+    // Set up scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        cont_rest_len, ncont_rest_len, cont_len - cont_rest_len,
+        ncont_len - ncont_rest_len, cont_rest_len, ncont_rest_len, 2);
+    this->param_->set_sca_wrapper_loop(knh_basic_len, knh_basic_len,
+        cont_rest_len, ncont_rest_len);
   }
   else if (cont_len >= knh_basic_len and ncont_len >= knh_basic_len) {
     // Leading orders are too small for full kernels, use half kernels
@@ -568,22 +585,34 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_HALF, kn_cont_size,
         kn_ncont_size, 0, 0, knh_cont_num, knh_ncont_num);
 
-    // Set up vertical scalar region
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1,
+    // Set up right scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        cont_len % knh_basic_len, kn_ncont_size * knh_basic_len,
         knh_cont_num * knh_basic_len, 0, cont_len % knh_basic_len,
         knh_ncont_num * knh_basic_len);
 
-    // Set up horizontal scalar region
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1, 0,
-        knh_ncont_num * knh_basic_len, cont_len, ncont_len % knh_basic_len,
-        true);
+    // Set up bottom scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        kn_cont_size * knh_basic_len, ncont_len % knh_basic_len, 0,
+        knh_ncont_num * knh_basic_len, knh_cont_num * knh_basic_len,
+        ncont_len % knh_basic_len, 1);
+
+    // Set up scalar region
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
+        cont_len % knh_basic_len, ncont_len % knh_basic_len,
+        knh_ncont_num * knh_basic_len, knh_ncont_num * knh_basic_len,
+        cont_len % knh_basic_len, ncont_len % knh_basic_len, 2);
+    this->param_->set_sca_wrapper_loop(kn_cont_size * knh_basic_len,
+        kn_ncont_size * knh_basic_len, cont_len % knh_basic_len,
+        ncont_len % knh_basic_len);
   }
   else {
     // Leading orders are too small for full kernels, use linear kernels
     this->avail_parallel_[this->in_ld_idx_] = cont_len;
     this->avail_parallel_[this->out_ld_idx_] = ncont_len;
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_LINE, 1, 1, 0, 0,
-        cont_len, ncont_len);
+    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL, 1, 1, 0, 0,
+        cont_len, ncont_len, 2);
+    this->param_->set_sca_wrapper_loop(1, 1, 0, 0);
   }
 }
 
@@ -593,11 +622,11 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
     const KernelTypeTrans kn_type, const TensorUInt kn_cont_size,
     const TensorUInt kn_ncont_size, const TensorUInt cont_begin_pos,
     const TensorUInt ncont_begin_pos, const TensorUInt cont_offset_size,
-    const TensorUInt ncont_offset_size, const bool is_linh) {
+    const TensorUInt ncont_offset_size, const TensorUInt offset) {
   if (cont_offset_size > 0 and ncont_offset_size > 0) {
     // Locate kernel's position
     const auto kernel_offset = this->param_->get_kernel().kernel_offset(kn_type,
-        kn_cont_size, kn_ncont_size, is_linh);
+        kn_cont_size, kn_ncont_size) + offset;
     auto &oper = this->template_descriptor_.description[0][kernel_offset];
 
     // Set up all loops
@@ -612,9 +641,9 @@ void PlanTransOptimizer<ParamType>::init_vec_deploy_kernels_(
           = this->param_->get_kernel().kn_ncont_len(kn_type) * kn_ncont_size;
     }
     oper.loop_end[this->in_ld_idx_] = cont_begin_pos
-      + cont_offset_size * this->param_->get_kernel().kn_cont_len(kn_type);
+        + cont_offset_size * this->param_->get_kernel().kn_cont_len(kn_type);
     oper.loop_end[this->out_ld_idx_] = ncont_begin_pos
-      + ncont_offset_size * this->param_->get_kernel().kn_ncont_len(kn_type);
+        + ncont_offset_size * this->param_->get_kernel().kn_ncont_len(kn_type);
 
     // Set up non leading order loops
     oper.set_pass(this->in_ld_idx_);

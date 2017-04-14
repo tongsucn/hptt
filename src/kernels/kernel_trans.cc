@@ -31,7 +31,9 @@ void KernelPackTrans<FloatType, UPDATE_OUT>::set_coef(
   this->kn_lin_right.set_coef(alpha, beta);
   this->kn_lin_bottom.set_coef(alpha, beta);
   this->kn_lin_scalar.set_coef(alpha, beta);
-  this->kn_scl.set_coef(alpha, beta);
+  this->kn_sca_right.set_coef(alpha, beta);
+  this->kn_sca_bottom.set_coef(alpha, beta);
+  this->kn_sca_scalar.set_coef(alpha, beta);
 }
 
 
@@ -39,13 +41,13 @@ template <typename FloatType,
           bool UPDATE_OUT>
 TensorUInt KernelPackTrans<FloatType, UPDATE_OUT>::kernel_offset(
     const KernelTypeTrans kn_type, const TensorUInt cont_size,
-    const TensorUInt ncont_size, const bool is_tail) const {
+    const TensorUInt ncont_size) const {
   if (KernelTypeTrans::KERNEL_FULL == kn_type)
     return 4 * (cont_size - 1) + ncont_size - 1;
   else if (KernelTypeTrans::KERNEL_HALF == kn_type)
     return 16 + (1 == cont_size ? ncont_size - 1 : cont_size + 2);
   else
-    return KERNEL_NUM - 2 + (is_tail ? 1 : 0);
+    return KERNEL_NUM - 3;
 }
 
 

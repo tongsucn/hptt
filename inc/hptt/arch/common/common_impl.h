@@ -40,7 +40,7 @@ template <typename FloatType,
           bool UPDATE_OUT>
 HPTT_INL void common_trans_linear_impl(const FloatType * RESTRICT data_in,
     FloatType * RESTRICT data_out, const TensorIdx size_trans,
-    const TensorIdx size_pad, const DeducedFloatType<FloatType> &alpha,
+    const TensorIdx, const DeducedFloatType<FloatType> &alpha,
     const DeducedFloatType<FloatType> &beta) {
   if (UPDATE_OUT)
 #pragma omp simd

@@ -166,10 +166,9 @@ void MacroTransLinear<FloatType, UPDATE_OUT>::set_coef(
 template <typename FloatType,
           bool UPDATE_OUT>
 void MacroTransLinear<FloatType, UPDATE_OUT>::set_wrapper_loop(
-    const TensorIdx stride_in_inld,
-    const TensorIdx stride_in_outld, const TensorIdx stride_out_inld,
-    const TensorIdx stride_out_outld, const TensorUInt size_kn_inld,
-    const TensorUInt size_kn_outld) {
+    const TensorIdx stride_in_inld, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld, const TensorIdx stride_out_outld,
+    const TensorUInt size_kn_inld, const TensorUInt size_kn_outld) {
   this->stride_in_inld_ = stride_in_inld;
   this->stride_in_outld_ = stride_in_outld;
   this->stride_out_inld_ = stride_out_inld;
@@ -181,18 +180,17 @@ void MacroTransLinear<FloatType, UPDATE_OUT>::set_wrapper_loop(
 
 template <typename FloatType,
           bool UPDATE_OUT>
-void MacroTransLinear<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
-    FloatType *data_out, const TensorIdx size_trans,
-    const TensorIdx size_pad) const {
+void MacroTransLinear<FloatType, UPDATE_OUT>::exec(
+    const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
+    const TensorIdx size_trans, const TensorIdx size_pad) const {
   for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
-    for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx) {
-      const FloatType *ptr_in = data_in + this->stride_in_inld_ * in_idx
-          + this->stride_in_outld_ * out_idx;
-      FloatType *ptr_out = data_out + this->stride_out_inld_ * in_idx
-          + this->stride_out_outld_ * out_idx;
+    const TensorIdx offset_in = this->stride_in_outld_ * out_idx;
+    const TensorIdx offset_out = this->stride_out_outld_ * out_idx;
 
-      this->kernel_.exec(ptr_in, ptr_out, size_trans, size_pad);
-    }
+    for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx)
+      this->kernel_.exec(data_in + offset_in + this->stride_in_inld_ * in_idx,
+          data_out + offset_out + this->stride_out_inld_ * in_idx,
+          size_trans, 0);
   }
 }
 
@@ -211,9 +209,46 @@ void MacroTransScalar<FloatType, UPDATE_OUT>::set_coef(
 
 template <typename FloatType,
           bool UPDATE_OUT>
-void MacroTransScalar<FloatType, UPDATE_OUT>::exec(const FloatType *data_in,
-    FloatType *data_out, const TensorIdx, const TensorIdx) const {
-  *data_out = this->alpha_ * *data_in + this->beta_ * *data_out;
+void MacroTransScalar<FloatType, UPDATE_OUT>::set_wrapper_loop(
+    const TensorIdx stride_in_inld, const TensorIdx stride_in_outld,
+    const TensorIdx stride_out_inld, const TensorIdx stride_out_outld,
+    const TensorUInt size_kn_inld, const TensorUInt size_kn_outld) {
+  this->stride_in_inld_ = stride_in_inld;
+  this->stride_in_outld_ = stride_in_outld;
+  this->stride_out_inld_ = stride_out_inld;
+  this->stride_out_outld_ = stride_out_outld;
+  this->size_kn_inld_ = size_kn_inld > 0 ? size_kn_inld : 1;
+  this->size_kn_outld_ = size_kn_outld > 0 ? size_kn_outld : 1;
+}
+
+
+template <typename FloatType,
+          bool UPDATE_OUT>
+void MacroTransScalar<FloatType, UPDATE_OUT>::exec(
+    const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
+    const TensorIdx, const TensorIdx) const {
+  if (UPDATE_OUT) {
+    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
+      const TensorIdx offset_in = this->stride_in_outld_ * out_idx;
+      const TensorIdx offset_out = this->stride_out_outld_ * out_idx;
+
+      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx)
+        *(data_out + offset_in + this->stride_out_inld_ * in_idx) = this->alpha_
+            * *(data_in + offset_in + this->stride_in_inld_ * in_idx)
+            + this->beta_
+            * *(data_out + offset_out + this->stride_out_inld_ * in_idx);
+    }
+  }
+  else {
+    for (TensorUInt out_idx = 0; out_idx < this->size_kn_outld_; ++out_idx) {
+      const TensorIdx offset_in = this->stride_in_outld_ * out_idx;
+      const TensorIdx offset_out = this->stride_out_outld_ * out_idx;
+
+      for (TensorUInt in_idx = 0; in_idx < this->size_kn_inld_; ++in_idx)
+        *(data_out + offset_in + this->stride_out_inld_ * in_idx) = this->alpha_
+            * *(data_in + offset_in + this->stride_in_inld_ * in_idx);
+    }
+  }
 }
 
 

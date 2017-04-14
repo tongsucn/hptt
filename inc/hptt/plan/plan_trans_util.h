@@ -74,7 +74,7 @@ private:
       const TensorUInt kn_cont_size, const TensorUInt kn_ncont_size,
       const TensorUInt cont_begin_pos, const TensorUInt ncont_begin_pos,
       const TensorUInt cont_offset_size, const TensorUInt ncont_offset_size,
-      const bool is_linh = false);
+      const TensorUInt offset = 0);
   void init_vec_common_leading_();
 
   void init_parallel_rule_general_();

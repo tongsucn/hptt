@@ -104,9 +104,9 @@ template <typename FloatType,
           bool UPDATE_OUT>
 void KernelTrans<FloatType, KernelTypeTrans::KERNEL_LINE, UPDATE_OUT>::exec(
     const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
-    const TensorIdx size_trans, const TensorIdx size_pad) const {
+    const TensorIdx size_trans, const TensorIdx) const {
   common_trans_linear_impl<FloatType, UPDATE_OUT>(data_in, data_out, size_trans,
-      size_pad, alpha_, beta_);
+      0, alpha_, beta_);
 }
 
 

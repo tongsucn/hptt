@@ -17,7 +17,8 @@ namespace hptt {
 enum class KernelTypeTrans : TensorUInt {
   KERNEL_FULL = 0,
   KERNEL_HALF = 1,
-  KERNEL_LINE = 2
+  KERNEL_LINE = 2,
+  KERNEL_SCAL = 3
 };
 
 

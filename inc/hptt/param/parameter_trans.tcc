@@ -194,6 +194,23 @@ void ParamTrans<TensorType, UPDATE_OUT>::set_lin_wrapper_loop(
 
 template <typename TensorType,
           bool UPDATE_OUT>
+void ParamTrans<TensorType, UPDATE_OUT>::set_sca_wrapper_loop(
+    const TensorUInt size_kn_in_inld, const TensorUInt size_kn_in_outld,
+    const TensorUInt size_kn_out_inld, const TensorUInt size_kn_out_outld) {
+  this->kn_.kn_sca_right.set_wrapper_loop(this->stride_in_inld,
+      this->stride_in_outld, this->stride_out_inld, this->stride_out_outld,
+      size_kn_in_inld, size_kn_in_outld);
+  this->kn_.kn_sca_bottom.set_wrapper_loop(this->stride_in_inld,
+      this->stride_in_outld, this->stride_out_inld, this->stride_out_outld,
+      size_kn_out_inld, size_kn_out_outld);
+  this->kn_.kn_sca_scalar.set_wrapper_loop(this->stride_in_inld,
+      this->stride_in_outld, this->stride_out_inld, this->stride_out_outld,
+      size_kn_in_inld, size_kn_out_outld);
+}
+
+
+template <typename TensorType,
+          bool UPDATE_OUT>
 void ParamTrans<TensorType, UPDATE_OUT>::reset_data(const Float *data_in,
     Float *data_out) {
   this->input_tensor.reset_data(data_in);

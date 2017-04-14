@@ -251,10 +251,13 @@ HPTT_INL void CGraphTrans<ParamType>::exec_general_(const TensorUInt th_idx) {
       stride_out_inld);
 
   task = task->next;
-  task->exec(kn.kn_scl, input_tensor, output_tensor, 1, 0);
+  task->exec(kn.kn_sca_right, input_tensor, output_tensor, 0, 0);
 
   task = task->next;
-  task->exec(kn.kn_scl, input_tensor, output_tensor, 1, 0);
+  task->exec(kn.kn_sca_bottom, input_tensor, output_tensor, 0, 0);
+
+  task = task->next;
+  task->exec(kn.kn_sca_scalar, input_tensor, output_tensor, 0, 0);
 }
 
 

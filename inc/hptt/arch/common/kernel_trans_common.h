@@ -68,7 +68,7 @@ public:
   KernelTrans();
 
   void exec(const FloatType * RESTRICT data_in, FloatType * RESTRICT data_out,
-      const TensorIdx size_trans, const TensorIdx size_pad) const;
+      const TensorIdx size_trans, const TensorIdx) const;
 };
 
 

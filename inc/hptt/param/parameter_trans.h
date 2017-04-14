@@ -58,6 +58,9 @@ struct ParamTrans {
   HPTT_INL const KernelPack &get_kernel() const;
   void set_lin_wrapper_loop(const TensorUInt size_kn_inld,
       const TensorUInt size_kn_outld);
+  void set_sca_wrapper_loop(const TensorUInt size_kn_in_inld,
+      const TensorUInt size_kn_in_outld, const TensorUInt size_kn_out_inld,
+      const TensorUInt size_kn_out_outld);
 
   void reset_data(const Float *data_in, Float *data_out);
 
