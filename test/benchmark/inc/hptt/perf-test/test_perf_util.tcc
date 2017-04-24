@@ -45,9 +45,6 @@ void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case,
   auto tp_ref = calc_tp_trans<FloatType>(test_case.size, time_ref);
   auto tp_hptt = calc_tp_trans<FloatType>(test_case.size, time_hptt);
 
-  delete graph;
-  graph = nullptr;
-
   auto result = data_wrapper.verify();
 
   // Print log

@@ -1,6 +1,7 @@
 #include <hptt/hptt.h>
 
 #include <vector>
+#include <memory>
 
 #include <hptt/types.h>
 #include <hptt/arch/arch.h>
@@ -13,9 +14,9 @@ namespace hptt {
  * Implementation of function create_cgraph_trans
  */
 template <typename FloatType>
-CGraphTransPackBase<FloatType> *create_trans_plan(const FloatType *in_data,
-    FloatType *out_data, const std::vector<TensorUInt> &in_size,
-    const std::vector<TensorUInt> &perm,
+std::shared_ptr<CGraphTransPackBase<FloatType>> create_trans_plan(
+    const FloatType *in_data, FloatType *out_data,
+    const std::vector<TensorUInt> &in_size, const std::vector<TensorUInt> &perm,
     const DeducedFloatType<FloatType> alpha,
     const DeducedFloatType<FloatType> beta,
     const TensorUInt num_threads, const double tuning_timeout,
@@ -85,34 +86,40 @@ CGraphTransPackBase<FloatType> *create_trans_plan(const FloatType *in_data,
   if (nullptr == raw_func_trans)
     return nullptr;
   else
-    return reinterpret_cast<FuncType_>(raw_func_trans)(in_data, out_data, order,
+    return std::shared_ptr<CGraphTransPackBase<FloatType>>(
+        reinterpret_cast<FuncType_>(raw_func_trans)(in_data, out_data, order,
         in_size, perm, alpha, beta, num_threads, tuning_timeout, in_outer_size,
-        out_outer_size);
+        out_outer_size));
 }
 
 
 /*
  * Explicit template instantiation definition for function create_trans_plan
  */
-template CGraphTransPackBase<float> *create_trans_plan<float>(const float *,
-    float *, const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+template std::shared_ptr<CGraphTransPackBase<float>>
+create_trans_plan<float>(const float *, float *,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<float>, const DeducedFloatType<float>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
-template CGraphTransPackBase<double> *create_trans_plan<double>(const double *,
-    double *, const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+template std::shared_ptr<CGraphTransPackBase<double>>
+create_trans_plan<double>(const double *, double *,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<double>, const DeducedFloatType<double>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
-template CGraphTransPackBase<FloatComplex> *create_trans_plan<FloatComplex>(
-    const FloatComplex *, FloatComplex *, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<FloatComplex>,
-    const DeducedFloatType<FloatComplex>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
-template CGraphTransPackBase<DoubleComplex> *create_trans_plan<DoubleComplex>(
-    const DoubleComplex *, DoubleComplex *, const std::vector<TensorUInt> &,
-    const std::vector<TensorUInt> &, const DeducedFloatType<DoubleComplex>,
-    const DeducedFloatType<DoubleComplex>, const TensorUInt, const double,
-    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &);
+template std::shared_ptr<CGraphTransPackBase<FloatComplex>>
+create_trans_plan<FloatComplex>(const FloatComplex *, FloatComplex *,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+    const DeducedFloatType<FloatComplex>, const DeducedFloatType<FloatComplex>,
+    const TensorUInt, const double, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &);
+template std::shared_ptr<CGraphTransPackBase<DoubleComplex>>
+create_trans_plan<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
+    const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
+    const DeducedFloatType<DoubleComplex>,
+    const DeducedFloatType<DoubleComplex>, const TensorUInt,
+    const double, const std::vector<TensorUInt> &,
+    const std::vector<TensorUInt> &);
 
 }
