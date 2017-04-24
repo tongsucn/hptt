@@ -19,7 +19,7 @@ void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case,
   std::vector<TensorUInt> size_vec(test_case.size.begin(),
       test_case.size.end());
 
-  auto graph = create_trans_plan<FloatType>(data_wrapper.org_in_data,
+  auto graph = create_plan<FloatType>(data_wrapper.org_in_data,
       data_wrapper.act_data, size_vec, perm, static_cast<Deduced>(ALPHA),
       static_cast<Deduced>(BETA), 0);
 

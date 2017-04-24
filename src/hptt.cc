@@ -14,7 +14,7 @@ namespace hptt {
  * Implementation of function create_cgraph_trans
  */
 template <typename FloatType>
-std::shared_ptr<CGraphTransPackBase<FloatType>> create_trans_plan(
+std::shared_ptr<CGraphTransPackBase<FloatType>> create_plan(
     const FloatType *in_data, FloatType *out_data,
     const std::vector<TensorUInt> &in_size, const std::vector<TensorUInt> &perm,
     const DeducedFloatType<FloatType> alpha,
@@ -94,28 +94,28 @@ std::shared_ptr<CGraphTransPackBase<FloatType>> create_trans_plan(
 
 
 /*
- * Explicit template instantiation definition for function create_trans_plan
+ * Explicit template instantiation definition for function create_plan
  */
 template std::shared_ptr<CGraphTransPackBase<float>>
-create_trans_plan<float>(const float *, float *,
+create_plan<float>(const float *, float *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<float>, const DeducedFloatType<float>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
 template std::shared_ptr<CGraphTransPackBase<double>>
-create_trans_plan<double>(const double *, double *,
+create_plan<double>(const double *, double *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<double>, const DeducedFloatType<double>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
 template std::shared_ptr<CGraphTransPackBase<FloatComplex>>
-create_trans_plan<FloatComplex>(const FloatComplex *, FloatComplex *,
+create_plan<FloatComplex>(const FloatComplex *, FloatComplex *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<FloatComplex>, const DeducedFloatType<FloatComplex>,
     const TensorUInt, const double, const std::vector<TensorUInt> &,
     const std::vector<TensorUInt> &);
 template std::shared_ptr<CGraphTransPackBase<DoubleComplex>>
-create_trans_plan<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
+create_plan<DoubleComplex>(const DoubleComplex *, DoubleComplex *,
     const std::vector<TensorUInt> &, const std::vector<TensorUInt> &,
     const DeducedFloatType<DoubleComplex>,
     const DeducedFloatType<DoubleComplex>, const TensorUInt,

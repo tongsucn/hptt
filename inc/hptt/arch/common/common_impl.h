@@ -16,7 +16,6 @@ HPTT_INL void common_trans_impl(const FloatType * RESTRICT data_in,
     const TensorIdx stride_out_inld, const DeducedFloatType<FloatType> &alpha,
     const DeducedFloatType<FloatType> &beta) {
   if (UPDATE_OUT)
-#pragma omp simd collapse(2)
     for (TensorUInt idx_in_outld = 0; idx_in_outld < WIDTH; ++idx_in_outld) {
       for (TensorUInt idx_in_inld = 0; idx_in_inld < WIDTH; ++idx_in_inld) {
         const auto idx_in = idx_in_inld + idx_in_outld * stride_in_outld,
@@ -25,7 +24,6 @@ HPTT_INL void common_trans_impl(const FloatType * RESTRICT data_in,
       }
     }
   else
-#pragma omp simd collapse(2)
     for (TensorUInt idx_in_outld = 0; idx_in_outld < WIDTH; ++idx_in_outld) {
       for (TensorUInt idx_in_inld = 0; idx_in_inld < WIDTH; ++idx_in_inld) {
         const auto idx_in = idx_in_inld + idx_in_outld * stride_in_outld,
