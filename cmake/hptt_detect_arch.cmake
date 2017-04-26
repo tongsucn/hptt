@@ -4,6 +4,14 @@
 set(HPTT_ARCH_DETECT_SCRIPT "${CMAKE_SOURCE_DIR}/cmake/pylib/cpu_flags.py")
 
 # ----------------------------------------------------------------------------
+# Architecture detection variables
+# ----------------------------------------------------------------------------
+set(HPTT_ARCH_AVX2 "")
+set(HPTT_ARCH_AVX "")
+set(HPTT_ARCH_ARM "")
+
+
+# ----------------------------------------------------------------------------
 # Architecture detection
 # ----------------------------------------------------------------------------
 macro(hptt_detect_arch)
