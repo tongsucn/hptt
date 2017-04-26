@@ -241,7 +241,8 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_general_(
 
   // Re-initialize loop order descriptor, and skip cases that leading orders
   // locating at outer most loops (when ORDER > 3)
-  if (ORDER > 3) {
+  const auto merged_order = this->param_->merged_order;
+  if (merged_order > 3) {
     for (TensorUInt order_idx = 0; order_idx < ORDER; ++order_idx)
       loop_order[order_idx] = order_idx;
     if (this->in_ld_idx_ + 1 == this->out_ld_idx_)
@@ -254,8 +255,8 @@ void PlanTransOptimizer<ParamType>::init_loop_heur_general_(
 
   // 2. Allow leading orders appear anywhere except outer most (when ORDER > 3)
   for (bool has_next = true;
-      ORDER > 2 and has_next and (heur_num < 0 or heur_num > times);) {
-    if (ORDER > 3) {
+      merged_order > 2 and has_next and (heur_num < 0 or heur_num > times);) {
+    if (merged_order > 3) {
       if (this->out_ld_idx_ == loop_order[this->in_ld_idx_]) {
         if (ORDER - 1 == this->out_ld_idx_)
           break;
@@ -546,13 +547,6 @@ void PlanTransOptimizer<ParamType>::init_vec_general_() {
     // Set up vertical scalar region
     const TensorUInt cont_rest_len = cont_len % knh_basic_len,
         ncont_rest_len = ncont_len % knh_basic_len;
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL, 1, 1,
-        cont_len - cont_rest_len, 0, cont_rest_len, ncont_len - ncont_rest_len);
-
-    // Set up horizontal scalar region
-    this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL, 1, 1, 0,
-        ncont_len - ncont_rest_len, cont_len, ncont_rest_len, true);
-
     // Set up right scalar region
     this->init_vec_deploy_kernels_(KernelTypeTrans::KERNEL_SCAL,
         cont_rest_len, knh_basic_len, cont_len - cont_rest_len, 0,

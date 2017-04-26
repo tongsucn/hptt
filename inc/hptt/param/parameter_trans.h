@@ -65,7 +65,9 @@ struct ParamTrans {
   void reset_data(const Float *data_in, Float *data_out);
 
 private:
-  TensorUInt merge_idx_(const std::array<TensorUInt, ORDER> &perm);
+  TensorUInt merge_idx_(const TensorType &input_tensor,
+      const TensorType &output_tensor,
+      const std::array<TensorUInt, ORDER> &perm);
 
   // They need to be initialized before merging
   std::unordered_set<TensorUInt> input_merge_set_, output_merge_set_;

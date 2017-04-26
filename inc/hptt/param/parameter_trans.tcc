@@ -109,7 +109,7 @@ ParamTrans<TensorType, UPDATE_OUT>::ParamTrans(const TensorType &input_tensor,
     : input_merge_set_(), output_merge_set_(), kn_(), perm(perm),
       stride_in_inld(1), stride_in_outld(1),
       stride_out_inld(1), stride_out_outld(1),
-      merged_order(this->merge_idx_(perm)),
+      merged_order(this->merge_idx_(input_tensor, output_tensor, perm)),
       input_tensor(input_tensor, this->input_merge_set_),
       output_tensor(output_tensor, this->output_merge_set_) {
   // Initialize coefficients
@@ -143,10 +143,10 @@ ParamTrans<TensorType, UPDATE_OUT>::ParamTrans(const TensorType &input_tensor,
     for (auto order_idx = this->begin_order_idx;
         order_idx != this->perm[this->begin_order_idx] + this->begin_order_idx;
         ++order_idx)
-      this->stride_in_outld *= input_tensor.get_outer_size(order_idx);
+      this->stride_in_outld *= this->input_tensor.get_outer_size(order_idx);
     for (auto order_idx = this->begin_order_idx;
         0 != this->perm[order_idx]; ++order_idx)
-      this->stride_out_inld *= output_tensor.get_outer_size(order_idx);
+      this->stride_out_inld *= this->output_tensor.get_outer_size(order_idx);
   }
 }
 
@@ -221,14 +221,15 @@ void ParamTrans<TensorType, UPDATE_OUT>::reset_data(const Float *data_in,
 template <typename TensorType,
           bool UPDATE_OUT>
 TensorUInt ParamTrans<TensorType, UPDATE_OUT>::merge_idx_(
+    const TensorType &input_tensor, const TensorType &output_tensor,
     const std::array<TensorUInt, ORDER> &perm) {
   if (ORDER <= 1)
     return ORDER;
 
-  const auto &input_size = this->input_tensor.get_size();
-  const auto &input_outer_size = this->input_tensor.get_outer_size();
-  const auto &output_size = this->output_tensor.get_size();
-  const auto &output_outer_size = this->output_tensor.get_outer_size();
+  const auto &input_size = input_tensor.get_size();
+  const auto &input_outer_size = input_tensor.get_outer_size();
+  const auto &output_size = output_tensor.get_size();
+  const auto &output_outer_size = output_tensor.get_outer_size();
 
   // Create permutation set
   for (TensorUInt order_idx = 1; order_idx < ORDER; ++order_idx) {
@@ -249,7 +250,7 @@ TensorUInt ParamTrans<TensorType, UPDATE_OUT>::merge_idx_(
   this->output_merge_set_.insert(ORDER - 1);
 
   // Check merged order
-  auto merged = static_cast<TensorUInt>(this->input_merge_set_.size());
+  const auto merged = static_cast<TensorUInt>(this->input_merge_set_.size());
   this->begin_order_idx = ORDER - merged;
   if (ORDER == merged)
     return ORDER;
