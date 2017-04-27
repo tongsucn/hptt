@@ -6,11 +6,11 @@ template <typename FloatType,
           typename RefFuncType,
           TensorUInt ORDER>
 void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case,
-    const TensorUInt bm_idx) {
+    const TensorUInt bm_idx, bool randomize) {
   using Deduced = DeducedFloatType<FloatType>;
 
   // Prepare data and timer
-  DataWrapper<FloatType> data_wrapper(test_case.size, true);
+  DataWrapper<FloatType> data_wrapper(test_case.size, randomize);
   TimerWrapper timer(1);
 
   // Create HPTT computational graph
@@ -21,7 +21,7 @@ void compare_perf(RefFuncType &ref_trans, const RefTransConfig &test_case,
 
   auto graph = create_plan<FloatType>(data_wrapper.org_in_data,
       data_wrapper.act_data, size_vec, perm, static_cast<Deduced>(ALPHA),
-      static_cast<Deduced>(BETA), 0);
+      static_cast<Deduced>(BETA), 0, -1.0);
 
   double time_ref = DBL_MAX, time_hptt = DBL_MAX;
   for (auto times = 0; times < MEASURE_REPEAT; ++times) {

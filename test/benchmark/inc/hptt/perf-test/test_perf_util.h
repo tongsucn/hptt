@@ -19,7 +19,7 @@
 
 #define ALPHA 2.3
 #define BETA 4.2
-#define MEASURE_REPEAT 5
+#define MEASURE_REPEAT 10
 
 
 namespace hptt {
@@ -27,7 +27,8 @@ namespace hptt {
 template <typename FloatType,
           typename RefFuncType,
           TensorUInt ORDER>
-void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case);
+void compare_perf(RefFuncType &ref_func, const RefTransConfig &test_case,
+    bool randomize = false);
 
 
 void print_title(std::string title);
