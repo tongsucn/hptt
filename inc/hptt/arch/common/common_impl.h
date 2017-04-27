@@ -41,11 +41,9 @@ HPTT_INL void common_trans_linear_impl(const FloatType * RESTRICT data_in,
     const TensorIdx, const DeducedFloatType<FloatType> &alpha,
     const DeducedFloatType<FloatType> &beta) {
   if (UPDATE_OUT)
-#pragma omp simd
     for (TensorIdx idx = 0; idx < size_trans; ++idx)
       data_out[idx] = alpha * data_in[idx] + beta * data_out[idx];
   else
-#pragma omp simd
     for (TensorIdx idx = 0; idx < size_trans; ++idx)
       data_out[idx] = alpha * data_in[idx];
 }
