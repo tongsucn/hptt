@@ -72,6 +72,12 @@ plan->reset_data(in_data_new, out_data_new);
 The `plan` in above code is actually a `std::shared_ptr`, it does not need to
 be released manually..
 
+## Acknowledgment
+
+I gratefully appreciate Paul Springer
+([@springer13](https://github.com/springer13))'s guidance and code
+contribution to this project.
+
 ## Citation
 
 ```
